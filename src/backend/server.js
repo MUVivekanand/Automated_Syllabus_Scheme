@@ -5,6 +5,8 @@ const dotenv = require('dotenv');
 
 //mongo db for filtering:
 
+require('dotenv').config();
+
 const mongoose=require("mongoose");
 
 const MONGO_URI=process.env.MONGO_URI
@@ -34,27 +36,38 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-//mysql connection:
+//mysql pool:
 const MYSQL_PASSWORD=process.env.MYSQL_PASSWORD
 
-// MySQL connection setup
-const connection = mysql.createConnection({
-  host: "localhost",
-  user: "root",
-  password: process.env.MYSQL_PASSWORD,
-  database: "finai",
+// MySQL pool setup
+const pool = mysql.createPool({
+  host: process.env.host, 
+  user: process.env.user,          // Your MySQL username
+  password: process.env.password,      // Your MySQL password
+  database: process.env.database,          
+  waitForpools: true,
+  poolLimit: 10,
+  queueLimit: 0
 });
 
 // Connect to the database
-connection.connect((err) => {
+// pool.connect((err) => {
+//   if (err) {
+//     console.error("Error connecting to the database:", err.message);
+//     process.exit(1); 
+//   } else {
+//     console.log("Connected to the MySQL database");
+//   }
+// });
+
+pool.query('SELECT 1 + 1 AS solution', (err, results) => {
   if (err) {
     console.error("Error connecting to the database:", err.message);
-    process.exit(1); 
+    process.exit(1); // Exit the process if the connection fails
   } else {
-    console.log("Connected to the MySQL database");
+    console.log("Connected to the MySQL Heliohost database. The result of 1 + 1 is:", results[0].solution);
   }
 });
-
 
 app.post("/addRow", (req, res) => {
   const {
@@ -88,7 +101,7 @@ app.post("/addRow", (req, res) => {
   console.log('Calculated credits:', credits);
 
   const query = `
-    INSERT INTO creditssem (
+    INSERT INTO Credits (
       sem_no, ca_marks, fe_marks, total_marks,
       course_code, course_name, lecture, tutorial,
       practical, credits, type, faculty, department
@@ -111,7 +124,7 @@ app.post("/addRow", (req, res) => {
     department,
   ]
 
-  connection.query(query, values, (err, results) => {
+  pool.query(query, values, (err, results) => {
     if (err) {
       res.status(500).json({ success: false, error: err.message });
       return;
@@ -120,12 +133,39 @@ app.post("/addRow", (req, res) => {
   });
 });
 
+app.get("/getCourse", async (req, res) => {
+  const facultyName = req.query.facultyName;
+
+  if (!facultyName) {
+    return res.status(400).send({ message: "Faculty name is required" });
+  }
+
+  console.log("Received faculty name:", facultyName);
+
+  const query = `SELECT course_name FROM Credits WHERE faculty = ?`;
+
+  pool.query(query, [facultyName], (err, results) => {
+    if (err) {
+      console.error("Error executing query:", err);
+      return res.status(500).send({ message: "Error fetching data from the database" });
+    }
+
+    console.log("Query results:", results);
+
+    if (results.length > 0) {
+      return res.status(200).send({ courseTitle: results[0].course_name });
+    } else {
+      return res.status(404).send({ message: "Faculty not found or no course assigned" });
+    }
+  });
+});
+
 app.get("/getTableData", async (req, res) => {
   try {
     const latestFilter = await Filter.findOne().sort({ _id: -1 });
 
     let query = `SELECT course_code, course_name, lecture, tutorial, practical, credits,
-                ca_marks, fe_marks, total_marks, type FROM creditssem`;
+                ca_marks, fe_marks, total_marks, type FROM Credits`;
 
     let conditions = [];
 
@@ -144,7 +184,7 @@ app.get("/getTableData", async (req, res) => {
 
     query += " ORDER BY sem_no";
 
-    connection.query(query, (err, results) => {
+    pool.query(query, (err, results) => {
       if (err) {
         res.status(500).json({ success: false, error: err.message });
         return;
@@ -204,7 +244,7 @@ app.put("/updateTableData", (req, res) => {
     type,
   } = req.body;
 
-  const query = `UPDATE creditssem SET 
+  const query = `UPDATE Credits SET 
                   course_name = ?, 
                   lecture = ?, 
                   tutorial = ?, 
@@ -216,7 +256,7 @@ app.put("/updateTableData", (req, res) => {
                   type = ? 
                   WHERE course_code = ?`;
 
-  connection.query(
+  pool.query(
     query,
     [
       course_name,
