@@ -461,12 +461,3 @@ function Syllabus() {
 }
 
 export default Syllabus;
-
-
-
-
-
-
-
-
-

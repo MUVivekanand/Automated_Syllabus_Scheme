@@ -6,6 +6,7 @@ const dotenv = require('dotenv');
 //mongo db for filtering:
 
 require('dotenv').config();
+dotenv.config({path: '../../.env'});
 
 const mongoose=require("mongoose");
 
@@ -30,7 +31,6 @@ const filterSchema = new mongoose.Schema({
 
 const Filter =mongoose.model("credits",filterSchema)
 
-dotenv.config();
 
 const app = express();
 app.use(cors());
@@ -39,12 +39,13 @@ app.use(express.json());
 //mysql pool:
 const MYSQL_PASSWORD=process.env.MYSQL_PASSWORD
 
+
 // MySQL pool setup
 const pool = mysql.createPool({
-  host: process.env.host, 
-  user: process.env.user,          // Your MySQL username
-  password: process.env.password,      // Your MySQL password
-  database: process.env.database,          
+  host: 'johnny.heliohost.org', 
+  user: 'vivekanandmu22_vivek',          // Your MySQL username
+  password: 'Vivek220105',     // Your MySQL password
+  database: 'vivekanandmu22_syllabusSystem',      
   waitForpools: true,
   poolLimit: 10,
   queueLimit: 0
