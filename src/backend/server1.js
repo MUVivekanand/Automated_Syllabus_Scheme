@@ -8,7 +8,7 @@ dotenv.config({ path: "../../.env" });
 
 const mongoose = require("mongoose");
 
-const MONGO_URI = process.env.MONGO_URI;
+const MONGO_URI = "";
 
 mongoose
   .connect(MONGO_URI)
@@ -30,10 +30,9 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Supabase setup
 const { createClient } = require("@supabase/supabase-js");
-const SUPABASE_URL = process.env.SUPABASE_URL;
-const SUPABASE_API_KEY = process.env.SUPABASE_API_KEY;
+const SUPABASE_URL = "";
+const SUPABASE_API_KEY = "";
 const supabase = createClient(SUPABASE_URL, SUPABASE_API_KEY);
 
 console.log(supabase)
@@ -197,6 +196,16 @@ app.post("/filtertable", async (req, res) => {
   }
 });
 
+
+app.post("/clearFilters", async (req, res) => {
+  try {
+    await Filter.deleteMany({});
+    res.status(200).json({ success: true, message: "Filters cleared successfully" });
+  } catch (error) {
+    console.error("Error clearing filters:", error);
+    res.status(500).json({ success: false, error: "Internal Server Error" });
+  }
+});
 // Update table data in the credits table
 app.put("/updateTableData", async (req, res) => {
   try {
