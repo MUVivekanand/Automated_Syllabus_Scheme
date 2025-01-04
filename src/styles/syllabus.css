@@ -1,138 +1,144 @@
 /* Reset some default styles */
 * {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-  }
-  
-  body {
-    font-family: Arial, sans-serif;
-  }
-  
-  .container-syllabus {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 20px;
-  }
-  
-  .sylltitle {
-    text-align: center;
-    font-size: 2rem;
-    margin-bottom: 10px;
-  }
-  
-  .regulationtext {
-    text-align: center;
-    font-size: 1.2rem;
-    margin-bottom: 30px;
-  }
-  
-  .form-container {
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-  }
-  
-  .form-part {
-    background-color: #f4f4f9;
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  }
-  
-  .part-title {
-    font-size: 1.5rem;
-    margin-bottom: 15px;
-    text-align: center;
-  }
-  
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: Arial, sans-serif;
+}
+
+.container-syllabus {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.sylltitle {
+  text-align: center;
+  font-size: 2rem;
+  margin-bottom: 10px;
+}
+
+.regulationtext {
+  text-align: center;
+  font-size: 1.2rem;
+  margin-bottom: 30px;
+}
+
+.form-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.form-part {
+  background-color: #f4f4f9;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.part-title {
+  font-size: 1.5rem;
+  margin-bottom: 15px;
+  text-align: center;
+}
+
+.form-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
+}
+
+.form-fields input {
+  padding: 10px;
+  font-size: 1rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.form-fields input:focus {
+  border-color: #007bff;
+  outline: none;
+}
+
+/* Responsiveness */
+@media (max-width: 768px) {
   .form-fields {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 15px;
+    grid-template-columns: 1fr;
   }
-  
-  .form-fields input {
-    padding: 10px;
-    font-size: 1rem;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-  }
-  
-  .form-fields input:focus {
-    border-color: #007bff;
-    outline: none;
-  }
-  
-  /* Responsiveness */
-  @media (max-width: 768px) {
-    .form-fields {
-      grid-template-columns: 1fr;
-    }
-  }
-  
-  @media (max-width: 480px) {
-    .sylltitle {
-      font-size: 1.5rem;
-    }
-  
-    .regulationtext {
-      font-size: 1rem;
-    }
-  
-    .form-part {
-      padding: 15px;
-    }
-  
-    .form-fields input {
-      font-size: 0.9rem;
-    }
-  }
-  
-  
-  .generate-table-button {
-    margin-top: 20px;
-    padding: 10px 20px;
-    background-color: #4caf50;
-    color: white;
-    border: none;
-    cursor: pointer;
-    font-size: 16px;
-  }
-  
-  .generate-table-button:hover {
-    background-color: #45a049;
+}
+
+@media (max-width: 480px) {
+  .sylltitle {
+    font-size: 1.5rem;
   }
 
-  .table-container {
-    margin: 20px;
-    overflow-x: auto;
+  .regulationtext {
+    font-size: 1rem;
   }
-  
-  .data-table {
-    width: 100%;
-    border-collapse: collapse;
-    background: white;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+
+  .form-part {
+    padding: 15px;
   }
-  
-  .data-table th,
-  .data-table td {
-    padding: 12px;
-    text-align: left;
-    border: 1px solid #ddd;
+
+  .form-fields input {
+    font-size: 0.9rem;
   }
-  
-  .data-table th {
-    background-color: #f4f4f4;
-    font-weight: bold;
-  }
-  
-  .data-table tr:nth-child(even) {
-    background-color: #f8f8f8;
-  }
-  
-  .data-table tr:hover {
-    background-color: #f0f0f0;
-  }
-  
+}
+
+.generate-table-button {
+  margin-top: 20px;
+  padding: 10px 20px;
+  background-color: #4caf50;
+  color: white;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+.generate-table-button:hover {
+  background-color: #45a049;
+}
+
+.table-container {
+  margin: 20px;
+  overflow-x: auto;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+.data-table th,
+.data-table td {
+  padding: 12px;
+  text-align: left;
+  border: 1px solid #ddd;
+}
+
+.data-table th {
+  background-color: #f4f4f4;
+  font-weight: bold;
+}
+
+.data-table tr:nth-child(even) {
+  background-color: #f8f8f8;
+}
+
+.data-table tr:hover {
+  background-color: #f0f0f0;
+}
+
+/* Styling for "Total Rows Entered" */
+.total-rows {
+  margin-top: 20px;
+  font-size: 1.1rem;
+  text-align: center;
+  color: #333;
+}

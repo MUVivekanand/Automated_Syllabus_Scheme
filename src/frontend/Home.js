@@ -21,7 +21,8 @@ function Home() {
 
         // Check the condition with the trimmed and case-normalized values for student
         if (trimmedUsername === "vivekanand" && trimmedPassword === "vivek") {
-            navigate("/Syllabus");
+            // navigate("/Syllabus");
+            navigate("/semInfo");
         } else {
             alert("Incorrect username or password!");
         }
