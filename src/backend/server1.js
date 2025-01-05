@@ -390,6 +390,51 @@ app.post('/updateSemInfo', async (req, res) => {
   }
 });
 
+
+
+
+
+
+
+app.get("/api/courses/:semNo", async (req, res) => {
+  try {
+    const { semNo } = req.params;
+    const { data, error } = await supabase
+      .from("credits")
+      .select("*")
+      .eq("sem_no", semNo);
+
+    if (error) throw error;
+    res.json(data);
+  } catch (error) {
+    console.error("Error fetching courses:", error);
+    res.status(500).json({ message: "Failed to fetch courses" });
+  }
+});
+
+// Delete courses for a specific semester
+app.delete("/api/courses/:semNo", async (req, res) => {
+  try {
+    const { semNo } = req.params;
+    const { error } = await supabase
+      .from("credits")
+      .delete()
+      .eq("sem_no", semNo);
+
+    if (error) throw error;
+    res.json({ message: "Courses deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting courses:", error);
+    res.status(500).json({ message: "Failed to delete courses" });
+  }
+});
+
+
+
+
+
+
+
 const PORT = 4000;
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);

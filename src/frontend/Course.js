@@ -1,9 +1,8 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import axios from "axios";
 import "../styles/Course.css";
 
 function Course() {
-  const [semData, setSemData] = useState([]);
   const [currentSem, setCurrentSem] = useState(1);
   const [commonInfo, setCommonInfo] = useState({
     semNo: currentSem,
@@ -15,6 +14,7 @@ function Course() {
     department: "",
   });
   const [courses, setCourses] = useState([]);
+  const [existingCourses, setExistingCourses] = useState([]);
   const [totalRow, setTotalRow] = useState({
     lecture: 0,
     tutorial: 0,
@@ -22,76 +22,133 @@ function Course() {
     credits: 0,
   });
 
+  // Fetch data when semester changes
   useEffect(() => {
-    // Fetch semester info for the current semester
-    const fetchSemInfo = async () => {
+    const fetchData = async () => {
       try {
-        const response = await axios.get(`http://localhost:4000/api/seminfo/${currentSem}`);
-        console.log(response.data); // Make sure the response data is correct
+        // Fetch semester info
+        const semResponse = await axios.get(`http://localhost:4000/api/seminfo/${currentSem}`);
+        const semInfo = semResponse.data;
 
-        const data = response.data;
+        // Fetch existing courses
+        const coursesResponse = await axios.get(`http://localhost:4000/api/courses/${currentSem}`);
+        const existingCoursesData = coursesResponse.data;
+        setExistingCourses(existingCoursesData);
 
-        // Update commonInfo state with correct values
-        setCommonInfo((prev) => ({
+        // Update common info
+        setCommonInfo(prev => ({
           ...prev,
-          totalCredits: data.total_credits,
-          totalCourses: data.total_courses,
+          totalCredits: semInfo.total_credits,
+          totalCourses: semInfo.total_courses,
+          semNo: currentSem
         }));
 
-        // Create courses array based on total_courses from the response
-        setCourses(
-          Array.from({ length: data.total_courses }, () => ({
-            courseCode: "",
-            courseTitle: "",
+        // Initialize courses
+        if (existingCoursesData.length > 0) {
+          // Use existing data if available
+          const formattedCourses = existingCoursesData.map(course => ({
+            courseCode: course.course_code,
+            courseTitle: course.course_name,
+            lecture: course.lecture,
+            tutorial: course.tutorial,
+            practical: course.practical,
+            credits: course.credits,
+            type: course.type,
+            faculty: course.faculty,
+          }));
+          
+          setCourses(formattedCourses);
+          
+          // Update total row with existing data
+          const totals = formattedCourses.reduce(
+            (acc, course) => ({
+              lecture: acc.lecture + Number(course.lecture || 0),
+              tutorial: acc.tutorial + Number(course.tutorial || 0),
+              practical: acc.practical + Number(course.practical || 0),
+              credits: acc.credits + Number(course.credits || 0),
+            }),
+            { lecture: 0, tutorial: 0, practical: 0, credits: 0 }
+          );
+          setTotalRow(totals);
+        } else {
+          // Create empty rows if no existing data
+          setCourses(
+            Array.from({ length: semInfo.total_courses }, () => ({
+              courseCode: "",
+              courseTitle: "",
+              lecture: 0,
+              tutorial: 0,
+              practical: 0,
+              credits: 0,
+              type: "",
+              faculty: "",
+            }))
+          );
+          setTotalRow({
             lecture: 0,
             tutorial: 0,
             practical: 0,
             credits: 0,
-            type: "",
-            faculty: "",
-          }))
-        );
+          });
+        }
       } catch (error) {
-        console.error("Error fetching semester info:", error);
+        console.error("Error fetching data:", error);
       }
     };
 
-    fetchSemInfo();
+    fetchData();
   }, [currentSem]);
 
-  // Ensure semNo updates when currentSem changes
-  useEffect(() => {
-    setCommonInfo((prev) => ({ ...prev, semNo: currentSem }));
-  }, [currentSem]);
-
-  // Handle input changes for common info
-  const handleCommonInfoChange = (e) => {
+  // Handle common info changes
+  const handleCommonInfoChange = useCallback((e) => {
     const { name, value } = e.target;
-    setCommonInfo((prev) => ({ ...prev, [name]: value }));
-  };
+    setCommonInfo(prev => ({ ...prev, [name]: value }));
+  }, []);
 
-  // Handle input changes for course details
-  const handleCourseChange = (index, field, value) => {
-    const updatedCourses = [...courses];
-    updatedCourses[index][field] = value;
+  // Handle course detail changes
+  const handleCourseChange = useCallback((index, field, value) => {
+    setCourses(prevCourses => {
+      const updatedCourses = [...prevCourses];
+      updatedCourses[index] = {
+        ...updatedCourses[index],
+        [field]: value
+      };
 
-    // Update total row
-    const totals = updatedCourses.reduce(
-      (acc, course) => ({
-        lecture: acc.lecture + Number(course.lecture || 0),
-        tutorial: acc.tutorial + Number(course.tutorial || 0),
-        practical: acc.practical + Number(course.practical || 0),
-        credits: acc.credits + Number(course.credits || 0),
-      }),
-      { lecture: 0, tutorial: 0, practical: 0, credits: 0 }
-    );
+      // Update total row
+      const totals = updatedCourses.reduce(
+        (acc, course) => ({
+          lecture: acc.lecture + Number(course.lecture || 0),
+          tutorial: acc.tutorial + Number(course.tutorial || 0),
+          practical: acc.practical + Number(course.practical || 0),
+          credits: acc.credits + Number(course.credits || 0),
+        }),
+        { lecture: 0, tutorial: 0, practical: 0, credits: 0 }
+      );
 
-    setCourses(updatedCourses);
-    setTotalRow(totals);
-  };
+      setTotalRow(totals);
+      return updatedCourses;
+    });
+  }, []);
 
-  // Submit data for the current semester
-  const handleSubmit = async () => {
+  // Handle form submission
+  const handleSubmit = useCallback(async () => {
+    // const isValid = courses.every(course => {
+    //   return Object.values(course).every(value => value !== "" && value !== null && value !== undefined);
+    // });
+  
+    // if (!isValid) {
+    //   alert("Please fill in all course details before submitting!");
+    //   return;
+    // }
+
+    const isValid = courses.every(course => course.courseCode !== "" && course.courseCode !== null && course.courseCode !== undefined);
+
+    if (!isValid) {
+      alert("Please fill in the Course Code for all courses before submitting!");
+      return;
+    }
+
+
     if (totalRow.credits !== commonInfo.totalCredits) {
       alert("Total credits do not match the expected value!");
       return;
@@ -114,27 +171,43 @@ function Course() {
     }));
 
     try {
+      // Delete existing courses first
+      await axios.delete(`http://localhost:4000/api/courses/${currentSem}`);
+      // Then insert new courses
       await axios.post("http://localhost:4000/api/courses", semesterData);
       alert("Data submitted successfully!");
     } catch (error) {
       console.error("Error submitting data:", error);
       alert("Failed to submit data.");
     }
-  };
+  }, [courses, currentSem, commonInfo, totalRow.credits]);
 
-  // Navigate to the next semester
-  const handleNext = () => {
+  // Navigation handlers
+  const handleNext = useCallback(() => {
     if (currentSem < 8) {
-      setCurrentSem((prev) => prev + 1);
+      setCurrentSem(prev => prev + 1);
+      setCommonInfo(prev => ({
+        ...prev,
+        caMarks: "",
+        feMarks: "",
+        totalMarks: "",
+        department: ""
+      }));
     }
-  };
+  }, [currentSem]);
 
-  // Navigate to the previous semester
-  const handleBack = () => {
+  const handleBack = useCallback(() => {
     if (currentSem > 1) {
-      setCurrentSem((prev) => prev - 1);
+      setCurrentSem(prev => prev - 1);
+      setCommonInfo(prev => ({
+        ...prev,
+        caMarks: "",
+        feMarks: "",
+        totalMarks: "",
+        department: ""
+      }));
     }
-  };
+  }, [currentSem]);
 
   return (
     <div className="container-course">
@@ -195,20 +268,20 @@ function Course() {
         </div>
       </div>
 
-      {/* Course Details Section */}
+      {/* Course Details Input Section */}
       <div className="table-container">
         <h3>Course Details</h3>
         <table className="data-table">
           <thead>
             <tr>
-              <th>Course Code</th>
-              <th>Course Title</th>
+              <th className="wide-column">Course Code</th>
+              <th className="extra-wide-column">Course Title</th>
               <th>Lecture</th>
               <th>Tutorial</th>
               <th>Practical</th>
               <th>Credits</th>
-              <th>Type</th>
-              <th>Faculty Assigned</th>
+              <th className="wide-column">Type</th>
+              <th className="wide-column">Faculty Assigned</th>
             </tr>
           </thead>
           <tbody>
@@ -235,7 +308,7 @@ function Course() {
                 ))}
               </tr>
             ))}
-            <tr>
+            <tr className="total-row">
               <td colSpan="2">Total</td>
               <td>{totalRow.lecture}</td>
               <td>{totalRow.tutorial}</td>
@@ -246,6 +319,56 @@ function Course() {
           </tbody>
         </table>
       </div>
+
+      {/* Existing Courses Display Section */}
+      {existingCourses.length > 0 && (
+        <div className="existing-courses-container">
+          <h3>Existing Courses for Semester {currentSem}</h3>
+          <table className="existing-courses-table">
+            <thead>
+              <tr>
+                <th>Course Code</th>
+                <th>Course Title</th>
+                <th>Lecture</th>
+                <th>Tutorial</th>
+                <th>Practical</th>
+                <th>Credits</th>
+                <th>CA</th>
+                <th>FE</th>
+                <th>Total</th>
+                <th>Type</th>
+              </tr>
+            </thead>
+            <tbody>
+              {existingCourses.map((course, index) => (
+                <tr key={index}>
+                  <td>{course.course_code}</td>
+                  <td>{course.course_name}</td>
+                  <td>{course.lecture}</td>
+                  <td>{course.tutorial}</td>
+                  <td>{course.practical}</td>
+                  <td>{course.credits}</td>
+                  <td>{course.ca_marks}</td>
+                  <td>{course.fe_marks}</td>
+                  <td>{course.total_marks}</td>
+                  <td>{course.type}</td>
+                </tr>
+              ))}
+              <tr className="total-row">
+                <td colSpan="2">Total</td>
+                <td>{existingCourses.reduce((sum, course) => sum + course.lecture, 0)}</td>
+                <td>{existingCourses.reduce((sum, course) => sum + course.tutorial, 0)}</td>
+                <td>{existingCourses.reduce((sum, course) => sum + course.practical, 0)}</td>
+                <td>{existingCourses.reduce((sum, course) => sum + course.credits, 0)}</td>
+                <td>{existingCourses.reduce((sum, course) => sum + course.ca_marks, 0)}</td>
+                <td>{existingCourses.reduce((sum, course) => sum + course.fe_marks, 0)}</td>
+                <td>{existingCourses.reduce((sum, course) => sum + course.total_marks, 0)}</td>
+                <td colSpan="4"></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      )}
 
       <div className="actions">
         <button onClick={handleSubmit}>Submit</button>
