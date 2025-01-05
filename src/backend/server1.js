@@ -7,7 +7,7 @@ require("dotenv").config();
 dotenv.config({ path: "../.env" });
 
 const mongoose = require("mongoose");
-const MONGO_URI = process.env.MONGO_URI;
+const MONGO_URI = process.env.MONGO_URI
 
 mongoose
   .connect(MONGO_URI)
@@ -30,10 +30,9 @@ app.use(cors());
 app.use(express.json());
 
 const { createClient } = require("@supabase/supabase-js");
-const SUPABASE_URL = process.env.SUPABASE_URL;
-const SUPABASE_API_KEY = process.env.SUPABASE_API_KEY;
+const SUPABASE_URL = process.env.SUPABASE_URL
+const SUPABASE_API_KEY = process.env.SUPABASE_API_KEY
 const supabase = createClient(SUPABASE_URL, SUPABASE_API_KEY);
-
 
 if (!supabase) {
   console.error("Failed to initialize Supabase client.");
@@ -84,7 +83,7 @@ app.post("/api/courses", async (req, res) => {
         lecture, 
         tutorial, 
         practical, 
-        credits, 
+        credits, // Use the credits from the request body
         ca_marks, 
         fe_marks, 
         total_marks, 
@@ -93,11 +92,9 @@ app.post("/api/courses", async (req, res) => {
         department 
       } = courseData;
 
-      // Handle missing or invalid numeric fields by converting them to valid numbers (e.g., 0)
       const parsedLecture = isNaN(lecture) || lecture === "" ? 0 : parseInt(lecture);
       const parsedTutorial = isNaN(tutorial) || tutorial === "" ? 0 : parseInt(tutorial);
       const parsedPractical = isNaN(practical) || practical === "" ? 0 : parseInt(practical);
-      const parsedCredits = isNaN(credits) || credits === "" ? 0 : parseInt(credits);
       const parsedCaMarks = isNaN(ca_marks) || ca_marks === "" ? 0 : parseInt(ca_marks);
       const parsedFeMarks = isNaN(fe_marks) || fe_marks === "" ? 0 : parseInt(fe_marks);
       const parsedTotalMarks = isNaN(total_marks) || total_marks === "" ? 0 : parseInt(total_marks);
@@ -105,24 +102,22 @@ app.post("/api/courses", async (req, res) => {
       // Insert or update course in Supabase 'credits' table using upsert
       const { data, error } = await supabase
         .from("credits") // Ensure 'credits' table exists
-        .upsert([
-          {
-            sem_no,
-            course_code,
-            course_name,
-            lecture: parsedLecture,
-            tutorial: parsedTutorial,
-            practical: parsedPractical,
-            credits: parsedCredits,
-            ca_marks: parsedCaMarks,
-            fe_marks: parsedFeMarks,
-            total_marks: parsedTotalMarks,
-            type,
-            faculty,
-            department,
-          },
-        ], {
-          onConflict: ['sem_no', 'course_code'] // Ensure that we avoid conflicts on sem_no and course_code
+        .upsert([{
+          sem_no,
+          course_code,
+          course_name,
+          lecture: parsedLecture,
+          tutorial: parsedTutorial,
+          practical: parsedPractical,
+          credits, // Use the credits from the request body
+          ca_marks: parsedCaMarks,
+          fe_marks: parsedFeMarks,
+          total_marks: parsedTotalMarks,
+          type,
+          faculty,
+          department,
+        }], {
+          onConflict: ['sem_no', 'course_code'] // Ensure no conflicts on sem_no and course_code
         });
 
       // If there is an error inserting a course, throw it
@@ -136,6 +131,17 @@ app.post("/api/courses", async (req, res) => {
   } catch (error) {
     console.error("Error saving courses:", error);
     res.status(500).json({ message: "Failed to save courses" });
+  }
+});
+
+app.post("/api/credits", async (req, res) => {
+  try {
+    const { totalCredits } = req.body;
+    // Add your logic to handle the totalCredits data
+    res.status(200).json({ message: "Credits processed successfully!" });
+  } catch (error) {
+    console.error("Error processing credits:", error);
+    res.status(500).json({ message: "Failed to process credits" });
   }
 });
 
@@ -391,11 +397,6 @@ app.post('/updateSemInfo', async (req, res) => {
 });
 
 
-
-
-
-
-
 app.get("/api/courses/:semNo", async (req, res) => {
   try {
     const { semNo } = req.params;
@@ -428,11 +429,6 @@ app.delete("/api/courses/:semNo", async (req, res) => {
     res.status(500).json({ message: "Failed to delete courses" });
   }
 });
-
-
-
-
-
 
 
 const PORT = 4000;
