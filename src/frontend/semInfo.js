@@ -4,11 +4,11 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 
 function SemInfo() {
-  // Initialize state with unique objects for each semester
   const [semData, setSemData] = useState(
     Array.from({ length: 8 }, (_, i) => ({
       semNo: i + 1,
-      totalCourses: "",
+      theoryCourses: "",
+      practicalCourses: "",
       totalCredits: "",
     }))
   );
@@ -24,15 +24,6 @@ function SemInfo() {
   // Handle form submission
   const handleSubmit = async () => {
     console.log("Submitting semData:", semData);
-
-    // const hasEmptyFields = semData.some(
-    //   (row) => !row.totalCourses || !row.totalCredits
-    // );
-  
-    // if (hasEmptyFields) {
-    //   alert("Please fill out all fields before submitting.");
-    //   return;
-    // }
 
     try {
       const response = await axios.post("http://localhost:4000/updateSemInfo", semData);
@@ -59,7 +50,8 @@ function SemInfo() {
           <thead>
             <tr>
               <th>Semester No</th>
-              <th>Total Courses</th>
+              <th>Theory Courses</th>
+              <th>Practical Courses</th>
               <th>Total Credits</th>
             </tr>
           </thead>
@@ -70,11 +62,22 @@ function SemInfo() {
                 <td>
                   <input
                     type="number"
-                    name="totalCourses"
-                    placeholder="Enter total courses"
-                    value={row.totalCourses}
+                    name="theoryCourses"
+                    placeholder="Enter theory courses"
+                    value={row.theoryCourses}
                     onChange={(e) =>
-                      handleInputChange(index, "totalCourses", e.target.value)
+                      handleInputChange(index, "theoryCourses", e.target.value)
+                    }
+                  />
+                </td>
+                <td>
+                  <input
+                    type="number"
+                    name="practicalCourses"
+                    placeholder="Enter practical courses"
+                    value={row.practicalCourses}
+                    onChange={(e) =>
+                      handleInputChange(index, "practicalCourses", e.target.value)
                     }
                   />
                 </td>

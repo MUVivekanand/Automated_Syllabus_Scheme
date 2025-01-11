@@ -55,7 +55,7 @@ function Home() {
             {/* Student Login Form */}
             <form onSubmit={handleSubmit} className="login-form">
                 <div className="input-group">
-                    <label htmlFor="username">Username</label>
+                    <label htmlFor="username">Admin username</label>
                     <input
                         type="text"
                         id="username"
@@ -67,7 +67,7 @@ function Home() {
                     />
                 </div>
                 <div className="input-group">
-                    <label htmlFor="password">Password</label>
+                    <label htmlFor="password">Admin password</label>
                     <input
                         type="password"
                         id="password"

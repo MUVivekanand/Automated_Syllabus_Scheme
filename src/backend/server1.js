@@ -351,21 +351,16 @@ app.put("/updateTableData", async (req, res) => {
 app.post('/updateSemInfo', async (req, res) => {
   const semData = req.body; // Get the data from the request body
 
-  // Validate data format
   if (!Array.isArray(semData) || semData.length !== 8) {
     return res.status(400).json({ success: false, message: 'Invalid data format.' });
   }
 
   try {
-    // Process each semester data and insert or update in Supabase
     for (let i = 0; i < semData.length; i++) {
-      let { semNo, totalCourses, totalCredits } = semData[i];
-
-      // Log the data to check if it's formatted correctly
-      // console.log(`Upserting semester data for semNo: ${semNo}, courses: ${totalCourses}, credits: ${totalCredits}`);
+      const { semNo, theoryCourses, practicalCourses, totalCredits } = semData[i];
 
       // Skip if any of the required fields are empty
-      if(totalCourses == '' || totalCredits == ''){
+      if (theoryCourses === "" || practicalCourses === "" || totalCredits === "") {
         continue;
       }
 
@@ -375,20 +370,19 @@ app.post('/updateSemInfo', async (req, res) => {
         .upsert([
           {
             sem_no: semNo,
-            total_courses: totalCourses,
+            theory_courses: theoryCourses,
+            practical_courses: practicalCourses,
             total_credits: totalCredits,
           },
         ])
-        .eq('sem_no', semNo); // Ensure that the row is updated based on sem_no
+        .eq('sem_no', semNo); 
 
       if (error) {
-        // Log the error details for better debugging
         console.error('Error upserting data:', error);
         throw error;
       }
     }
 
-    // Respond with success message
     res.status(200).json({ success: true, message: 'Semester information updated successfully.' });
   } catch (error) {
     console.error('Error while updating SemesterInfo:', error);

@@ -7,7 +7,8 @@ function Course() {
   const [commonInfo, setCommonInfo] = useState({
     semNo: currentSem,
     totalCredits: 0,
-    totalCourses: 0,
+    practicalCourses: 0,
+    theoryCourses: 0,
     caMarks: "",
     feMarks: "",
     totalMarks: "",
@@ -30,20 +31,20 @@ function Course() {
         // Fetch semester info
         const semResponse = await axios.get(`http://localhost:4000/api/seminfo/${currentSem}`);
         const semInfo = semResponse.data;
-
+  
         // Fetch existing courses
         const coursesResponse = await axios.get(`http://localhost:4000/api/courses/${currentSem}`);
         const existingCoursesData = coursesResponse.data;
         setExistingCourses(existingCoursesData);
-
+  
         // Update common info
         setCommonInfo(prev => ({
           ...prev,
-          totalCredits: semInfo.total_credits,
-          totalCourses: semInfo.total_courses,
+          practicalCourses: semInfo.practical_courses,
+          theoryCourses: semInfo.theory_courses,
           semNo: currentSem
         }));
-
+  
         // Initialize courses
         if (existingCoursesData.length > 0) {
           // Use existing data if available
@@ -56,6 +57,7 @@ function Course() {
             credits: course.credits,
             type: course.type,
             faculty: course.faculty,
+            courseType: course.practical > 0 ? 'practical' : 'theory'
           }));
           
           setCourses(formattedCourses);
@@ -72,19 +74,32 @@ function Course() {
           );
           setTotalRow(totals);
         } else {
-          // Create empty rows if no existing data
-          setCourses(
-            Array.from({ length: semInfo.total_courses }, () => ({
-              courseCode: "",
-              courseTitle: "",
-              lecture: 0,
-              tutorial: 0,
-              practical: 0,
-              credits: 0,
-              type: "",
-              faculty: "",
-            }))
-          );
+          // Create empty rows for both theory and practical courses
+          const theoryCourses = Array.from({ length: semInfo.theory_courses }, () => ({
+            courseCode: "",
+            courseTitle: "",
+            lecture: 0,
+            tutorial: 0,
+            practical: 0,
+            credits: 0,
+            type: "",
+            faculty: "",
+            courseType: "theory"
+          }));
+  
+          const practicalCourses = Array.from({ length: semInfo.practical_courses }, () => ({
+            courseCode: "",
+            courseTitle: "",
+            lecture: 0,
+            tutorial: 0,
+            practical: 0,
+            credits: 0,
+            type: "",
+            faculty: "",
+            courseType: "practical"
+          }));
+  
+          setCourses([...theoryCourses, ...practicalCourses]);
           setTotalRow({
             lecture: 0,
             tutorial: 0,
@@ -96,7 +111,7 @@ function Course() {
         console.error("Error fetching data:", error);
       }
     };
-
+  
     fetchData();
   }, [currentSem]);
 
@@ -166,15 +181,15 @@ function Course() {
   const handleSubmit = useCallback(async () => {
     const isValid = courses.every(course => course.courseCode);
   
-    if (!isValid) {
-      alert("Please fill in the Course Code for all courses before submitting!");
-      return;
-    }
+  //   if (!isValid) {
+  //     alert("Please fill in the Course Code for all courses before submitting!");
+  //     return;
+  //   }
 
-    if (totalRow.credits !== commonInfo.totalCredits) {
-      alert("Total credits do not match the expected value!");
-      return;
-    }
+  //   if (totalRow.credits !== commonInfo.totalCredits) {
+  //     alert("Total credits do not match the expected value!");
+  //     return;
+  //   }
 
     const semesterData = courses.map((course) => ({
       sem_no: currentSem,
@@ -301,251 +316,286 @@ function Course() {
 
   return (
     <div className="container-course">
-      <h1>Course Details - Semester {currentSem}</h1>
-
-      {/* Common Information Section */}
-      <div className="form-container">
-        <h3>Common Information</h3>
-        <div className="form-fields">
-          <div>
-            <label>Semester Number:</label>
-            <input type="number" value={commonInfo.semNo} readOnly />
-          </div>
-          <div>
-            <label>Total Credits:</label>
-            <input type="number" value={commonInfo.totalCredits} readOnly />
-          </div>
-          <div>
-            <label>Total Courses:</label>
-            <input type="number" value={commonInfo.totalCourses} readOnly />
-          </div>
-          <div>
-            <label>CA Marks:</label>
-            <input
-              type="number"
-              name="caMarks"
-              value={commonInfo.caMarks}
-              onChange={handleCommonInfoChange}
-            />
-          </div>
-          <div>
-            <label>FE Marks:</label>
-            <input
-              type="number"
-              name="feMarks"
-              value={commonInfo.feMarks}
-              onChange={handleCommonInfoChange}
-            />
-          </div>
-          <div>
-            <label>Total Marks:</label>
-            <input
-              type="number"
-              name="totalMarks"
-              value={commonInfo.totalMarks}
-              onChange={handleCommonInfoChange}
-            />
-          </div>
-          <div>
-            <label>Department:</label>
-            <input
-              type="text"
-              name="department"
-              value={commonInfo.department}
-              onChange={handleCommonInfoChange}
-            />
-          </div>
+    <h1>Course Details - Semester {currentSem}</h1>
+  
+    {/* Common Information Section */}
+    <div className="form-container">
+      <h3>Common Information</h3>
+      <div className="form-fields">
+        <div>
+          <label>Semester Number:</label>
+          <input type="number" value={commonInfo.semNo} readOnly />
+        </div>
+        <div>
+          <label>Total Theory:</label>
+          <input type="number" value={commonInfo.theoryCourses} readOnly />
+        </div>
+        <div>
+          <label>Total Practical:</label>
+          <input type="number" value={commonInfo.practicalCourses} readOnly />
+        </div>
+        <div>
+          <label>CA Marks:</label>
+          <input
+            type="number"
+            name="caMarks"
+            value={commonInfo.caMarks}
+            onChange={handleCommonInfoChange}
+          />
+        </div>
+        <div>
+          <label>FE Marks:</label>
+          <input
+            type="number"
+            name="feMarks"
+            value={commonInfo.feMarks}
+            onChange={handleCommonInfoChange}
+          />
+        </div>
+        <div>
+          <label>Total Marks:</label>
+          <input
+            type="number"
+            name="totalMarks"
+            value={commonInfo.totalMarks}
+            onChange={handleCommonInfoChange}
+          />
+        </div>
+        <div>
+          <label>Department:</label>
+          <input
+            type="text"
+            name="department"
+            value={commonInfo.department}
+            onChange={handleCommonInfoChange}
+          />
         </div>
       </div>
-
-      {/* Course Details Input Section */}
-      <div className="table-container">
-          <h3>Course Details</h3>
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th className="wide-column">Course Code</th>
-                <th className="extra-wide-column">Course Title</th>
-                <th>Lecture</th>
-                <th>Tutorial</th>
-                <th>Practical</th>
-                <th>Credits</th>
-                <th className="wide-column">Type</th>
-                <th className="wide-column">Faculty Assigned</th>
-              </tr>
-            </thead>
-            <tbody>
-              {courses.map((course, index) => (
-                <tr key={index}>
-                  {Object.keys(course).map((field) => (
+    </div>
+  
+    {/* Course Details Input Section */}
+    <div className="table-container">
+      <h3>Course Details</h3>
+      <table className="data-table">
+        <thead>
+          <tr>
+            <th className="wide-column">Course Code</th>
+            <th className="extra-wide-column">Course Title</th>
+            <th>Lecture</th>
+            <th>Tutorial</th>
+            <th>Practical</th>
+            <th>Credits</th>
+            <th className="wide-column">Type</th>
+            <th className="wide-column">Faculty Assigned</th>
+          </tr>
+        </thead>
+        <tbody>
+        <h4>Theory Courses</h4>
+          {/* Theory Courses Section */}
+          {courses
+            .filter(course => course.courseType === 'theory')
+            .map((course, index) => (
+              <tr key={`theory-${index}`}>
+                {Object.keys(course)
+                  .filter(key => key !== 'courseType')
+                  .map((field) => (
                     <td key={field}>
                       {field === "credits" ? (
                         <span>{course[field]}</span>
                       ) : (
                         <input
-                          type={
-                            field === "lecture" ||
-                            field === "tutorial" ||
-                            field === "practical"
-                              ? "number"
-                              : "text"
-                          }
+                          type={["lecture", "tutorial", "practical"].includes(field) ? "number" : "text"}
                           value={course[field]}
                           onChange={(e) =>
-                            handleCourseChange(index, field, e.target.value)
+                            handleCourseChange(
+                              courses.findIndex(c => c === course),
+                              field,
+                              e.target.value
+                            )
                           }
-                          className={field === "courseTitle" ? "course-title-input" : ""}
                         />
                       )}
                     </td>
                   ))}
-                </tr>
-              ))}
-              <tr className="total-row">
-                <td colSpan="2">Total</td>
-                <td>{totalRow.lecture}</td>
-                <td>{totalRow.tutorial}</td>
-                <td>{totalRow.practical}</td>
-                <td>{totalRow.credits}</td>
-                <td colSpan="2"></td>
               </tr>
-            </tbody>
-          </table>
-        </div>
-
-
-      {/* Existing Courses Display Section */}
-      {existingCourses.length > 0 && (
-        <div className="existing-courses-container">
-          <h3>Existing Courses for Semester {currentSem}</h3>
-          <table className="existing-courses-table">
-            <thead>
-              <tr>
-                <th>Course Code</th>
-                <th>Course Title</th>
-                <th>Lecture</th>
-                <th>Tutorial</th>
-                <th>Practical</th>
-                <th>Credits</th>
-                <th>CA</th>
-                <th>FE</th>
-                <th>Total</th>
-                <th>Type</th>
+            ))}
+          <h4>Practical Courses</h4>
+          {/* Practical Courses Section */}
+          {courses
+            .filter(course => course.courseType === 'practical')
+            .map((course, index) => (
+              <tr key={`practical-${index}`}>
+                {Object.keys(course)
+                  .filter(key => key !== 'courseType')
+                  .map((field) => (
+                    <td key={field}>
+                      {field === "credits" ? (
+                        <span>{course[field]}</span>
+                      ) : (
+                        <input
+                          type={["lecture", "tutorial", "practical"].includes(field) ? "number" : "text"}
+                          value={course[field]}
+                          onChange={(e) =>
+                            handleCourseChange(
+                              courses.findIndex(c => c === course),
+                              field,
+                              e.target.value
+                            )
+                          }
+                        />
+                      )}
+                    </td>
+                  ))}
               </tr>
-            </thead>
-            <tbody>
-              {existingCourses.map((course, index) => (
-                <tr key={index}>
-                  <td>{course.course_code}</td>
-                  <td>{course.course_name}</td>
-                  <td>{course.lecture}</td>
-                  <td>{course.tutorial}</td>
-                  <td>{course.practical}</td>
-                  <td>{course.credits}</td>
-                  <td>{course.ca_marks}</td>
-                  <td>{course.fe_marks}</td>
-                  <td>{course.total_marks}</td>
-                  <td>{course.type}</td>
-                </tr>
-              ))}
-              <tr className="total-row">
-                <td colSpan="2">Total</td>
-                <td>{existingCourses.reduce((sum, course) => sum + course.lecture, 0)}</td>
-                <td>{existingCourses.reduce((sum, course) => sum + course.tutorial, 0)}</td>
-                <td>{existingCourses.reduce((sum, course) => sum + course.practical, 0)}</td>
-                <td>{existingCourses.reduce((sum, course) => sum + course.credits, 0)}</td>
-                <td>{existingCourses.reduce((sum, course) => sum + course.ca_marks, 0)}</td>
-                <td>{existingCourses.reduce((sum, course) => sum + course.fe_marks, 0)}</td>
-                <td>{existingCourses.reduce((sum, course) => sum + course.total_marks, 0)}</td>
-                <td colSpan="4"></td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      <div className="actions">
-        <button onClick={handleSubmit}>Submit</button>
-        <button onClick={handleNext} disabled={currentSem >= 8}>
-          Next Semester
-        </button>
-        <button onClick={handleBack} disabled={currentSem <= 1}>
-          Back to Previous Semester
-        </button>
-      </div>
-
-      <br></br>
-      <div className="filter-container">
-        <div className="form-part">
-          <h4 className="part-title">Filter Details</h4>
-          <div className="form-fields">
-            <input
-              type="number"
-              name="filterSem"
-              placeholder="Enter sem no"
-              value={filterForm.filterSem}
-              onChange={handleFilterChange}
-            />
-            <input
-              type="text"
-              name="FilterDep"
-              placeholder="Enter the department"
-              value={filterForm.FilterDep}
-              onChange={handleFilterChange}
-            />
-          </div>
-          <button onClick={filtertable} className="generate-table-button">
-            Apply filter
-          </button>
-          <button 
-            onClick={clearFilters} 
-            disabled={!isFiltered} 
-            className="generate-table-button"
-          >
-            Clear Filters
-          </button>
-        </div>
-      </div>
-
-      {/* Add Filtered Results Table */}
-      {tableData.length > 0 && (
-        <div className="filtered-results-container">
-          <h3>Filtered Results</h3>
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>Course Code</th>
-                <th>Course Name</th>
-                <th>Lecture</th>
-                <th>Tutorial</th>
-                <th>Practical</th>
-                <th>Credits</th>
-                <th>CA Marks</th>
-                <th>FE Marks</th>
-                <th>Total Marks</th>
-                <th>Type</th>
-              </tr>
-            </thead>
-            <tbody>
-              {tableData.map((course, index) => (
-                <tr key={index}>
-                  <td>{course.course_code}</td>
-                  <td>{course.course_name}</td>
-                  <td>{course.lecture}</td>
-                  <td>{course.tutorial}</td>
-                  <td>{course.practical}</td>
-                  <td>{course.credits}</td>
-                  <td>{course.ca_marks}</td>
-                  <td>{course.fe_marks}</td>
-                  <td>{course.total_marks}</td>
-                  <td>{course.type}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+            ))}
+  
+          {/* Total Row */}
+          <tr className="total-row">
+            <td colSpan="2">Total</td>
+            <td>{totalRow.lecture}</td>
+            <td>{totalRow.tutorial}</td>
+            <td>{totalRow.practical}</td>
+            <td>{totalRow.credits}</td>
+            <td colSpan="2"></td>
+          </tr>
+        </tbody>
+      </table>
     </div>
+  
+    {/* Existing Courses Display Section */}
+    {existingCourses.length > 0 && (
+      <div className="existing-courses-container">
+        <h3>Existing Courses for Semester {currentSem}</h3>
+        <table className="existing-courses-table">
+          <thead>
+            <tr>
+              <th>Course Code</th>
+              <th>Course Title</th>
+              <th>Lecture</th>
+              <th>Tutorial</th>
+              <th>Practical</th>
+              <th>Credits</th>
+              <th>CA</th>
+              <th>FE</th>
+              <th>Total</th>
+              <th>Type</th>
+            </tr>
+          </thead>
+          <tbody>
+            {existingCourses.map((course, index) => (
+              <tr key={index}>
+                <td>{course.course_code}</td>
+                <td>{course.course_name}</td>
+                <td>{course.lecture}</td>
+                <td>{course.tutorial}</td>
+                <td>{course.practical}</td>
+                <td>{course.credits}</td>
+                <td>{course.ca_marks}</td>
+                <td>{course.fe_marks}</td>
+                <td>{course.total_marks}</td>
+                <td>{course.type}</td>
+              </tr>
+            ))}
+            <tr className="total-row">
+              <td colSpan="2">Total</td>
+              <td>{existingCourses.reduce((sum, course) => sum + course.lecture, 0)}</td>
+              <td>{existingCourses.reduce((sum, course) => sum + course.tutorial, 0)}</td>
+              <td>{existingCourses.reduce((sum, course) => sum + course.practical, 0)}</td>
+              <td>{existingCourses.reduce((sum, course) => sum + course.credits, 0)}</td>
+              <td>{existingCourses.reduce((sum, course) => sum + course.ca_marks, 0)}</td>
+              <td>{existingCourses.reduce((sum, course) => sum + course.fe_marks, 0)}</td>
+              <td>{existingCourses.reduce((sum, course) => sum + course.total_marks, 0)}</td>
+              <td></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    )}
+  
+    {/* Action Buttons */}
+    <div className="actions">
+      <button onClick={handleSubmit}>Submit</button>
+      <button onClick={handleNext} disabled={currentSem >= 8}>
+        Next Semester
+      </button>
+      <button onClick={handleBack} disabled={currentSem <= 1}>
+        Back to Previous Semester
+      </button>
+    </div>
+  
+    {/* Filter Section */}
+    <br />
+    <div className="filter-container">
+      <div className="form-part">
+        <h4 className="part-title">Filter Details</h4>
+        <div className="form-fields">
+          <input
+            type="number"
+            name="filterSem"
+            placeholder="Enter sem no"
+            value={filterForm.filterSem}
+            onChange={handleFilterChange}
+          />
+          <input
+            type="text"
+            name="FilterDep"
+            placeholder="Enter the department"
+            value={filterForm.FilterDep}
+            onChange={handleFilterChange}
+          />
+        </div>
+        <button onClick={filtertable} className="generate-table-button">
+          Apply filter
+        </button>
+        <button 
+          onClick={clearFilters} 
+          disabled={!isFiltered} 
+          className="generate-table-button"
+        >
+          Clear Filters
+        </button>
+      </div>
+    </div>
+  
+    {/* Filtered Results Table */}
+    {tableData.length > 0 && (
+      <div className="filtered-results-container">
+        <h3>Filtered Results</h3>
+        <table className="data-table">
+          <thead>
+            <tr>
+              <th>Course Code</th>
+              <th>Course Name</th>
+              <th>Lecture</th>
+              <th>Tutorial</th>
+              <th>Practical</th>
+              <th>Credits</th>
+              <th>CA Marks</th>
+              <th>FE Marks</th>
+              <th>Total Marks</th>
+              <th>Type</th>
+            </tr>
+          </thead>
+          <tbody>
+            {tableData.map((course, index) => (
+              <tr key={index}>
+                <td>{course.course_code}</td>
+                <td>{course.course_name}</td>
+                <td>{course.lecture}</td>
+                <td>{course.tutorial}</td>
+                <td>{course.practical}</td>
+                <td>{course.credits}</td>
+                <td>{course.ca_marks}</td>
+                <td>{course.fe_marks}</td>
+                <td>{course.total_marks}</td>
+                <td>{course.type}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    )}
+  </div>
   );
 }
 
