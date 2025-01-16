@@ -11,3 +11,12 @@ Tried heliohost in new branch for hosting
 
 1/1/2025:
 Merged the supabase branch with the main branch
+
+5/1/2025:
+Added filter option (for filtering any departments)
+
+11/1/2025:
+practical,thoery courses classified
+
+16/1/2025:
+summary table added 
