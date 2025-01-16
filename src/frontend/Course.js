@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import axios from "axios";
 import "../styles/Course.css";
+import {useNavigate} from "react-router-dom";
 
 function Course() {
   const [currentSem, setCurrentSem] = useState(1);
@@ -22,6 +23,12 @@ function Course() {
     practical: 0,
     credits: 0,
   });
+
+  const navigate=useNavigate();
+
+  const navigateSummary=() => {
+    navigate("/Summary");
+  }
 
 
   // Fetch data when semester changes
@@ -522,6 +529,10 @@ function Course() {
         Back to Previous Semester
       </button>
     </div>
+
+    <button onClick={navigateSummary} disabled={currentSem <= 1}>
+        Generate Summary
+    </button>
   
     {/* Filter Section */}
     <br />

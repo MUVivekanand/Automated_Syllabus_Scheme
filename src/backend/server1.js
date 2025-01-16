@@ -280,6 +280,37 @@ app.get("/getTableData", async (req, res) => {
   }
 });
 
+//entire table:
+app.get("/api/creditsSummary", async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from("credits") 
+      .select(`
+        course_code,
+        course_name,
+        lecture,
+        tutorial,
+        practical,
+        credits,
+        ca_marks,
+        fe_marks,
+        total_marks,
+        type,
+        sem_no
+      `);
+
+    if (error) {
+      console.error("Error fetching data:", error);
+      return res.status(500).json({ error: "Failed to fetch data" });
+    }
+
+    res.json(data);
+  } catch (err) {
+    console.error("Server error:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 // Apply filter for the table data
 app.post("/filtertable", async (req, res) => {
   try {
