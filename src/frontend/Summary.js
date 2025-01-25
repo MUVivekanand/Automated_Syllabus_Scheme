@@ -6,6 +6,9 @@ function Summary() {
   const [tableData, setTableData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [totalCreditsMismatch, setTotalCreditsMismatch] = useState(false);
+  const [expectedTotalCredits, setExpectedTotalCredits] = useState(null);
+  const [calculatedTotalCredits, setCalculatedTotalCredits] = useState(null);
 
   const courseTypes = ["HS", "BS", "ES", "PC", "PE", "OE", "EEC", "MC"];
   const semesters = Array.from({ length: 8 }, (_, i) => i + 1);
@@ -16,8 +19,14 @@ function Summary() {
 
   const fetchData = async () => {
     try {
-      const response = await axios.get("http://localhost:4000/api/creditsSummary");
-      const backendData = response.data;
+      // Fetch both credits summary and total credits
+      const [creditsSummaryResponse, totalCreditsResponse] = await Promise.all([
+        axios.get("http://localhost:4000/api/creditsSummary"),
+        axios.get("http://localhost:4000/api/getTotalCredits")
+      ]);
+
+      const backendData = creditsSummaryResponse.data;
+      const storedTotalCredits = totalCreditsResponse.data.total_credits;
 
       const processedData = courseTypes.map((type) => {
         const typeData = { type, credits: {} };
@@ -34,6 +43,33 @@ function Summary() {
       });
 
       setTableData(processedData);
+
+      // Calculate total credits
+      const totalCalculatedCredits = processedData.reduce(
+        (sum, row) => sum + calculateRowTotal(row.credits), 
+        0
+      );
+
+      setExpectedTotalCredits(Number(storedTotalCredits));
+      setCalculatedTotalCredits(totalCalculatedCredits);
+
+      // Alert with credits information
+      const alertMessage = storedTotalCredits
+        ? `Total Credits Check:
+Expected Credits: ${storedTotalCredits}
+Calculated Credits: ${totalCalculatedCredits}
+${Number(storedTotalCredits) === totalCalculatedCredits 
+  ? 'Credits Match ✅' 
+  : 'Credits Do Not Match ❌'}`
+        : 'No total credits value found';
+
+      window.alert(alertMessage);
+
+      if (storedTotalCredits && 
+          Number(storedTotalCredits) !== totalCalculatedCredits) {
+        setTotalCreditsMismatch(true);
+      }
+
       setLoading(false);
     } catch (error) {
       console.error("Error fetching data:", error);
@@ -60,6 +96,13 @@ function Summary() {
 
   return (
     <div className="summary-container">
+      {totalCreditsMismatch && (
+        <div className="error-banner">
+          Warning: Total credits mismatch! 
+          Expected: {expectedTotalCredits}, 
+          Calculated: {calculatedTotalCredits}
+        </div>
+      )}
       <h1 className="summary-title">Summary of Credit Distribution</h1>
       <div className="table-container">
         <table className="summary-table">
@@ -101,5 +144,3 @@ function Summary() {
 }
 
 export default Summary;
-
-

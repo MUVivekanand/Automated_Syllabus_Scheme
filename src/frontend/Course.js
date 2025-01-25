@@ -186,7 +186,15 @@ function Course() {
   
   // Handle form submission
   const handleSubmit = useCallback(async () => {
-    const isValid = courses.every(course => course.courseCode);
+
+    const isValid = courses.every(
+      (course) => course.courseCode.trim() && course.courseTitle.trim()
+    );
+  
+    if (!isValid) {
+      alert("Please fill the data for all courses before submitting!");
+      return;
+    }
   
   //   if (!isValid) {
   //     alert("Please fill in the Course Code for all courses before submitting!");
@@ -198,21 +206,22 @@ function Course() {
   //     return;
   //   }
 
-    const semesterData = courses.map((course) => ({
-      sem_no: currentSem,
-      course_code: course.courseCode,
-      course_name: course.courseTitle,
-      lecture: course.lecture,
-      tutorial: course.tutorial,
-      practical: course.practical,
-      credits: course.credits, // Use dynamically calculated credits
-      ca_marks: commonInfo.caMarks,
-      fe_marks: commonInfo.feMarks,
-      total_marks: commonInfo.totalMarks,
-      type: course.type,
-      faculty: course.faculty,
-      department: commonInfo.department,
-    }));
+  const semesterData = courses.map((course) => ({
+    sem_no: currentSem,
+    course_code: course.courseCode,
+    course_name: course.courseTitle,
+    lecture: course.lecture,
+    tutorial: course.tutorial,
+    practical: course.practical,
+    credits: course.credits, // Use dynamically calculated credits
+    ca_marks: commonInfo.caMarks,
+    fe_marks: commonInfo.feMarks,
+    total_marks: commonInfo.totalMarks,
+    type: course.type,
+    faculty: course.faculty,
+    department: commonInfo.department,
+    category: course.courseType === "theory" ? "theory" : "practical", // Automatically set category
+  }));
   
     try {
       await axios.post("http://localhost:4000/api/credits", { totalCredits: totalRow.credits });
@@ -322,9 +331,9 @@ function Course() {
   };
 
   return (
-    <div className="container-course">
+  <div className="container-course">
     <h1>Course Details - Semester {currentSem}</h1>
-  
+
     {/* Common Information Section */}
     <div className="form-container">
       <h3>Common Information</h3>
@@ -379,10 +388,13 @@ function Course() {
         </div>
       </div>
     </div>
-  
+
     {/* Course Details Input Section */}
     <div className="table-container">
       <h3>Course Details</h3>
+
+      {/* Theory Courses Section */}
+      <h4>Theory Courses</h4>
       <table className="data-table">
         <thead>
           <tr>
@@ -397,25 +409,27 @@ function Course() {
           </tr>
         </thead>
         <tbody>
-        <h4>Theory Courses</h4>
-          {/* Theory Courses Section */}
           {courses
-            .filter(course => course.courseType === 'theory')
+            .filter((course) => course.courseType === "theory")
             .map((course, index) => (
               <tr key={`theory-${index}`}>
                 {Object.keys(course)
-                  .filter(key => key !== 'courseType')
+                  .filter((key) => key !== "courseType")
                   .map((field) => (
                     <td key={field}>
                       {field === "credits" ? (
                         <span>{course[field]}</span>
                       ) : (
                         <input
-                          type={["lecture", "tutorial", "practical"].includes(field) ? "number" : "text"}
+                          type={
+                            ["lecture", "tutorial", "practical"].includes(field)
+                              ? "number"
+                              : "text"
+                          }
                           value={course[field]}
                           onChange={(e) =>
                             handleCourseChange(
-                              courses.findIndex(c => c === course),
+                              courses.findIndex((c) => c === course),
                               field,
                               e.target.value
                             )
@@ -426,25 +440,46 @@ function Course() {
                   ))}
               </tr>
             ))}
-          <h4>Practical Courses</h4>
-          {/* Practical Courses Section */}
+        </tbody>
+      </table>
+
+      {/* Practical Courses Section */}
+      <h4>Practical Courses</h4>
+      <table className="data-table">
+        <thead>
+          <tr>
+            <th className="wide-column">Course Code</th>
+            <th className="extra-wide-column">Course Title</th>
+            <th>Lecture</th>
+            <th>Tutorial</th>
+            <th>Practical</th>
+            <th>Credits</th>
+            <th className="wide-column">Type</th>
+            <th className="wide-column">Faculty Assigned</th>
+          </tr>
+        </thead>
+        <tbody>
           {courses
-            .filter(course => course.courseType === 'practical')
+            .filter((course) => course.courseType === "practical")
             .map((course, index) => (
               <tr key={`practical-${index}`}>
                 {Object.keys(course)
-                  .filter(key => key !== 'courseType')
+                  .filter((key) => key !== "courseType")
                   .map((field) => (
                     <td key={field}>
                       {field === "credits" ? (
                         <span>{course[field]}</span>
                       ) : (
                         <input
-                          type={["lecture", "tutorial", "practical"].includes(field) ? "number" : "text"}
+                          type={
+                            ["lecture", "tutorial", "practical"].includes(field)
+                              ? "number"
+                              : "text"
+                          }
                           value={course[field]}
                           onChange={(e) =>
                             handleCourseChange(
-                              courses.findIndex(c => c === course),
+                              courses.findIndex((c) => c === course),
                               field,
                               e.target.value
                             )
@@ -455,8 +490,12 @@ function Course() {
                   ))}
               </tr>
             ))}
-  
-          {/* Total Row */}
+        </tbody>
+      </table>
+
+      {/* Total Row */}
+      <table className="data-table">
+        <tbody>
           <tr className="total-row">
             <td colSpan="2">Total</td>
             <td>{totalRow.lecture}</td>
@@ -468,7 +507,7 @@ function Course() {
         </tbody>
       </table>
     </div>
-  
+
     {/* Existing Courses Display Section */}
     {existingCourses.length > 0 && (
       <div className="existing-courses-container">
@@ -518,7 +557,7 @@ function Course() {
         </table>
       </div>
     )}
-  
+
     {/* Action Buttons */}
     <div className="actions">
       <button onClick={handleSubmit}>Submit</button>
@@ -528,12 +567,11 @@ function Course() {
       <button onClick={handleBack} disabled={currentSem <= 1}>
         Back to Previous Semester
       </button>
+      <button onClick={navigateSummary} disabled={currentSem <= 1}>
+        Generate Summary
+      </button>
     </div>
 
-    <button onClick={navigateSummary} disabled={currentSem <= 1}>
-        Generate Summary
-    </button>
-  
     {/* Filter Section */}
     <br />
     <div className="filter-container">
@@ -558,16 +596,16 @@ function Course() {
         <button onClick={filtertable} className="generate-table-button">
           Apply filter
         </button>
-        <button 
-          onClick={clearFilters} 
-          disabled={!isFiltered} 
+        <button
+          onClick={clearFilters}
+          disabled={!isFiltered}
           className="generate-table-button"
         >
           Clear Filters
         </button>
       </div>
     </div>
-  
+
     {/* Filtered Results Table */}
     {tableData.length > 0 && (
       <div className="filtered-results-container">
@@ -607,7 +645,8 @@ function Course() {
       </div>
     )}
   </div>
-  );
+);
+
 }
 
 export default Course;

@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "../styles/Login.css";
 
-function AdminLogin() {
+function FacultyLogin() {
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
     const navigate = useNavigate();
@@ -13,8 +13,8 @@ function AdminLogin() {
         const trimmedUsername = username.trim().toLowerCase();
         const trimmedPassword = password.trim().toLowerCase();
 
-        if (trimmedUsername === "vivekanand" && trimmedPassword === "vivek") {
-            navigate("/semInfo");
+        if (trimmedUsername === "yyyy" && trimmedPassword === "yyyy") {
+            navigate("/Faculty");
         } else {
             alert("Incorrect username or password!");
         }
@@ -23,15 +23,15 @@ function AdminLogin() {
     return (
         <div className="login-container">
             <form onSubmit={handleSubmit} className="login-form">
-                <h1 className="login-title">Admin Sign In</h1>
+                <h1 className="login-title">Faculty Sign In</h1>
                 <div className="input-group">
-                    <label htmlFor="username">Admin Username</label>
+                    <label htmlFor="username">Faculty Username</label>
                     <input
                         type="text"
                         id="username"
                         value={username}
                         onChange={(e) => setUsername(e.target.value)}
-                        placeholder="Enter admin username"
+                        placeholder="Enter faculty username"
                         required
                     />
                 </div>
@@ -50,10 +50,10 @@ function AdminLogin() {
                 <div className="login-footer">
                     <button 
                         type="button" 
-                        className="faculty-link" 
-                        onClick={() => navigate("/faculty-login")}
+                        className="admin-link" 
+                        onClick={() => navigate("/")}
                     >
-                        Faculty Login
+                        Admin Login
                     </button>
                 </div>
             </form>
@@ -61,5 +61,4 @@ function AdminLogin() {
     );
 }
 
-export default AdminLogin;
-
+export default FacultyLogin;

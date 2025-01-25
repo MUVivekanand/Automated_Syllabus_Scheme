@@ -66,16 +66,84 @@ app.get("/api/seminfo/:semNo", async (req, res) => {
   }
 });
 
+// app.post("/api/courses", async (req, res) => {
+//   try {
+//     // Extract courses from the request body
+//     const courses = req.body;
+
+//     // Process each course one by one (sequentially)
+//     for (let i = 0; i < courses.length; i++) {
+//       const courseData = courses[i];
+
+//       // Extract individual course data
+//       const { 
+//         sem_no, 
+//         course_code, 
+//         course_name, 
+//         lecture, 
+//         tutorial, 
+//         practical, 
+//         credits, // Use the credits from the request body
+//         ca_marks, 
+//         fe_marks, 
+//         total_marks, 
+//         type, 
+//         faculty, 
+//         department 
+//       } = courseData;
+
+//       const parsedLecture = isNaN(lecture) || lecture === "" ? 0 : parseInt(lecture);
+//       const parsedTutorial = isNaN(tutorial) || tutorial === "" ? 0 : parseInt(tutorial);
+//       const parsedPractical = isNaN(practical) || practical === "" ? 0 : parseInt(practical);
+//       const parsedCaMarks = isNaN(ca_marks) || ca_marks === "" ? 0 : parseInt(ca_marks);
+//       const parsedFeMarks = isNaN(fe_marks) || fe_marks === "" ? 0 : parseInt(fe_marks);
+//       const parsedTotalMarks = isNaN(total_marks) || total_marks === "" ? 0 : parseInt(total_marks);
+
+//       // Insert or update course in Supabase 'credits' table using upsert
+//       const { data, error } = await supabase
+//         .from("credits") // Ensure 'credits' table exists
+//         .upsert([{
+//           sem_no,
+//           course_code,
+//           course_name,
+//           lecture: parsedLecture,
+//           tutorial: parsedTutorial,
+//           practical: parsedPractical,
+//           credits, // Use the credits from the request body
+//           ca_marks: parsedCaMarks,
+//           fe_marks: parsedFeMarks,
+//           total_marks: parsedTotalMarks,
+//           type,
+//           faculty,
+//           department,
+//         }], {
+//           onConflict: ['sem_no', 'course_code'] // Ensure no conflicts on sem_no and course_code
+//         });
+
+//       // If there is an error inserting a course, throw it
+//       if (error) {
+//         throw new Error(error.message);
+//       }
+//     }
+
+//     // Return success message after all courses are inserted
+//     res.status(200).json({ message: "Courses saved successfully!" });
+//   } catch (error) {
+//     console.error("Error saving courses:", error);
+//     res.status(500).json({ message: "Failed to save courses" });
+//   }
+// });
+
 app.post("/api/courses", async (req, res) => {
   try {
-    // Extract courses from the request body
     const courses = req.body;
 
-    // Process each course one by one (sequentially)
     for (let i = 0; i < courses.length; i++) {
       const courseData = courses[i];
 
-      // Extract individual course data
+      // Determine category based on practical hours
+      const category = courseData.practical > 0 ? 'practical' : 'theory';
+
       const { 
         sem_no, 
         course_code, 
@@ -83,7 +151,7 @@ app.post("/api/courses", async (req, res) => {
         lecture, 
         tutorial, 
         practical, 
-        credits, // Use the credits from the request body
+        credits, 
         ca_marks, 
         fe_marks, 
         total_marks, 
@@ -101,7 +169,7 @@ app.post("/api/courses", async (req, res) => {
 
       // Insert or update course in Supabase 'credits' table using upsert
       const { data, error } = await supabase
-        .from("credits") // Ensure 'credits' table exists
+        .from("credits")
         .upsert([{
           sem_no,
           course_code,
@@ -109,24 +177,23 @@ app.post("/api/courses", async (req, res) => {
           lecture: parsedLecture,
           tutorial: parsedTutorial,
           practical: parsedPractical,
-          credits, // Use the credits from the request body
+          credits,
           ca_marks: parsedCaMarks,
           fe_marks: parsedFeMarks,
           total_marks: parsedTotalMarks,
           type,
           faculty,
           department,
+          category, // Add this line to set category
         }], {
-          onConflict: ['sem_no', 'course_code'] // Ensure no conflicts on sem_no and course_code
+          onConflict: ['sem_no', 'course_code']
         });
 
-      // If there is an error inserting a course, throw it
       if (error) {
         throw new Error(error.message);
       }
     }
 
-    // Return success message after all courses are inserted
     res.status(200).json({ message: "Courses saved successfully!" });
   } catch (error) {
     console.error("Error saving courses:", error);
@@ -311,6 +378,26 @@ app.get("/api/creditsSummary", async (req, res) => {
   }
 });
 
+app.get('/api/getTotalCredits', async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from('seminfo')
+      .select('total_credits')
+      .limit(1);
+
+    if (error) throw error;
+
+    if (data && data.length > 0) {
+      res.json({ total_credits: data[0].total_credits });
+    } else {
+      res.status(404).json({ message: 'No total credits found' });
+    }
+  } catch (error) {
+    console.error('Error fetching total credits:', error);
+    res.status(500).json({ message: 'Error fetching total credits' });
+  }
+});
+
 // Apply filter for the table data
 app.post("/filtertable", async (req, res) => {
   try {
@@ -379,47 +466,127 @@ app.put("/updateTableData", async (req, res) => {
   }
 });
 
-app.post('/updateSemInfo', async (req, res) => {
-  const semData = req.body; // Get the data from the request body
+// app.post('/updateSemInfo', async (req, res) => {
+//   const semData = req.body; // Get the data from the request body
 
-  if (!Array.isArray(semData) || semData.length !== 8) {
-    return res.status(400).json({ success: false, message: 'Invalid data format.' });
-  }
+//   if (!Array.isArray(semData) || semData.length !== 8) {
+//     return res.status(400).json({ success: false, message: 'Invalid data format.' });
+//   }
+
+//   try {
+//     for (let i = 0; i < semData.length; i++) {
+//       const { semNo, theoryCourses, practicalCourses } = semData[i];
+
+//       // Skip if any of the required fields are empty
+//       if (theoryCourses === "" || practicalCourses === "") {
+//         continue;
+//       }
+
+//       // Insert or update the semester data
+//       const { error } = await supabase
+//         .from('seminfo')
+//         .upsert([
+//           {
+//             sem_no: semNo,
+//             theory_courses: theoryCourses,
+//             practical_courses: practicalCourses,
+//           },
+//         ])
+//         .eq('sem_no', semNo);
+
+//       if (error) {
+//         console.error('Error upserting data:', error);
+//         throw error;
+//       }
+//     }
+
+//     res.status(200).json({ success: true, message: 'Semester information updated successfully.' });
+//   } catch (error) {
+//     console.error('Error while updating SemesterInfo:', error);
+//     res.status(500).json({ success: false, message: 'Failed to update semester information.' });
+//   }
+// });
+
+app.post('/updateSemInfo', async (req, res) => {
+  const { semData, totalCredits } = req.body;
+
+  console.log("Received data from frontend:", req.body);
 
   try {
-    for (let i = 0; i < semData.length; i++) {
-      const { semNo, theoryCourses, practicalCourses, totalCredits } = semData[i];
+    // Check if it's a full update or partial update
+    const isFullUpdate = semData.every(row => 
+      row.theory_courses !== "" && row.practical_courses !== ""
+    );
 
-      // Skip if any of the required fields are empty
-      if (theoryCourses === "" || practicalCourses === "" || totalCredits === "") {
-        continue;
-      }
+    if (isFullUpdate) {
+      // Full update - replace all existing data
+      const upsertOperations = semData.map(row => ({
+        sem_no: row.sem_no,
+        theory_courses: row.theory_courses,
+        practical_courses: row.practical_courses,
+        total_credits: totalCredits
+      }));
 
-      // Insert or update the semester data
       const { error } = await supabase
         .from('seminfo')
-        .upsert([
-          {
-            sem_no: semNo,
-            theory_courses: theoryCourses,
-            practical_courses: practicalCourses,
-            total_credits: totalCredits,
-          },
-        ])
-        .eq('sem_no', semNo); 
+        .upsert(upsertOperations)
+        .select();
 
       if (error) {
-        console.error('Error upserting data:', error);
-        throw error;
+        console.error('Supabase full upsert error:', error);
+        return res.status(500).json({ 
+          success: false, 
+          message: 'Failed to update semester information.',
+          error: error.message 
+        });
+      }
+    } else {
+      // Partial update - only update non-empty fields
+      for (const row of semData) {
+        const updateData = {};
+        
+        if (row.theory_courses !== "") {
+          updateData.theory_courses = row.theory_courses;
+        }
+        
+        if (row.practical_courses !== "") {
+          updateData.practical_courses = row.practical_courses;
+        }
+
+        if (Object.keys(updateData).length > 0) {
+          const { error } = await supabase
+            .from('seminfo')
+            .update(updateData)
+            .eq('sem_no', row.sem_no);
+
+          if (error) {
+            console.error(`Error updating semester ${row.sem_no}:`, error);
+            return res.status(500).json({ 
+              success: false, 
+              message: `Failed to update semester ${row.sem_no}`,
+              error: error.message 
+            });
+          }
+        }
       }
     }
 
-    res.status(200).json({ success: true, message: 'Semester information updated successfully.' });
+    res.status(200).json({ 
+      success: true, 
+      message: 'Semester information updated successfully.' 
+    });
+
   } catch (error) {
-    console.error('Error while updating SemesterInfo:', error);
-    res.status(500).json({ success: false, message: 'Failed to update semester information.' });
+    console.error('Unexpected error while updating SemesterInfo:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Unexpected error occurred.',
+      error: error.message 
+    });
   }
 });
+
+
 
 
 app.get("/api/courses/:semNo", async (req, res) => {

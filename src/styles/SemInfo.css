@@ -71,4 +71,33 @@
   .submit-button:hover {
     background-color: #45a049;
   }
+
+  /* Style for the Total Credits input section */
+.total-credits-container {
+  margin-top: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.total-credits-container label {
+  font-size: 16px;
+  font-weight: bold;
+  margin-bottom: 5px;
+}
+
+.total-credits-container input {
+  width: 200px;
+  padding: 8px;
+  font-size: 14px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-sizing: border-box;
+}
+
+.total-credits-container input:focus {
+  border-color: #007bff;
+  outline: none;
+}
+
   
