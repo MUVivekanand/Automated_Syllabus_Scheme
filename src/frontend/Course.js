@@ -30,21 +30,13 @@ function Course() {
     navigate("/Summary");
   }
 
-
-  // Fetch data when semester changes
+  //Fetch data when semester changes
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Fetch semester info
         const semResponse = await axios.get(`http://localhost:4000/api/seminfo/${currentSem}`);
         const semInfo = semResponse.data;
-  
-        // Fetch existing courses
-        const coursesResponse = await axios.get(`http://localhost:4000/api/courses/${currentSem}`);
-        const existingCoursesData = coursesResponse.data;
-        setExistingCourses(existingCoursesData);
-  
-        // Update common info
+
         setCommonInfo(prev => ({
           ...prev,
           practicalCourses: semInfo.practical_courses,
@@ -52,24 +44,26 @@ function Course() {
           semNo: currentSem
         }));
   
-        // Initialize courses
+        // Fetch courses for the current semester
+        const coursesResponse = await axios.get(`http://localhost:4000/api/courses/${currentSem}`);
+        const existingCoursesData = coursesResponse.data;
+  
         if (existingCoursesData.length > 0) {
-          // Use existing data if available
-          const formattedCourses = existingCoursesData.map(course => ({
+          const formattedCourses = existingCoursesData.map((course) => ({
+            serial_no:course.serial_no,
             courseCode: course.course_code,
             courseTitle: course.course_name,
-            lecture: course.lecture,
-            tutorial: course.tutorial,
-            practical: course.practical,
-            credits: course.credits,
-            type: course.type,
-            faculty: course.faculty,
-            courseType: course.practical > 0 ? 'practical' : 'theory'
+            lecture: course.lecture || 0,
+            tutorial: course.tutorial || 0,
+            practical: course.practical || 0,
+            credits: course.credits || 0,
+            type: course.type || "",
+            faculty: course.faculty || "",
+            courseType: course.category, 
           }));
-          
+  
           setCourses(formattedCourses);
-          
-          // Update total row with existing data
+
           const totals = formattedCourses.reduce(
             (acc, course) => ({
               lecture: acc.lecture + Number(course.lecture || 0),
@@ -80,39 +74,6 @@ function Course() {
             { lecture: 0, tutorial: 0, practical: 0, credits: 0 }
           );
           setTotalRow(totals);
-        } else {
-          // Create empty rows for both theory and practical courses
-          const theoryCourses = Array.from({ length: semInfo.theory_courses }, () => ({
-            courseCode: "",
-            courseTitle: "",
-            lecture: 0,
-            tutorial: 0,
-            practical: 0,
-            credits: 0,
-            type: "",
-            faculty: "",
-            courseType: "theory"
-          }));
-  
-          const practicalCourses = Array.from({ length: semInfo.practical_courses }, () => ({
-            courseCode: "",
-            courseTitle: "",
-            lecture: 0,
-            tutorial: 0,
-            practical: 0,
-            credits: 0,
-            type: "",
-            faculty: "",
-            courseType: "practical"
-          }));
-  
-          setCourses([...theoryCourses, ...practicalCourses]);
-          setTotalRow({
-            lecture: 0,
-            tutorial: 0,
-            practical: 0,
-            credits: 0,
-          });
         }
       } catch (error) {
         console.error("Error fetching data:", error);
@@ -121,6 +82,7 @@ function Course() {
   
     fetchData();
   }, [currentSem]);
+  
 
   // Handle common info changes
   const handleCommonInfoChange = useCallback((e) => {
@@ -186,53 +148,80 @@ function Course() {
   
   // Handle form submission
   const handleSubmit = useCallback(async () => {
-
-    const isValid = courses.every(
-      (course) => course.courseCode.trim() && course.courseTitle.trim()
+    const currentSemesterCourses = courses.filter(
+      (course) => course.sem_no === currentSem
     );
   
-    if (!isValid) {
-      alert("Please fill the data for all courses before submitting!");
+    if (
+      currentSemesterCourses.some(
+        (course) =>
+          !course.courseCode?.trim() || !course.courseTitle?.trim() // Validate required fields
+      )
+    ) {
+      alert("Please fill the data for all courses in this semester before submitting!");
       return;
     }
   
-  //   if (!isValid) {
-  //     alert("Please fill in the Course Code for all courses before submitting!");
-  //     return;
-  //   }
-
-  //   if (totalRow.credits !== commonInfo.totalCredits) {
-  //     alert("Total credits do not match the expected value!");
-  //     return;
-  //   }
-
-  const semesterData = courses.map((course) => ({
-    sem_no: currentSem,
-    course_code: course.courseCode,
-    course_name: course.courseTitle,
-    lecture: course.lecture,
-    tutorial: course.tutorial,
-    practical: course.practical,
-    credits: course.credits, // Use dynamically calculated credits
-    ca_marks: commonInfo.caMarks,
-    fe_marks: commonInfo.feMarks,
-    total_marks: commonInfo.totalMarks,
-    type: course.type,
-    faculty: course.faculty,
-    department: commonInfo.department,
-    category: course.courseType === "theory" ? "theory" : "practical", // Automatically set category
-  }));
-  
     try {
-      await axios.post("http://localhost:4000/api/credits", { totalCredits: totalRow.credits });
-      await axios.delete(`http://localhost:4000/api/courses/${currentSem}`);
-      await axios.post("http://localhost:4000/api/courses", semesterData);
-      alert("Data submitted successfully!");
+      const response = await axios.get(`http://localhost:4000/api/courseUpdated`, {
+        params: { sem_no: currentSem },
+      });
+  
+      if (!response.data.success) {
+        alert("Failed to fetch existing data from the backend.");
+        return;
+      }
+  
+      const existingData = response.data.data;
+  
+      const semesterData = currentSemesterCourses.map((course) => {
+        const match = existingData.find(
+          (row) =>
+            row.sem_no === course.sem_no &&
+            row.serial_no === course.serial_no &&
+            row.category === course.category // Match by category, not type
+        );
+      
+        return {
+          sem_no: course.sem_no,
+          serial_no: course.serial_no,
+          category: course.category, // Match by category
+          course_code: match?.course_code ?? course.courseCode,
+          course_name: match?.course_name ?? course.courseTitle,
+          lecture: match?.lecture ?? course.lecture,
+          tutorial: match?.tutorial ?? course.tutorial,
+          practical: match?.practical ?? course.practical,
+          credits: match?.credits ?? course.credits,
+          ca_marks: match?.ca_marks ?? commonInfo.caMarks,
+          fe_marks: match?.fe_marks ?? commonInfo.feMarks,
+          total_marks: match?.total_marks ?? commonInfo.totalMarks,
+          department: match?.department ?? commonInfo.department,
+          faculty: match?.faculty ?? course.faculty,
+          type: match?.type ?? course.type, // Include type as it is
+        };
+      });
+      console.log("Prepared semesterData:", semesterData);
+  
+      const submitResponse = await axios.post("http://localhost:4000/api/courses", {
+        data: semesterData,
+      });
+
+  
+      if (submitResponse.data.success) {
+        alert("Data submitted successfully for this semester!");
+        setCurrentSem((prev) => prev + 1);
+        setCourses((prev) =>
+          prev.filter((course) => course.sem_no !== currentSem)
+        );
+      } else {
+        alert("Failed to submit data.");
+      }
     } catch (error) {
       console.error("Error submitting data:", error);
       alert("Failed to submit data.");
     }
-  }, [courses, currentSem, commonInfo, totalRow.credits]);
+  }, [courses, currentSem, commonInfo]);
+  
   
 
   // Navigation handlers
@@ -391,107 +380,112 @@ function Course() {
 
     {/* Course Details Input Section */}
     <div className="table-container">
-      <h3>Course Details</h3>
+        <h3>Course Details</h3>
 
-      {/* Theory Courses Section */}
-      <h4>Theory Courses</h4>
-      <table className="data-table">
-        <thead>
-          <tr>
-            <th className="wide-column">Course Code</th>
-            <th className="extra-wide-column">Course Title</th>
-            <th>Lecture</th>
-            <th>Tutorial</th>
-            <th>Practical</th>
-            <th>Credits</th>
-            <th className="wide-column">Type</th>
-            <th className="wide-column">Faculty Assigned</th>
-          </tr>
-        </thead>
-        <tbody>
-          {courses
-            .filter((course) => course.courseType === "theory")
-            .map((course, index) => (
-              <tr key={`theory-${index}`}>
-                {Object.keys(course)
-                  .filter((key) => key !== "courseType")
-                  .map((field) => (
-                    <td key={field}>
-                      {field === "credits" ? (
-                        <span>{course[field]}</span>
-                      ) : (
-                        <input
-                          type={
-                            ["lecture", "tutorial", "practical"].includes(field)
-                              ? "number"
-                              : "text"
-                          }
-                          value={course[field]}
-                          onChange={(e) =>
-                            handleCourseChange(
-                              courses.findIndex((c) => c === course),
-                              field,
-                              e.target.value
-                            )
-                          }
-                        />
-                      )}
-                    </td>
-                  ))}
-              </tr>
-            ))}
-        </tbody>
-      </table>
+        {/* Theory Courses Section */}
+        <h4>Theory Courses</h4>
+        <table className="data-table">
+          <thead>
+            <tr>
+              <th>Serial No</th> {/* Add Serial No column */}
+              <th className="wide-column">Course Code</th>
+              <th className="extra-wide-column">Course Title</th>
+              <th>Lecture</th>
+              <th>Tutorial</th>
+              <th>Practical</th>
+              <th>Credits</th>
+              <th className="wide-column">Type</th>
+              <th className="wide-column">Faculty Assigned</th>
+            </tr>
+          </thead>
+          <tbody>
+            {courses
+              .filter((course) => course.courseType === "theory")
+              .map((course, index) => (
+                <tr key={`theory-${index}`}>
+                  <td>{course.serial_no}</td> {/* Add Serial No data */}
+                  {Object.keys(course)
+                    .filter((key) => key !== "courseType" && key !== "serial_no")
+                    .map((field) => (
+                      <td key={field}>
+                        {field === "credits" ? (
+                          <span>{course[field]}</span>
+                        ) : (
+                          <input
+                            type={
+                              ["lecture", "tutorial", "practical"].includes(field)
+                                ? "number"
+                                : "text"
+                            }
+                            value={course[field]}
+                            onChange={(e) =>
+                              handleCourseChange(
+                                courses.findIndex((c) => c === course),
+                                field,
+                                e.target.value
+                              )
+                            }
+                          />
+                        )}
+                      </td>
+                    ))}
+                </tr>
+              ))}
+          </tbody>
+        </table>
 
-      {/* Practical Courses Section */}
-      <h4>Practical Courses</h4>
-      <table className="data-table">
-        <thead>
-          <tr>
-            <th className="wide-column">Course Code</th>
-            <th className="extra-wide-column">Course Title</th>
-            <th>Lecture</th>
-            <th>Tutorial</th>
-            <th>Practical</th>
-            <th>Credits</th>
-            <th className="wide-column">Type</th>
-            <th className="wide-column">Faculty Assigned</th>
-          </tr>
-        </thead>
-        <tbody>
-          {courses
-            .filter((course) => course.courseType === "practical")
-            .map((course, index) => (
-              <tr key={`practical-${index}`}>
-                {Object.keys(course)
-                  .filter((key) => key !== "courseType")
-                  .map((field) => (
-                    <td key={field}>
-                      {field === "credits" ? (
-                        <span>{course[field]}</span>
-                      ) : (
-                        <input
-                          type={
-                            ["lecture", "tutorial", "practical"].includes(field)
-                              ? "number"
-                              : "text"
-                          }
-                          value={course[field]}
-                          onChange={(e) =>
-                            handleCourseChange(
-                              courses.findIndex((c) => c === course),
-                              field,
-                              e.target.value
-                            )
-                          }
-                        />
-                      )}
-                    </td>
-                  ))}
-              </tr>
-            ))}
-        </tbody>
-      </table>
+        {/* Practical Courses Section */}
+        <h4>Practical Courses</h4>
+        <table className="data-table">
+          <thead>
+            <tr>
+              <th>Serial No</th> {/* Add Serial No column */}
+              <th className="wide-column">Course Code</th>
+              <th className="extra-wide-column">Course Title</th>
+              <th>Lecture</th>
+              <th>Tutorial</th>
+              <th>Practical</th>
+              <th>Credits</th>
+              <th className="wide-column">Type</th>
+              <th className="wide-column">Faculty Assigned</th>
+            </tr>
+          </thead>
+          <tbody>
+            {courses
+              .filter((course) => course.courseType === "practical")
+              .map((course, index) => (
+                <tr key={`practical-${index}`}>
+                  <td>{course.serial_no}</td> {/* Add Serial No data */}
+                  {Object.keys(course)
+                    .filter((key) => key !== "courseType" && key !== "serial_no")
+                    .map((field) => (
+                      <td key={field}>
+                        {field === "credits" ? (
+                          <span>{course[field]}</span>
+                        ) : (
+                          <input
+                            type={
+                              ["lecture", "tutorial", "practical"].includes(field)
+                                ? "number"
+                                : "text"
+                            }
+                            value={course[field]}
+                            onChange={(e) =>
+                              handleCourseChange(
+                                courses.findIndex((c) => c === course),
+                                field,
+                                e.target.value
+                              )
+                            }
+                          />
+                        )}
+                      </td>
+                    ))}
+                </tr>
+              ))}
+          </tbody>
+        </table>
+      </div>
 
       {/* Total Row */}
       <table className="data-table">
@@ -506,7 +500,6 @@ function Course() {
           </tr>
         </tbody>
       </table>
-    </div>
 
     {/* Existing Courses Display Section */}
     {existingCourses.length > 0 && (

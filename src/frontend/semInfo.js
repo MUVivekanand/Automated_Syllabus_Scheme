@@ -11,67 +11,78 @@ function SemInfo() {
       practical_courses: "",
     }))
   );
-  const [totalCredits, setTotalCredits] = useState(""); // Single input for total credits
+  const [totalCredits, setTotalCredits] = useState(""); 
   const navigate = useNavigate();
 
-  // Handle input changes for each field
   const handleInputChange = (index, field, value) => {
     const updatedData = [...semData];
     updatedData[index] = { ...updatedData[index], [field]: value };
     setSemData(updatedData);
   };
 
-  // Handle changes for total credits input
   const handleTotalCreditsChange = (e) => {
     setTotalCredits(e.target.value);
   };
 
-  // Handle form submission
   const handleSubmit = async () => {
     try {
-      // Validate inputs
-      const isValidData = semData.every(row => 
-        row.theory_courses !== "" && row.practical_courses !== ""
-      );
+        const isValidData = semData.every(row => 
+            row.theory_courses !== "" && row.practical_courses !== ""
+        );
 
-      // if (!isValidData) {
-      //   alert("Please fill in all theory and practical courses.");
-      //   return;
-      // }
+        if (!totalCredits) {
+            alert("Please enter total credits.");
+            return;
+        }
 
-      // if (!totalCredits) {
-      //   alert("Please enter total credits.");
-      //   return;
-      // }
+        // Separate payload for seminfo
+        const semInfoPayload = semData.map(row => ({
+            sem_no: row.sem_no,
+            theory_courses: row.theory_courses,
+            practical_courses: row.practical_courses,
+            total_credits: totalCredits
+        }));
 
-      const payload = {
-        semData: semData,
-        totalCredits: totalCredits
-      };
+        // Calculate serial numbers and create credits payload
+        let serialNo = 1;
+        const creditsPayload = semData.flatMap(semester => {
+            const theoryRows = Array.from({ length: parseInt(semester.theory_courses) }, () => ({
+                sem_no: semester.sem_no,
+                category: 'theory',
+                serial_no: serialNo++ // Assign and increment serial number
+            }));
 
-      console.log("Payload sent to backend:", payload);
-  
-      const response = await axios.post("http://localhost:4000/updateSemInfo", payload);
-      console.log("Backend response:", response.data);
-  
-      if (response.data.success) {
-        alert("Semester information updated successfully.");
-        navigate("/syllabus");
-      } else {
-        alert("Failed to update semester information.");
-        console.log("Server response error:", response.data);
-      }
+            const practicalRows = Array.from({ length: parseInt(semester.practical_courses) }, () => ({
+                sem_no: semester.sem_no,
+                category: 'practical',
+                serial_no: serialNo++ // Assign and increment serial number
+            }));
+
+            return [...theoryRows, ...practicalRows];
+        });
+
+        // First request to seminfo
+        const semInfoResponse = await axios.post("http://localhost:4000/api/updateSemInfo", {
+            semData: semInfoPayload
+        });
+
+        // Second request to credits
+        const creditsResponse = await axios.post("http://localhost:4000/api/updateCredits", {
+            creditsData: creditsPayload
+        });
+
+        if (semInfoResponse.data.success && creditsResponse.data.success) {
+            alert("Semester information updated successfully.");
+            navigate("/syllabus");
+        } else {
+            alert("Failed to update semester information.");
+        }
     } catch (error) {
-      console.error("Error updating semester info:", error);
-      alert("An error occurred while updating semester information.");
-      
-      // Log more detailed error information
-      if (error.response) {
-        console.error("Error response:", error.response.data);
-        console.error("Error status:", error.response.status);
-      }
+        console.error("Error updating semester info:", error);
+        alert("An error occurred while updating semester information.");
     }
-  };
+};
+
   
   return (
     <div className="container-seminfo">
@@ -119,7 +130,6 @@ function SemInfo() {
         </table>
       </div>
 
-      {/* Input for Total Credits */}
       <div className="total-credits-container">
         <label htmlFor="totalCredits">Total Credits:</label>
         <input
