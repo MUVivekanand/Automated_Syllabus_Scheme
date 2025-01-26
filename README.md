@@ -20,3 +20,6 @@ practical,thoery courses classified
 
 16/1/2025:
 summary table added 
+
+26/1/2025:
+modified the supabase table structure in backend, categorised and formatted the project.
