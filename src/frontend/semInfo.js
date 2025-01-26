@@ -25,62 +25,63 @@ function SemInfo() {
   };
 
   const handleSubmit = async () => {
-    try {
-        const isValidData = semData.every(row => 
-            row.theory_courses !== "" && row.practical_courses !== ""
-        );
+  try {
+    // Filter out rows with empty fields and only send valid data
+    const filteredSemData = semData.filter(row => 
+      row.theory_courses.trim() !== "" || row.practical_courses.trim() !== ""
+    );
 
-        if (!totalCredits) {
-            alert("Please enter total credits.");
-            return;
-        }
-
-        // Separate payload for seminfo
-        const semInfoPayload = semData.map(row => ({
-            sem_no: row.sem_no,
-            theory_courses: row.theory_courses,
-            practical_courses: row.practical_courses,
-            total_credits: totalCredits
-        }));
-
-        // Calculate serial numbers and create credits payload
-        let serialNo = 1;
-        const creditsPayload = semData.flatMap(semester => {
-            const theoryRows = Array.from({ length: parseInt(semester.theory_courses) }, () => ({
-                sem_no: semester.sem_no,
-                category: 'theory',
-                serial_no: serialNo++ // Assign and increment serial number
-            }));
-
-            const practicalRows = Array.from({ length: parseInt(semester.practical_courses) }, () => ({
-                sem_no: semester.sem_no,
-                category: 'practical',
-                serial_no: serialNo++ // Assign and increment serial number
-            }));
-
-            return [...theoryRows, ...practicalRows];
-        });
-
-        // First request to seminfo
-        const semInfoResponse = await axios.post("http://localhost:4000/api/updateSemInfo", {
-            semData: semInfoPayload
-        });
-
-        // Second request to credits
-        const creditsResponse = await axios.post("http://localhost:4000/api/updateCredits", {
-            creditsData: creditsPayload
-        });
-
-        if (semInfoResponse.data.success && creditsResponse.data.success) {
-            alert("Semester information updated successfully.");
-            navigate("/syllabus");
-        } else {
-            alert("Failed to update semester information.");
-        }
-    } catch (error) {
-        console.error("Error updating semester info:", error);
-        alert("An error occurred while updating semester information.");
+    if (filteredSemData.length === 0) {
+      alert("No new data entered. Existing data remains unchanged.");
+      navigate("/syllabus");
+      return;
     }
+
+    const semInfoPayload = filteredSemData.map(row => ({
+      sem_no: row.sem_no,
+      theory_courses: row.theory_courses.trim() || null,
+      practical_courses: row.practical_courses.trim() || null,
+      total_credits: totalCredits || null,
+    }));
+
+    // Calculate serial numbers and prepare credits payload
+    let serialNo = 1;
+    const creditsPayload = filteredSemData.flatMap(semester => {
+      const theoryRows = Array.from({ length: parseInt(semester.theory_courses) || 0 }, () => ({
+        sem_no: semester.sem_no,
+        category: "theory",
+        serial_no: serialNo++, // Assign and increment serial number
+      }));
+
+      const practicalRows = Array.from({ length: parseInt(semester.practical_courses) || 0 }, () => ({
+        sem_no: semester.sem_no,
+        category: "practical",
+        serial_no: serialNo++, // Assign and increment serial number
+      }));
+
+      return [...theoryRows, ...practicalRows];
+    });
+
+    // API calls
+    const semInfoResponse = await axios.post("http://localhost:4000/api/updateSemInfo", {
+      semData: semInfoPayload,
+    });
+
+    const creditsResponse = await axios.post("http://localhost:4000/api/updateCredits", {
+      creditsData: creditsPayload,
+    });
+
+    if (semInfoResponse.data.success && creditsResponse.data.success) {
+      alert("Semester information updated successfully.");
+      navigate("/syllabus");
+    } else {
+      alert("Failed to update semester information.");
+    }
+  } catch (error) {
+    console.error("Error updating semester info:", error);
+    alert("An error occurred while updating semester information.");
+  }  
+  
 };
 
   
