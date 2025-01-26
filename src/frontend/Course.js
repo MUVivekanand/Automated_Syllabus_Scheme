@@ -64,16 +64,16 @@ function Course() {
   
           setCourses(formattedCourses);
 
-          const totals = formattedCourses.reduce(
-            (acc, course) => ({
-              lecture: acc.lecture + Number(course.lecture || 0),
-              tutorial: acc.tutorial + Number(course.tutorial || 0),
-              practical: acc.practical + Number(course.practical || 0),
-              credits: acc.credits + Number(course.credits || 0),
-            }),
-            { lecture: 0, tutorial: 0, practical: 0, credits: 0 }
-          );
-          setTotalRow(totals);
+          // const totals = formattedCourses.reduce(
+          //   (acc, course) => ({
+          //     lecture: acc.lecture + Number(course.lecture || 0),
+          //     tutorial: acc.tutorial + Number(course.tutorial || 0),
+          //     practical: acc.practical + Number(course.practical || 0),
+          //     credits: acc.credits + Number(course.credits || 0),
+          //   }),
+          //   { lecture: 0, tutorial: 0, practical: 0, credits: 0 }
+          // );
+          // setTotalRow(totals);
         }
       } catch (error) {
         console.error("Error fetching data:", error);
@@ -144,85 +144,33 @@ function Course() {
       return updatedCourses;
     });
   }, []);
-  
-  
-  // Handle form submission
-  const handleSubmit = useCallback(async () => {
-    const currentSemesterCourses = courses.filter(
-      (course) => course.sem_no === currentSem
-    );
-  
-    if (
-      currentSemesterCourses.some(
-        (course) =>
-          !course.courseCode?.trim() || !course.courseTitle?.trim() // Validate required fields
-      )
-    ) {
-      alert("Please fill the data for all courses in this semester before submitting!");
-      return;
-    }
-  
-    try {
-      const response = await axios.get(`http://localhost:4000/api/courseUpdated`, {
-        params: { sem_no: currentSem },
-      });
-  
-      if (!response.data.success) {
-        alert("Failed to fetch existing data from the backend.");
-        return;
-      }
-  
-      const existingData = response.data.data;
-  
-      const semesterData = currentSemesterCourses.map((course) => {
-        const match = existingData.find(
-          (row) =>
-            row.sem_no === course.sem_no &&
-            row.serial_no === course.serial_no &&
-            row.category === course.category // Match by category, not type
-        );
-      
-        return {
-          sem_no: course.sem_no,
-          serial_no: course.serial_no,
-          category: course.category, // Match by category
-          course_code: match?.course_code ?? course.courseCode,
-          course_name: match?.course_name ?? course.courseTitle,
-          lecture: match?.lecture ?? course.lecture,
-          tutorial: match?.tutorial ?? course.tutorial,
-          practical: match?.practical ?? course.practical,
-          credits: match?.credits ?? course.credits,
-          ca_marks: match?.ca_marks ?? commonInfo.caMarks,
-          fe_marks: match?.fe_marks ?? commonInfo.feMarks,
-          total_marks: match?.total_marks ?? commonInfo.totalMarks,
-          department: match?.department ?? commonInfo.department,
-          faculty: match?.faculty ?? course.faculty,
-          type: match?.type ?? course.type, // Include type as it is
-        };
-      });
-      console.log("Prepared semesterData:", semesterData);
-  
-      const submitResponse = await axios.post("http://localhost:4000/api/courses", {
-        data: semesterData,
-      });
 
-  
-      if (submitResponse.data.success) {
-        alert("Data submitted successfully for this semester!");
-        setCurrentSem((prev) => prev + 1);
-        setCourses((prev) =>
-          prev.filter((course) => course.sem_no !== currentSem)
-        );
-      } else {
-        alert("Failed to submit data.");
+
+  const handleSubmit = useCallback(async () => {
+    try {
+      // Map the serial_no to update the existing rows
+      for (const course of courses) {
+        await axios.patch(`http://localhost:4000/api/credits/${course.serial_no}`, {
+          course_code: course.courseCode,
+          course_name: course.courseTitle,
+          lecture: course.lecture,
+          tutorial: course.tutorial,
+          practical: course.practical,
+          credits: course.credits,
+          ca_marks: commonInfo.caMarks,
+          fe_marks: commonInfo.feMarks,
+          total_marks: commonInfo.totalMarks,
+          type: course.type,
+          faculty: course.faculty,
+          department: commonInfo.department,
+        });
       }
+      alert("Data updated successfully!");
     } catch (error) {
-      console.error("Error submitting data:", error);
-      alert("Failed to submit data.");
+      console.error("Error updating data:", error);
+      alert("Failed to update data.");
     }
-  }, [courses, currentSem, commonInfo]);
-  
-  
+  }, [courses, commonInfo]);
 
   // Navigation handlers
   const handleNext = useCallback(() => {
@@ -250,6 +198,7 @@ function Course() {
       }));
     }
   }, [currentSem]);
+  
   const [filterForm, setFilterForm] = useState({
     filterSem: "",
     FilterDep: "",
