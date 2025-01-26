@@ -412,7 +412,7 @@ function Course() {
 
 {/* Course Details Input Section */}
 <div className="table-container">
-    <h3>Course Details</h3>
+    <h2>Course Details</h2>
 
     {/* Theory Courses Section */}
     <h4>Theory Courses</h4>
@@ -466,6 +466,8 @@ function Course() {
       </tbody>
     </table>
 
+    <br></br>
+
     {/* Practical Courses Section */}
     <h4>Practical Courses</h4>
     <table className="data-table">
@@ -515,28 +517,28 @@ function Course() {
                 ))}
             </tr>
           ))}
+          <tr className="total-row">
+          <td colSpan="3" style={{ textAlign: "center", fontWeight: "bold" }}>
+            Total
+          </td>
+          <td style={{ textAlign: "center", fontWeight: "bold" }}>{totalRow.lecture}</td>
+          <td style={{ textAlign: "center", fontWeight: "bold" }}>{totalRow.tutorial}</td>
+          <td style={{ textAlign: "center", fontWeight: "bold" }}>{totalRow.practical}</td>
+          <td style={{ textAlign: "center", fontWeight: "bold" }}>{totalRow.credits}</td>
+          <td colSpan="2"></td>
+        </tr>
       </tbody>
     </table>
-  </div>
 
-  {/* Total Row */}
-  <table className="data-table">
-    <tbody>
-      <tr className="total-row">
-        <td colSpan="2">Total</td>
-        <td>{totalRow.lecture}</td>
-        <td>{totalRow.tutorial}</td>
-        <td>{totalRow.practical}</td>
-        <td>{totalRow.credits}</td>
-        <td colSpan="2"></td>
-      </tr>
-    </tbody>
-  </table>
+ </div>
 
 {/* Existing Courses Display Section */}
 {existingCourses.length > 0 && (
   <div className="existing-courses-container">
-    <h3>Existing Courses for Semester {currentSem}</h3>
+    <h2>Existing Courses for Semester-{currentSem}</h2>
+    
+    {/* Theory Courses Section */}
+    <h4>Theory Courses</h4>
     <table className="existing-courses-table">
       <thead>
         <tr>
@@ -553,22 +555,63 @@ function Course() {
         </tr>
       </thead>
       <tbody>
-        {existingCourses.map((course, index) => (
-          <tr key={index}>
-            <td>{course.course_code}</td>
-            <td>{course.course_name}</td>
-            <td>{course.lecture}</td>
-            <td>{course.tutorial}</td>
-            <td>{course.practical}</td>
-            <td>{course.credits}</td>
-            <td>{course.ca_marks}</td>
-            <td>{course.fe_marks}</td>
-            <td>{course.total_marks}</td>
-            <td>{course.type}</td>
-          </tr>
-        ))}
+        {existingCourses
+          .filter((course) => course.category.toLowerCase().includes("theory"))
+          .map((course, index) => (
+            <tr key={`theory-${index}`}>
+              <td>{course.course_code}</td>
+              <td>{course.course_name}</td>
+              <td>{course.lecture}</td>
+              <td>{course.tutorial}</td>
+              <td>{course.practical}</td>
+              <td>{course.credits}</td>
+              <td>{course.ca_marks}</td>
+              <td>{course.fe_marks}</td>
+              <td>{course.total_marks}</td>
+              <td>{course.type}</td>
+            </tr>
+          ))}
+      </tbody>
+    </table>
+
+    {/* Practical Courses Section */}
+    <h4>Practical Courses</h4>
+    <table className="existing-courses-table">
+      <thead>
+        <tr>
+          <th>Course Code</th>
+          <th>Course Title</th>
+          <th>Lecture</th>
+          <th>Tutorial</th>
+          <th>Practical</th>
+          <th>Credits</th>
+          <th>CA</th>
+          <th>FE</th>
+          <th>Total</th>
+          <th>Type</th>
+        </tr>
+      </thead>
+      <tbody>
+        {existingCourses
+          .filter((course) => course.category.toLowerCase().includes("practical"))
+          .map((course, index) => (
+            <tr key={`practical-${index}`}>
+              <td>{course.course_code}</td>
+              <td>{course.course_name}</td>
+              <td>{course.lecture}</td>
+              <td>{course.tutorial}</td>
+              <td>{course.practical}</td>
+              <td>{course.credits}</td>
+              <td>{course.ca_marks}</td>
+              <td>{course.fe_marks}</td>
+              <td>{course.total_marks}</td>
+              <td>{course.type}</td>
+            </tr>
+          ))}
+      </tbody>
+      <tbody>
         <tr className="total-row">
-          <td colSpan="2">Total</td>
+          <td colSpan="2" style={{ fontWeight: "bold" }}>Total</td>
           <td>{existingCourses.reduce((sum, course) => sum + course.lecture, 0)}</td>
           <td>{existingCourses.reduce((sum, course) => sum + course.tutorial, 0)}</td>
           <td>{existingCourses.reduce((sum, course) => sum + course.practical, 0)}</td>
@@ -582,6 +625,7 @@ function Course() {
     </table>
   </div>
 )}
+
 
 {/* Action Buttons */}
 <div className="actions">
