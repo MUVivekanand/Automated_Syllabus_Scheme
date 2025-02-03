@@ -1,0 +1,110 @@
+/* General container */
+.course-details-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+    padding: 20px;
+  }
+  
+  /* Card design */
+  .course-card {
+    width: 85%;
+    max-width: 900px;
+    background: white;
+    padding: 30px;
+    border-radius: 15px;
+    box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.2);
+    text-align: center;
+    transition: transform 0.2s ease-in-out;
+  }
+  
+  .course-card:hover {
+    transform: translateY(-5px);
+  }
+  
+  /* Course title */
+  .course-title {
+    font-size: 30px;
+    font-weight: bold;
+    color: #1e88e5;
+    margin-bottom: 20px;
+    border-bottom: 3px solid #1e88e5;
+    padding-bottom: 10px;
+  }
+  
+  /* Section headers */
+  .section-title {
+    font-size: 22px;
+    font-weight: bold;
+    color: #333;
+    margin-top: 25px;
+    text-align: left;
+    padding-left: 10px;
+  }
+  
+  /* Course Outcomes Grid */
+  .co-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 15px;
+    margin-top: 10px;
+  }
+  
+  .co-box {
+    background: #e1f5fe;
+    padding: 15px;
+    border-radius: 8px;
+    text-align: center;
+    transition: transform 0.2s ease-in-out;
+  }
+  
+  .co-box:hover {
+    transform: scale(1.05);
+  }
+  
+  .co-box h3 {
+    font-size: 18px;
+    color: #0277bd;
+    margin-bottom: 8px;
+  }
+  
+  .co-box p {
+    font-size: 15px;
+    color: #555;
+  }
+  
+  /* Styled List */
+  .styled-list {
+    list-style: none;
+    padding: 0;
+    text-align: left;
+    margin-top: 10px;
+  }
+  
+  .styled-list-item {
+    background: #e3f2fd;
+    padding: 12px;
+    margin: 8px 0;
+    border-radius: 6px;
+    font-size: 16px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  
+  .styled-list-item:hover {
+    background: #bbdefb;
+    transition: 0.2s;
+  }
+  
+  /* Error message */
+  .error-message {
+    color: red;
+    font-size: 18px;
+    text-align: center;
+    margin-top: 50px;
+  }
+  
