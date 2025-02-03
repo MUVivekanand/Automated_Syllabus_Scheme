@@ -1,0 +1,132 @@
+/* Faculty Dashboard Container */
+.faculty-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    background-color: #f7f7f7;
+    min-height: 100vh;
+  }
+  
+  /* Header Styling */
+  .faculty-title {
+    font-size: 32px;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 10px;
+  }
+  
+  .faculty-welcome {
+    font-size: 20px;
+    color: #555;
+    margin-bottom: 20px;
+  }
+  
+  /* Course Section */
+  .course-section {
+    width: 100%;
+    max-width: 1000px;
+    margin-bottom: 30px;
+  }
+  
+  /* Table Styling */
+  .course-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  }
+  
+  .course-table th,
+  .course-table td {
+    padding: 12px;
+    text-align: left;
+    border: 1px solid #ddd;
+  }
+  
+  .course-table th {
+    background-color: #007bff;
+    color: white;
+  }
+  
+  .course-table td {
+    background-color: #fff;
+    color: #333;
+  }
+  
+  /* Error Message */
+  .error-message {
+    color: red;
+    font-size: 16px;
+    margin-top: 10px;
+  }
+  
+  /* Select Course Dropdown */
+  .course-dropdown {
+    width: 100%;
+    padding: 10px;
+    font-size: 16px;
+    margin-bottom: 20px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background-color: #fff;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  }
+  
+  .dropdown-label {
+    font-size: 18px;
+    margin-bottom: 5px;
+  }
+  
+  /* CO (Course Outcomes) Section */
+  .co-section {
+    margin-bottom: 20px;
+  }
+  
+  .co-entry {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 15px;
+  }
+  
+  .input-field {
+    padding: 10px;
+    font-size: 16px;
+    margin: 5px 0;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background-color: #fff;
+    width: 100%;
+  }
+  
+  .section-title {
+    font-size: 20px;
+    margin-top: 30px;
+    color: #333;
+  }
+  
+  /* Textbook and Reference Sections */
+  .textbook-section,
+  .reference-section {
+    display: flex;
+    flex-direction: column;
+  }
+  
+  /* Save Button */
+  .save-button {
+    padding: 12px 24px;
+    font-size: 18px;
+    color: white;
+    background-color: #28a745;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+  }
+  
+  .save-button:hover {
+    background-color: #218838;
+  }
+  

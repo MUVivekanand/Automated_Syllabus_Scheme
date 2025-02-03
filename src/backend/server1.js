@@ -7,7 +7,7 @@ require("dotenv").config();
 dotenv.config({ path: "../.env" });
 
 const mongoose = require("mongoose");
-const MONGO_URI = process.env.MONGO_URI
+const MONGO_URI = process.env.MONGO_URI;
 
 mongoose
   .connect(MONGO_URI)
@@ -30,8 +30,8 @@ app.use(cors());
 app.use(express.json());
 
 const { createClient } = require("@supabase/supabase-js");
-const SUPABASE_URL = process.env.SUPABASE_URL
-const SUPABASE_API_KEY = process.env.SUPABASE_API_KEY
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_API_KEY = process.env.SUPABASE_API_KEY;
 const supabase = createClient(SUPABASE_URL, SUPABASE_API_KEY);
 
 if (!supabase) {
@@ -76,20 +76,20 @@ app.get("/api/seminfo/:semNo", async (req, res) => {
 //       const courseData = courses[i];
 
 //       // Extract individual course data
-//       const { 
-//         sem_no, 
-//         course_code, 
-//         course_name, 
-//         lecture, 
-//         tutorial, 
-//         practical, 
+//       const {
+//         sem_no,
+//         course_code,
+//         course_name,
+//         lecture,
+//         tutorial,
+//         practical,
 //         credits, // Use the credits from the request body
-//         ca_marks, 
-//         fe_marks, 
-//         total_marks, 
-//         type, 
-//         faculty, 
-//         department 
+//         ca_marks,
+//         fe_marks,
+//         total_marks,
+//         type,
+//         faculty,
+//         department
 //       } = courseData;
 
 //       const parsedLecture = isNaN(lecture) || lecture === "" ? 0 : parseInt(lecture);
@@ -134,29 +134,24 @@ app.get("/api/seminfo/:semNo", async (req, res) => {
 //   }
 // });
 
-
-app.post('/api/updateCourses', async (req, res) => {
+app.post("/api/updateCourses", async (req, res) => {
   try {
     console.log(req.body);
     const { data, error } = await supabase
-      .from('courses')
-      .upsert(req.body, { returning: 'minimal' });
+      .from("courses")
+      .upsert(req.body, { returning: "minimal" });
 
     if (error) {
-      console.error('Error updating courses:', error);
-      return res.status(500).json({ error: 'Failed to update courses' });
+      console.error("Error updating courses:", error);
+      return res.status(500).json({ error: "Failed to update courses" });
     }
 
-    res.status(200).json({ message: 'Courses updated successfully' });
+    res.status(200).json({ message: "Courses updated successfully" });
   } catch (err) {
-    console.error('Error updating courses:', err);
-    res.status(500).json({ error: 'Failed to update courses' });
+    console.error("Error updating courses:", err);
+    res.status(500).json({ error: "Failed to update courses" });
   }
 });
-
-
-
-
 
 app.post("/api/credits", async (req, res) => {
   try {
@@ -168,7 +163,6 @@ app.post("/api/credits", async (req, res) => {
     res.status(500).json({ message: "Failed to process credits" });
   }
 });
-
 
 // Get credits data from the `credits` table
 app.get("/getCredits", async (req, res) => {
@@ -240,32 +234,6 @@ app.post("/addRow", async (req, res) => {
   }
 });
 
-// Get a course by faculty name
-app.get("/getCourse", async (req, res) => {
-  try {
-    const facultyName = req.query.facultyName;
-
-    if (!facultyName) {
-      return res.status(400).send({ message: "Faculty name is required" });
-    }
-
-    const { data, error } = await supabase
-      .from("credits") // Use lowercase `credits`
-      .select("course_name")
-      .eq("faculty", facultyName);
-
-    if (error) throw error;
-
-    if (data.length > 0) {
-      return res.status(200).send({ courseTitle: data[0].course_name });
-    } else {
-      return res.status(404).send({ message: "Faculty not found or no course assigned" });
-    }
-  } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
-  }
-});
-
 // Get filtered table data from the credits table
 app.get("/getTableData", async (req, res) => {
   try {
@@ -307,9 +275,7 @@ app.get("/getTableData", async (req, res) => {
 //entire table:
 app.get("/api/creditsSummary", async (req, res) => {
   try {
-    const { data, error } = await supabase
-      .from("credits") 
-      .select(`
+    const { data, error } = await supabase.from("credits").select(`
         course_code,
         course_name,
         lecture,
@@ -335,11 +301,11 @@ app.get("/api/creditsSummary", async (req, res) => {
   }
 });
 
-app.get('/api/getTotalCredits', async (req, res) => {
+app.get("/api/getTotalCredits", async (req, res) => {
   try {
     const { data, error } = await supabase
-      .from('seminfo')
-      .select('total_credits')
+      .from("seminfo")
+      .select("total_credits")
       .limit(1);
 
     if (error) throw error;
@@ -347,19 +313,18 @@ app.get('/api/getTotalCredits', async (req, res) => {
     if (data && data.length > 0) {
       res.json({ total_credits: data[0].total_credits });
     } else {
-      res.status(404).json({ message: 'No total credits found' });
+      res.status(404).json({ message: "No total credits found" });
     }
   } catch (error) {
-    console.error('Error fetching total credits:', error);
-    res.status(500).json({ message: 'Error fetching total credits' });
+    console.error("Error fetching total credits:", error);
+    res.status(500).json({ message: "Error fetching total credits" });
   }
 });
-
 
 // app.get("/api/creditsSummary", async (req, res) => {
 //   try {
 //     const { data, error } = await supabase
-//       .from("credits") 
+//       .from("credits")
 //       .select(`
 //         course_code,
 //         course_name,
@@ -415,32 +380,35 @@ app.get('/api/getTotalCredits', async (req, res) => {
 //   }
 // });
 
-
-
 // Apply filter for the table data
 app.post("/filtertable", async (req, res) => {
   try {
     const { filterSem, FilterDep } = req.body;
 
     if (!filterSem || !FilterDep) {
-      return res.status(400).json({ success: false, error: "All fields are required" });
+      return res
+        .status(400)
+        .json({ success: false, error: "All fields are required" });
     }
 
     await Filter.deleteMany({});
     const newFilter = new Filter({ filterSem, FilterDep });
     await newFilter.save();
 
-    res.status(200).json({ success: true, message: "Filter data added successfully" });
+    res
+      .status(200)
+      .json({ success: true, message: "Filter data added successfully" });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }
 });
 
-
 app.post("/clearFilters", async (req, res) => {
   try {
     await Filter.deleteMany({});
-    res.status(200).json({ success: true, message: "Filters cleared successfully" });
+    res
+      .status(200)
+      .json({ success: true, message: "Filters cleared successfully" });
   } catch (error) {
     console.error("Error clearing filters:", error);
     res.status(500).json({ success: false, error: "Internal Server Error" });
@@ -544,28 +512,27 @@ app.put("/updateTableData", async (req, res) => {
 
 //     if (error) {
 //       console.error('Supabase full upsert error:', error);
-//       return res.status(500).json({ 
-//         success: false, 
+//       return res.status(500).json({
+//         success: false,
 //         message: 'Failed to update semester information.',
-//         error: error.message 
+//         error: error.message
 //       });
 //     }
 
-//     res.status(200).json({ 
-//       success: true, 
-//       message: 'Semester information updated successfully.' 
+//     res.status(200).json({
+//       success: true,
+//       message: 'Semester information updated successfully.'
 //     });
 
 //   } catch (error) {
 //     console.error('Unexpected error while updating SemesterInfo:', error);
-//     res.status(500).json({ 
-//       success: false, 
+//     res.status(500).json({
+//       success: false,
 //       message: 'Unexpected error occurred.',
-//       error: error.message 
+//       error: error.message
 //     });
 //   }
 // });
-
 
 // app.post('/api/updateCredits', async (req, res) => {
 //   const { creditsData } = req.body;
@@ -577,27 +544,26 @@ app.put("/updateTableData", async (req, res) => {
 
 //       if (creditsError) {
 //           console.error('Supabase credits insert error:', creditsError);
-//           return res.status(500).json({ 
-//               success: false, 
+//           return res.status(500).json({
+//               success: false,
 //               message: 'Failed to insert credits information.',
-//               error: creditsError.message 
+//               error: creditsError.message
 //           });
 //       }
 
-//       res.status(200).json({ 
-//           success: true, 
-//           message: 'Credits information updated successfully.' 
+//       res.status(200).json({
+//           success: true,
+//           message: 'Credits information updated successfully.'
 //       });
 //   } catch (error) {
 //       console.error('Unexpected error while updating Credits:', error);
-//       res.status(500).json({ 
-//           success: false, 
+//       res.status(500).json({
+//           success: false,
 //           message: 'Unexpected error occurred.',
-//           error: error.message 
+//           error: error.message
 //       });
 //   }
 // });
-
 
 // app.post('/api/updateSemInfo', async (req, res) => {
 //   const { semData } = req.body;
@@ -677,7 +643,7 @@ app.put("/updateTableData", async (req, res) => {
 //   }
 // });
 
-app.post('/api/updateSemInfo', async (req, res) => {
+app.post("/api/updateSemInfo", async (req, res) => {
   const { semData } = req.body;
 
   try {
@@ -686,26 +652,26 @@ app.post('/api/updateSemInfo', async (req, res) => {
       const updates = {};
 
       // Only update fields that are not null or empty
-      if (row.theory_courses !== null && row.theory_courses !== "") 
+      if (row.theory_courses !== null && row.theory_courses !== "")
         updates.theory_courses = row.theory_courses;
-      if (row.practical_courses !== null && row.practical_courses !== "") 
+      if (row.practical_courses !== null && row.practical_courses !== "")
         updates.practical_courses = row.practical_courses;
-      if (row.total_credits !== null && row.total_credits !== "") 
+      if (row.total_credits !== null && row.total_credits !== "")
         updates.total_credits = row.total_credits;
 
       // Only perform update if there are actual updates
       if (Object.keys(updates).length > 0) {
         const { data, error } = await supabase
-          .from('seminfo')
+          .from("seminfo")
           .update(updates)
-          .eq('sem_no', row.sem_no)
+          .eq("sem_no", row.sem_no)
           .select();
 
         if (error) {
-          console.error('Supabase update error:', error);
+          console.error("Supabase update error:", error);
           return res.status(500).json({
             success: false,
-            message: 'Failed to update semester information.',
+            message: "Failed to update semester information.",
             error: error.message,
           });
         }
@@ -714,93 +680,99 @@ app.post('/api/updateSemInfo', async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: 'Semester information updated successfully.',
+      message: "Semester information updated successfully.",
     });
-
   } catch (error) {
-    console.error('Unexpected error while updating SemesterInfo:', error);
+    console.error("Unexpected error while updating SemesterInfo:", error);
     res.status(500).json({
       success: false,
-      message: 'Unexpected error occurred.',
+      message: "Unexpected error occurred.",
       error: error.message,
     });
   }
 });
 
-app.post('/api/updateCredits', async (req, res) => {
+app.post("/api/updateCredits", async (req, res) => {
   const { creditsData } = req.body;
 
   if (!creditsData || creditsData.length === 0) {
     return res.status(200).json({
       success: true,
-      message: 'No credits data provided. Existing data remains unchanged.',
+      message: "No credits data provided. Existing data remains unchanged.",
     });
   }
 
   try {
     // First, delete existing credits for the semesters being updated
-    const semesterNumbers = [...new Set(creditsData.map(item => item.sem_no))];
-    
+    const semesterNumbers = [
+      ...new Set(creditsData.map((item) => item.sem_no)),
+    ];
+
     const { error: deleteError } = await supabase
-      .from('credits')
+      .from("credits")
       .delete()
-      .in('sem_no', semesterNumbers);
+      .in("sem_no", semesterNumbers);
 
     if (deleteError) {
-      console.error('Supabase delete error:', deleteError);
+      console.error("Supabase delete error:", deleteError);
       return res.status(500).json({
         success: false,
-        message: 'Failed to prepare credits information.',
+        message: "Failed to prepare credits information.",
         error: deleteError.message,
       });
     }
 
     // Modify creditsData to ensure unique serial_no across all entries
     let globalSerialNo = 1;
-    const processedCreditsData = creditsData.flatMap(semester => {
-      const theoryRows = Array.from({ length: parseInt(semester.theory_courses) || 0 }, () => ({
-        sem_no: semester.sem_no,
-        category: "theory",
-        serial_no: globalSerialNo++,
-      }));
+    const processedCreditsData = creditsData.flatMap((semester) => {
+      const theoryRows = Array.from(
+        { length: parseInt(semester.theory_courses) || 0 },
+        () => ({
+          sem_no: semester.sem_no,
+          category: "theory",
+          serial_no: globalSerialNo++,
+        })
+      );
 
-      const practicalRows = Array.from({ length: parseInt(semester.practical_courses) || 0 }, () => ({
-        sem_no: semester.sem_no,
-        category: "practical",
-        serial_no: globalSerialNo++,
-      }));
+      const practicalRows = Array.from(
+        { length: parseInt(semester.practical_courses) || 0 },
+        () => ({
+          sem_no: semester.sem_no,
+          category: "practical",
+          serial_no: globalSerialNo++,
+        })
+      );
 
       return [...theoryRows, ...practicalRows];
     });
 
     // Insert processed credits data
     const { error: insertError } = await supabase
-      .from('credits')
+      .from("credits")
       .insert(processedCreditsData);
 
     if (insertError) {
-      console.error('Supabase credits insert error:', insertError);
+      console.error("Supabase credits insert error:", insertError);
       return res.status(500).json({
         success: false,
-        message: 'Failed to insert credits information.',
+        message: "Failed to insert credits information.",
         error: insertError.message,
       });
     }
 
     res.status(200).json({
       success: true,
-      message: 'Credits information updated successfully.',
+      message: "Credits information updated successfully.",
     });
   } catch (error) {
-    console.error('Unexpected error while updating Credits:', error);
+    console.error("Unexpected error while updating Credits:", error);
     res.status(500).json({
       success: false,
-      message: 'Unexpected error occurred.',
+      message: "Unexpected error occurred.",
       error: error.message,
     });
   }
 });
-
 
 app.get("/api/seminfo/:semNo", async (req, res) => {
   const { semNo } = req.params;
@@ -810,7 +782,7 @@ app.get("/api/seminfo/:semNo", async (req, res) => {
       .from("seminfo")
       .select("*")
       .eq("sem_no", semNo)
-      .single(); 
+      .single();
 
     if (error) {
       throw error;
@@ -826,7 +798,6 @@ app.get("/api/seminfo/:semNo", async (req, res) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 });
-
 
 app.patch("/api/credits/:serial_no", async (req, res) => {
   try {
@@ -846,12 +817,18 @@ app.patch("/api/credits/:serial_no", async (req, res) => {
       department,
     } = req.body;
 
-    const parsedLecture = isNaN(lecture) || lecture === "" ? 0 : parseInt(lecture);
-    const parsedTutorial = isNaN(tutorial) || tutorial === "" ? 0 : parseInt(tutorial);
-    const parsedPractical = isNaN(practical) || practical === "" ? 0 : parseInt(practical);
-    const parsedCaMarks = isNaN(ca_marks) || ca_marks === "" ? 0 : parseInt(ca_marks);
-    const parsedFeMarks = isNaN(fe_marks) || fe_marks === "" ? 0 : parseInt(fe_marks);
-    const parsedTotalMarks = isNaN(total_marks) || total_marks === "" ? 0 : parseInt(total_marks);
+    const parsedLecture =
+      isNaN(lecture) || lecture === "" ? 0 : parseInt(lecture);
+    const parsedTutorial =
+      isNaN(tutorial) || tutorial === "" ? 0 : parseInt(tutorial);
+    const parsedPractical =
+      isNaN(practical) || practical === "" ? 0 : parseInt(practical);
+    const parsedCaMarks =
+      isNaN(ca_marks) || ca_marks === "" ? 0 : parseInt(ca_marks);
+    const parsedFeMarks =
+      isNaN(fe_marks) || fe_marks === "" ? 0 : parseInt(fe_marks);
+    const parsedTotalMarks =
+      isNaN(total_marks) || total_marks === "" ? 0 : parseInt(total_marks);
 
     const { data, error } = await supabase
       .from("credits")
@@ -915,6 +892,102 @@ app.delete("/api/courses/:semNo", async (req, res) => {
   }
 });
 
+app.post("/facultyLogin", async (req, res) => {
+  const { username, password } = req.body;
+
+  try {
+    // Fetch faculty details from Supabase
+    const { data, error } = await supabase
+      .from("credits") // Assuming "credits" table contains faculty details
+      .select("faculty")
+      .eq("faculty", username)
+      .single();
+
+    if (error || !data) {
+      return res
+        .status(401)
+        .json({ success: false, message: "Invalid username!" });
+    }
+
+    // Check if the password is "faculty"
+    if (password !== "faculty") {
+      return res
+        .status(401)
+        .json({ success: false, message: "Incorrect password!" });
+    }
+
+    // Login successful
+    res.json({ success: true, facultyName: data.faculty });
+  } catch (err) {
+    console.error("Login error:", err);
+    res.status(500).json({ success: false, message: "Internal server error" });
+  }
+});
+
+app.post("/updateCourseDetails", async (req, res) => {
+  try {
+    const { courseCode, coDetails, textbooks, references } = req.body;
+
+    const { data, error } = await supabase
+      .from("course_details")
+      .update({
+        co1_name: coDetails[0]?.name || null,
+        co1_desc: coDetails[0]?.desc || null,
+        co2_name: coDetails[1]?.name || null,
+        co2_desc: coDetails[1]?.desc || null,
+        co3_name: coDetails[2]?.name || null,
+        co3_desc: coDetails[2]?.desc || null,
+        co4_name: coDetails[3]?.name || null,
+        co4_desc: coDetails[3]?.desc || null,
+        co5_name: coDetails[4]?.name || null,
+        co5_desc: coDetails[4]?.desc || null,
+        textbook1: textbooks[0] || null,
+        textbook2: textbooks[1] || null,
+        textbook3: textbooks[2] || null,
+        textbook4: textbooks[3] || null,
+        reference1: references[0] || null,
+        reference2: references[1] || null,
+        reference3: references[2] || null,
+        reference4: references[3] || null,
+      })
+      .eq("course_code", courseCode);
+
+    if (error) throw error;
+
+    res.json({ success: true, data });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// Get courses by faculty
+app.get("/getCourse", async (req, res) => {
+  try {
+    const facultyName = req.query.facultyName;
+
+    if (!facultyName) {
+      return res.status(400).send({ message: "Faculty name is required" });
+    }
+
+    const { data, error } = await supabase
+      .from("credits") // Table name
+      .select("course_code, course_name, lecture, tutorial, practical, credits") // Fetch required fields
+      .eq("faculty", facultyName);
+
+    if (error) throw error;
+
+    if (data.length > 0) {
+      return res.status(200).send({ success: true, courses: data });
+    } else {
+      return res.status(404).send({
+        success: false,
+        message: "No courses assigned to this faculty.",
+      });
+    }
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
 
 const PORT = 4000;
 app.listen(PORT, () => {
