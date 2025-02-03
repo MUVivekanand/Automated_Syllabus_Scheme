@@ -106,7 +106,7 @@ function Faculty() {
       <h1 className="faculty-title">Faculty Dashboard</h1>
       <h2 className="faculty-welcome">Welcome, {facultyName}</h2>
 
-      {/* Table: Assigned Courses */}
+      {/* Assigned Courses Table */}
       <div className="course-section">
         <h3>Assigned Courses</h3>
         {courses.length > 0 ? (
@@ -139,9 +139,8 @@ function Faculty() {
         )}
       </div>
 
-      {/* Section: Select Course & Add Details */}
-      <div className="course-details-container">
-        <h3>Select Course & Add Details</h3>
+      {/* Select Course Dropdown Outside Box */}
+      <div className="course-dropdown-container">
         <label className="dropdown-label">Select Course:</label>
         <select
           className="course-dropdown"
@@ -155,73 +154,70 @@ function Faculty() {
             </option>
           ))}
         </select>
+      </div>
 
-        {/* Course Details Form */}
-        {selectedCourse && (
-          <div>
-            <h4 className="section-title">Course Outcomes (COs)</h4>
-            <div className="co-section">
-              {courseDetails.co.map((co, i) => (
-                <div key={i} className="co-entry">
-                  <input
-                    className="input-field"
-                    type="text"
-                    placeholder={`CO${i + 1} Name`}
-                    value={co.name}
-                    onChange={(e) =>
-                      handleChange("co", i, { ...co, name: e.target.value })
-                    }
-                  />
-                  <input
-                    className="input-field"
-                    type="text"
-                    placeholder={`CO${i + 1} Description`}
-                    value={co.desc}
-                    onChange={(e) =>
-                      handleChange("co", i, { ...co, desc: e.target.value })
-                    }
-                  />
-                </div>
-              ))}
-            </div>
-
-            <h4 className="section-title">Textbooks</h4>
-            <div className="textbook-section">
-              {courseDetails.textbooks.map((textbook, i) => (
+      {/* Course Details Box */}
+      {selectedCourse && (
+        <div className="course-details-box">
+          <h4 className="section-title">Course Outcomes (COs)</h4>
+          <div className="co-section">
+            {courseDetails.co.map((co, i) => (
+              <div key={i} className="co-entry">
                 <input
-                  key={i}
                   className="input-field"
                   type="text"
-                  placeholder={`Textbook ${i + 1}`}
-                  value={textbook}
-                  onChange={(e) => handleChange("textbooks", i, e.target.value)}
-                />
-              ))}
-            </div>
-
-            <h4 className="section-title">References</h4>
-            <div className="reference-section">
-              {courseDetails.references.map((reference, i) => (
-                <input
-                  key={i}
-                  className="input-field"
-                  type="text"
-                  placeholder={`Reference ${i + 1}`}
-                  value={reference}
+                  placeholder={`CO${i + 1} Name`}
+                  value={co.name}
                   onChange={(e) =>
-                    handleChange("references", i, e.target.value)
+                    handleChange("co", i, { ...co, name: e.target.value })
                   }
                 />
-              ))}
-            </div>
-
-            <br />
-            <button className="save-button" onClick={handleSave}>
-              Save
-            </button>
+                <input
+                  className="input-field"
+                  type="text"
+                  placeholder={`CO${i + 1} Description`}
+                  value={co.desc}
+                  onChange={(e) =>
+                    handleChange("co", i, { ...co, desc: e.target.value })
+                  }
+                />
+              </div>
+            ))}
           </div>
-        )}
-      </div>
+
+          <h4 className="section-title">Textbooks</h4>
+          <div className="textbook-section">
+            {courseDetails.textbooks.map((textbook, i) => (
+              <input
+                key={i}
+                className="input-field"
+                type="text"
+                placeholder={`Textbook ${i + 1}`}
+                value={textbook}
+                onChange={(e) => handleChange("textbooks", i, e.target.value)}
+              />
+            ))}
+          </div>
+
+          <h4 className="section-title">References</h4>
+          <div className="reference-section">
+            {courseDetails.references.map((reference, i) => (
+              <input
+                key={i}
+                className="input-field"
+                type="text"
+                placeholder={`Reference ${i + 1}`}
+                value={reference}
+                onChange={(e) => handleChange("references", i, e.target.value)}
+              />
+            ))}
+          </div>
+
+          <button className="save-button" onClick={handleSave}>
+            Save
+          </button>
+        </div>
+      )}
     </div>
   );
 }
