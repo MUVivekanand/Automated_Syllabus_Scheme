@@ -121,6 +121,7 @@ function Course() {
         ...prev,
         practicalCourses: semInfo.practical_courses,
         theoryCourses: semInfo.theory_courses,
+        mandatoryCourses: semInfo.mandatory_courses || 0,
         semNo: currentSem
       }));
 
@@ -355,327 +356,371 @@ function Course() {
     <div className="container-course">
       <h1>Course Details - Semester {currentSem}</h1>
 
-{/* Common Information Section */}
-<div className="form-container">
-  <h3>Common Information</h3>
-  <div className="form-fields">
-    <div>
-      <label>Semester Number:</label>
-      <input type="number" value={commonInfo.semNo} readOnly />
-    </div>
-    <div>
-      <label>Total Theory:</label>
-      <input type="number" value={commonInfo.theoryCourses} readOnly />
-    </div>
-    <div>
-      <label>Total Practical:</label>
-      <input type="number" value={commonInfo.practicalCourses} readOnly />
-    </div>
-    <div>
-      <label>CA Marks:</label>
-      <input
-        type="number"
-        name="caMarks"
-        value={commonInfo.caMarks}
-        onChange={handleCommonInfoChange}
-      />
-    </div>
-    <div>
-      <label>FE Marks:</label>
-      <input
-        type="number"
-        name="feMarks"
-        value={commonInfo.feMarks}
-        onChange={handleCommonInfoChange}
-      />
-    </div>
-    <div>
-      <label>Total Marks:</label>
-      <input
-        type="number"
-        name="totalMarks"
-        value={commonInfo.totalMarks}
-        onChange={handleCommonInfoChange}
-      />
-    </div>
-    <div>
-      <label>Department:</label>
-      <input
-        type="text"
-        name="department"
-        value={commonInfo.department}
-        onChange={handleCommonInfoChange}
-      />
-    </div>
-  </div>
-</div>
+      {/* Common Information Section */}
+      <div className="form-container">
+        <h3>Common Information</h3>
+        <div className="form-fields">
+          <div>
+            <label>Semester Number:</label>
+            <input type="number" value={commonInfo.semNo} readOnly />
+          </div>
+          <div>
+            <label>Total Theory:</label>
+            <input type="number" value={commonInfo.theoryCourses} readOnly />
+          </div>
+          <div>
+            <label>Total Practical:</label>
+            <input type="number" value={commonInfo.practicalCourses} readOnly />
+          </div>
+          <div>
+            <label>Total Mandatory:</label>
+            <input type="number" value={commonInfo.mandatoryCourses} readOnly />
+          </div>
+          <div>
+            <label>CA Marks:</label>
+            <input
+              type="number"
+              name="caMarks"
+              value={commonInfo.caMarks}
+              onChange={handleCommonInfoChange}
+            />
+          </div>
+          <div>
+            <label>FE Marks:</label>
+            <input
+              type="number"
+              name="feMarks"
+              value={commonInfo.feMarks}
+              onChange={handleCommonInfoChange}
+            />
+          </div>
+          <div>
+            <label>Total Marks:</label>
+            <input
+              type="number"
+              name="totalMarks"
+              value={commonInfo.totalMarks}
+              onChange={handleCommonInfoChange}
+            />
+          </div>
+          <div>
+            <label>Department:</label>
+            <input
+              type="text"
+              name="department"
+              value={commonInfo.department}
+              onChange={handleCommonInfoChange}
+            />
+          </div>
+        </div>
+      </div>
 
-{/* Course Details Input Section */}
-<div className="table-container">
-    <h2>Course Details</h2>
+      {/* Course Details Input Section */}
+      <div className="table-container">
+        <h2>Course Details</h2>
 
-    {/* Theory Courses Section */}
-    <h4>Theory Courses</h4>
-    <table className="data-table">
-      <thead>
-        <tr>
-          <th>Serial No</th> {/* Add Serial No column */}
-          <th className="wide-column">Course Code</th>
-          <th className="extra-wide-column">Course Title</th>
-          <th>Lecture</th>
-          <th>Tutorial</th>
-          <th>Practical</th>
-          <th>Credits</th>
-          <th className="wide-column">Type</th>
-          <th className="wide-column">Faculty Assigned</th>
-        </tr>
-      </thead>
-      <tbody>
-        {courses
-          .filter((course) => course.courseType === "theory")
-          .map((course, index) => (
-            <tr key={`theory-${index}`}>
-              <td>{course.serial_no}</td> {/* Add Serial No data */}
-              {Object.keys(course)
-                .filter((key) => key !== "courseType" && key !== "serial_no")
-                .map((field) => (
-                  <td key={field}>
-                    {field === "credits" ? (
-                      <span>{course[field]}</span>
-                    ) : (
-                      <input
-                        type={
-                          ["lecture", "tutorial", "practical"].includes(field)
-                            ? "number"
-                            : "text"
-                        }
-                        value={course[field]}
-                        onChange={(e) =>
-                          handleCourseChange(
-                            courses.findIndex((c) => c === course),
-                            field,
-                            e.target.value
-                          )
-                        }
-                      />
-                    )}
-                  </td>
+        {/* Theory Courses Section */}
+        <h4>Theory Courses</h4>
+        <table className="data-table">
+          <thead>
+            <tr>
+              <th>Serial No</th>
+              <th className="wide-column">Course Code</th>
+              <th className="extra-wide-column">Course Title</th>
+              <th>Lecture</th>
+              <th>Tutorial</th>
+              <th>Practical</th>
+              <th>Credits</th>
+              <th className="wide-column">Type</th>
+              <th className="wide-column">Faculty Assigned</th>
+            </tr>
+          </thead>
+          <tbody>
+            {courses
+              .filter((course) => course.courseType === "theory")
+              .map((course, index) => (
+                <tr key={`theory-${index}`}>
+                  <td>{course.serial_no}</td>
+                  {Object.keys(course)
+                    .filter((key) => key !== "courseType" && key !== "serial_no")
+                    .map((field) => (
+                      <td key={field}>
+                        {field === "credits" ? (
+                          <span>{course[field]}</span>
+                        ) : (
+                          <input
+                            type={["lecture", "tutorial", "practical"].includes(field) ? "number" : "text"}
+                            value={course[field]}
+                            onChange={(e) => handleCourseChange(courses.findIndex((c) => c === course), field, e.target.value)}
+                          />
+                        )}
+                      </td>
+                    ))}
+                </tr>
+              ))}
+          </tbody>
+        </table>
+
+        {/* Practical Courses Section */}
+        <h4>Practical Courses</h4>
+        <table className="data-table">
+          <thead>
+            <tr>
+              <th>Serial No</th>
+              <th className="wide-column">Course Code</th>
+              <th className="extra-wide-column">Course Title</th>
+              <th>Lecture</th>
+              <th>Tutorial</th>
+              <th>Practical</th>
+              <th>Credits</th>
+              <th className="wide-column">Type</th>
+              <th className="wide-column">Faculty Assigned</th>
+            </tr>
+          </thead>
+          <tbody>
+            {courses
+              .filter((course) => course.courseType === "practical")
+              .map((course, index) => (
+                <tr key={`practical-${index}`}>
+                  <td>{course.serial_no}</td>
+                  {Object.keys(course)
+                    .filter((key) => key !== "courseType" && key !== "serial_no")
+                    .map((field) => (
+                      <td key={field}>
+                        {field === "credits" ? (
+                          <span>{course[field]}</span>
+                        ) : (
+                          <input
+                            type={["lecture", "tutorial", "practical"].includes(field) ? "number" : "text"}
+                            value={course[field]}
+                            onChange={(e) => handleCourseChange(courses.findIndex((c) => c === course), field, e.target.value)}
+                          />
+                        )}
+                      </td>
+                    ))}
+                </tr>
+              ))}
+          </tbody>
+        </table>
+
+        {/* Mandatory Courses Section */}
+        <h4>Mandatory Courses</h4>
+        <table className="data-table">
+          <thead>
+            <tr>
+              <th>Serial No</th>
+              <th className="wide-column">Course Code</th>
+              <th className="extra-wide-column">Course Title</th>
+              <th>Lecture</th>
+              <th>Tutorial</th>
+              <th>Practical</th>
+              <th>Credits</th>
+              <th className="wide-column">Type</th>
+              <th className="wide-column">Faculty Assigned</th>
+            </tr>
+          </thead>
+          <tbody>
+            {courses
+              .filter((course) => course.courseType === "mandatory")
+              .map((course, index) => (
+                <tr key={`mandatory-${index}`}>
+                  <td>{course.serial_no}</td>
+                  {Object.keys(course)
+                    .filter((key) => key !== "courseType" && key !== "serial_no")
+                    .map((field) => (
+                      <td key={field}>
+                        {field === "credits" ? (
+                          <span>{course[field]}</span>
+                        ) : (
+                          <input
+                            type={["lecture", "tutorial", "practical"].includes(field) ? "number" : "text"}
+                            value={course[field]}
+                            onChange={(e) => handleCourseChange(courses.findIndex((c) => c === course), field, e.target.value)}
+                          />
+                        )}
+                      </td>
+                    ))}
+                </tr>
+              ))}
+          </tbody>
+          <tbody>
+            <tr className="total-row">
+              <td colSpan="3" style={{ textAlign: "center", fontWeight: "bold" }}>Total</td>
+              <td style={{ textAlign: "center", fontWeight: "bold" }}>{totalRow.lecture}</td>
+              <td style={{ textAlign: "center", fontWeight: "bold" }}>{totalRow.tutorial}</td>
+              <td style={{ textAlign: "center", fontWeight: "bold" }}>{totalRow.practical}</td>
+              <td style={{ textAlign: "center", fontWeight: "bold" }}>{totalRow.credits}</td>
+              <td colSpan="2"></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      {/* Existing Courses Section */}
+      {existingCourses.length > 0 && (
+        <div className="existing-courses-container">
+          <h2>Existing Courses for Semester-{currentSem}</h2>
+          
+          {/* Theory Courses */}
+          <h4>Theory Courses</h4>
+          <table className="existing-courses-table">
+            <thead>
+              <tr>
+                <th>Course Code</th>
+                <th>Course Title</th>
+                <th>Lecture</th>
+                <th>Tutorial</th>
+                <th>Practical</th>
+                <th>Credits</th>
+                <th>CA</th>
+                <th>FE</th>
+                <th>Total</th>
+                <th>Type</th>
+              </tr>
+            </thead>
+            <tbody>
+              {existingCourses
+                .filter((course) => course.category.toLowerCase().includes("theory"))
+                .map((course, index) => (
+                  <tr key={`theory-${index}`}>
+                    <td>{course.course_code}</td>
+                    <td>{course.course_name}</td>
+                    <td>{course.lecture}</td>
+                    <td>{course.tutorial}</td>
+                    <td>{course.practical}</td>
+                    <td>{course.credits}</td>
+                    <td>{course.ca_marks}</td>
+                    <td>{course.fe_marks}</td>
+                    <td>{course.total_marks}</td>
+                    <td>{course.type}</td>
+                  </tr>
                 ))}
-            </tr>
-          ))}
-      </tbody>
-    </table>
+            </tbody>
+          </table>
 
-    <br></br>
-
-    {/* Practical Courses Section */}
-    <h4>Practical Courses</h4>
-    <table className="data-table">
-      <thead>
-        <tr>
-          <th>Serial No</th> {/* Add Serial No column */}
-          <th className="wide-column">Course Code</th>
-          <th className="extra-wide-column">Course Title</th>
-          <th>Lecture</th>
-          <th>Tutorial</th>
-          <th>Practical</th>
-          <th>Credits</th>
-          <th className="wide-column">Type</th>
-          <th className="wide-column">Faculty Assigned</th>
-        </tr>
-      </thead>
-      <tbody>
-        {courses
-          .filter((course) => course.courseType === "practical")
-          .map((course, index) => (
-            <tr key={`practical-${index}`}>
-              <td>{course.serial_no}</td> {/* Add Serial No data */}
-              {Object.keys(course)
-                .filter((key) => key !== "courseType" && key !== "serial_no")
-                .map((field) => (
-                  <td key={field}>
-                    {field === "credits" ? (
-                      <span>{course[field]}</span>
-                    ) : (
-                      <input
-                        type={
-                          ["lecture", "tutorial", "practical"].includes(field)
-                            ? "number"
-                            : "text"
-                        }
-                        value={course[field]}
-                        onChange={(e) =>
-                          handleCourseChange(
-                            courses.findIndex((c) => c === course),
-                            field,
-                            e.target.value
-                          )
-                        }
-                      />
-                    )}
-                  </td>
+          {/* Practical Courses */}
+          <h4>Practical Courses</h4>
+          <table className="existing-courses-table">
+            <thead>
+              <tr>
+                <th>Course Code</th>
+                <th>Course Title</th>
+                <th>Lecture</th>
+                <th>Tutorial</th>
+                <th>Practical</th>
+                <th>Credits</th>
+                <th>CA</th>
+                <th>FE</th>
+                <th>Total</th>
+                <th>Type</th>
+              </tr>
+            </thead>
+            <tbody>
+              {existingCourses
+                .filter((course) => course.category.toLowerCase().includes("practical"))
+                .map((course, index) => (
+                  <tr key={`practical-${index}`}>
+                    <td>{course.course_code}</td>
+                    <td>{course.course_name}</td>
+                    <td>{course.lecture}</td>
+                    <td>{course.tutorial}</td>
+                    <td>{course.practical}</td>
+                    <td>{course.credits}</td>
+                    <td>{course.ca_marks}</td>
+                    <td>{course.fe_marks}</td>
+                    <td>{course.total_marks}</td>
+                    <td>{course.type}</td>
+                  </tr>
                 ))}
-            </tr>
-          ))}
-          <tr className="total-row">
-          <td colSpan="3" style={{ textAlign: "center", fontWeight: "bold" }}>
-            Total
-          </td>
-          <td style={{ textAlign: "center", fontWeight: "bold" }}>{totalRow.lecture}</td>
-          <td style={{ textAlign: "center", fontWeight: "bold" }}>{totalRow.tutorial}</td>
-          <td style={{ textAlign: "center", fontWeight: "bold" }}>{totalRow.practical}</td>
-          <td style={{ textAlign: "center", fontWeight: "bold" }}>{totalRow.credits}</td>
-          <td colSpan="2"></td>
-        </tr>
-      </tbody>
-    </table>
+            </tbody>
+          </table>
 
- </div>
+          {/* Mandatory Courses */}
+          <h4>Mandatory Courses</h4>
+          <table className="existing-courses-table">
+            <thead>
+              <tr>
+                <th>Course Code</th>
+                <th>Course Title</th>
+                <th>Lecture</th>
+                <th>Tutorial</th>
+                <th>Practical</th>
+                <th>Credits</th>
+                <th>CA</th>
+                <th>FE</th>
+                <th>Total</th>
+                <th>Type</th>
+              </tr>
+            </thead>
+            <tbody>
+              {existingCourses
+                .filter((course) => course.category.toLowerCase().includes("mandatory"))
+                .map((course, index) => (
+                  <tr key={`mandatory-${index}`}>
+                    <td>{course.course_code}</td>
+                    <td>{course.course_name}</td>
+                    <td>{course.lecture}</td>
+                    <td>{course.tutorial}</td>
+                    <td>{course.practical}</td>
+                    <td>{course.credits}</td>
+                    <td>{course.ca_marks}</td>
+                    <td>{course.fe_marks}</td>
+                    <td>{course.total_marks}</td>
+                    <td>{course.type}</td>
+                  </tr>
+                ))}
+            </tbody>
+            <tbody>
+              <tr className="total-row">
+                <td colSpan="2" style={{ fontWeight: "bold" }}>Total</td>
+                <td>{existingCourses.reduce((sum, course) => sum + course.lecture, 0)}</td>
+                <td>{existingCourses.reduce((sum, course) => sum + course.tutorial, 0)}</td>
+                <td>{existingCourses.reduce((sum, course) => sum + course.practical, 0)}</td>
+                <td>{existingCourses.reduce((sum, course) => sum + course.credits, 0)}</td>
+                <td>{existingCourses.reduce((sum, course) => sum + course.ca_marks, 0)}</td>
+                <td>{existingCourses.reduce((sum, course) => sum + course.fe_marks, 0)}</td>
+                <td>{existingCourses.reduce((sum, course) => sum + course.total_marks, 0)}</td>
+                <td></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      )}
 
-{/* Existing Courses Display Section */}
-{existingCourses.length > 0 && (
-  <div className="existing-courses-container">
-    <h2>Existing Courses for Semester-{currentSem}</h2>
-    
-    {/* Theory Courses Section */}
-    <h4>Theory Courses</h4>
-    <table className="existing-courses-table">
-      <thead>
-        <tr>
-          <th>Course Code</th>
-          <th>Course Title</th>
-          <th>Lecture</th>
-          <th>Tutorial</th>
-          <th>Practical</th>
-          <th>Credits</th>
-          <th>CA</th>
-          <th>FE</th>
-          <th>Total</th>
-          <th>Type</th>
-        </tr>
-      </thead>
-      <tbody>
-        {existingCourses
-          .filter((course) => course.category.toLowerCase().includes("theory"))
-          .map((course, index) => (
-            <tr key={`theory-${index}`}>
-              <td>{course.course_code}</td>
-              <td>{course.course_name}</td>
-              <td>{course.lecture}</td>
-              <td>{course.tutorial}</td>
-              <td>{course.practical}</td>
-              <td>{course.credits}</td>
-              <td>{course.ca_marks}</td>
-              <td>{course.fe_marks}</td>
-              <td>{course.total_marks}</td>
-              <td>{course.type}</td>
-            </tr>
-          ))}
-      </tbody>
-    </table>
+      {/* Action Buttons */}
+      <div className="actions">
+        <button onClick={handleSubmit}>Submit</button>
+        <button onClick={handleNext} disabled={currentSem >= 8}>Next Semester</button>
+        <button onClick={handleBack} disabled={currentSem <= 1}>Back to Previous Semester</button>
+        <button onClick={navigateSummary}>Generate Summary</button>
+      </div>
 
-    {/* Practical Courses Section */}
-    <h4>Practical Courses</h4>
-    <table className="existing-courses-table">
-      <thead>
-        <tr>
-          <th>Course Code</th>
-          <th>Course Title</th>
-          <th>Lecture</th>
-          <th>Tutorial</th>
-          <th>Practical</th>
-          <th>Credits</th>
-          <th>CA</th>
-          <th>FE</th>
-          <th>Total</th>
-          <th>Type</th>
-        </tr>
-      </thead>
-      <tbody>
-        {existingCourses
-          .filter((course) => course.category.toLowerCase().includes("practical"))
-          .map((course, index) => (
-            <tr key={`practical-${index}`}>
-              <td>{course.course_code}</td>
-              <td>{course.course_name}</td>
-              <td>{course.lecture}</td>
-              <td>{course.tutorial}</td>
-              <td>{course.practical}</td>
-              <td>{course.credits}</td>
-              <td>{course.ca_marks}</td>
-              <td>{course.fe_marks}</td>
-              <td>{course.total_marks}</td>
-              <td>{course.type}</td>
-            </tr>
-          ))}
-      </tbody>
-      <tbody>
-        <tr className="total-row">
-          <td colSpan="2" style={{ fontWeight: "bold" }}>Total</td>
-          <td>{existingCourses.reduce((sum, course) => sum + course.lecture, 0)}</td>
-          <td>{existingCourses.reduce((sum, course) => sum + course.tutorial, 0)}</td>
-          <td>{existingCourses.reduce((sum, course) => sum + course.practical, 0)}</td>
-          <td>{existingCourses.reduce((sum, course) => sum + course.credits, 0)}</td>
-          <td>{existingCourses.reduce((sum, course) => sum + course.ca_marks, 0)}</td>
-          <td>{existingCourses.reduce((sum, course) => sum + course.fe_marks, 0)}</td>
-          <td>{existingCourses.reduce((sum, course) => sum + course.total_marks, 0)}</td>
-          <td></td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-)}
+      {/* Filter Section */}
+      <div className="filter-container">
+        <div className="form-part">
+          <h4 className="part-title">Filter Details</h4>
+          <div className="form-fields">
+            <input
+              type="number"
+              name="filterSem"
+              placeholder="Enter sem no"
+              value={filterForm.filterSem}
+              onChange={handleFilterChange}
+            />
+            <input
+              type="text"
+              name="FilterDep"
+              placeholder="Enter the department"
+              value={filterForm.FilterDep}
+              onChange={handleFilterChange}
+            />
+          </div>
+          <button onClick={filtertable} className="generate-table-button">Apply filter</button>
+          <button onClick={clearFilters} disabled={!isFiltered} className="generate-table-button">Clear Filters</button>
+        </div>
+      </div>
 
-
-{/* Action Buttons */}
-<div className="actions">
-  <button onClick={handleSubmit}>Submit</button>
-  <button onClick={handleNext} disabled={currentSem >= 8}>
-    Next Semester
-  </button>
-  <button onClick={handleBack} disabled={currentSem <= 1}>
-    Back to Previous Semester
-  </button>
-  <button onClick={navigateSummary} disabled={currentSem <= 1}>
-    Generate Summary
-  </button>
-</div>
-
-{/* Filter Section */}
-<br />
-<div className="filter-container">
-  <div className="form-part">
-    <h4 className="part-title">Filter Details</h4>
-    <div className="form-fields">
-      <input
-        type="number"
-        name="filterSem"
-        placeholder="Enter sem no"
-        value={filterForm.filterSem}
-        onChange={handleFilterChange}
-      />
-      <input
-        type="text"
-        name="FilterDep"
-        placeholder="Enter the department"
-        value={filterForm.FilterDep}
-        onChange={handleFilterChange}
-      />
-    </div>
-    <button onClick={filtertable} className="generate-table-button">
-      Apply filter
-    </button>
-    <button
-      onClick={clearFilters}
-      disabled={!isFiltered}
-      className="generate-table-button"
-    >
-      Clear Filters
-    </button>
-  </div>
-</div>
-
-{/* Filtered Results Table */}
+      {/* Filtered Results Table */}
 {tableData.length > 0 && (
   <div className="filtered-results-container">
     <h3>Filtered Results</h3>
