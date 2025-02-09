@@ -178,3 +178,14 @@
   outline: none; /* Remove focus outline */
   box-shadow: 0 0 5px rgba(72, 193, 131, 0.7); /* Shadow effect on focus */
 }
+
+.textarea-field {
+  width: 100%;
+  min-height: 50px;
+  max-height: 200px;
+  resize: vertical; /* Allows users to resize the textarea vertically */
+  padding: 8px;
+  font-size: 14px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
