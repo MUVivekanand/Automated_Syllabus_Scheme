@@ -116,8 +116,20 @@ function Faculty() {
         alert("Course details updated successfully!");
         navigate("/course-details", {
           state: {
-            courseName: `${courseCode} - ${courseName}`, // Ensure both code and name are passed
-            courseDetails,
+            courseName: `${courseCode} - ${courseName}`,
+            courseDetails: {
+              ...courseDetails,
+              lecture:
+                courses.find((c) => c.course_code === courseCode)?.lecture || 0,
+              tutorial:
+                courses.find((c) => c.course_code === courseCode)?.tutorial ||
+                0,
+              practical:
+                courses.find((c) => c.course_code === courseCode)?.practical ||
+                0,
+              credits:
+                courses.find((c) => c.course_code === courseCode)?.credits || 0,
+            },
           },
         });
       } else {
@@ -208,9 +220,8 @@ function Faculty() {
                     handleChange("co", i, "name", e.target.value)
                   }
                 />
-                <input
-                  className="input-field"
-                  type="text"
+                <textarea
+                  className="input-field textarea-field"
                   placeholder={`CO${i + 1} Description`}
                   value={co.desc}
                   onChange={(e) =>
@@ -265,6 +276,7 @@ function Faculty() {
                   ],
                 }))
               }
+              disabled={courseDetails.textbooks.length >= 2} // Disable when 2 textbooks added
             >
               + Add Textbook
             </button>
@@ -314,6 +326,7 @@ function Faculty() {
                   ],
                 }))
               }
+              disabled={courseDetails.references.length >= 4} // Disable when 4 references added
             >
               + Add Reference
             </button>

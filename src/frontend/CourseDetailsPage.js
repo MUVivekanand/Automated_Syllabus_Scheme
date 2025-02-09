@@ -20,7 +20,8 @@ function CourseDetailsPage() {
         <h1 className="course-title">{courseName}</h1>{" "}
         {/* Displays "course code - course name" */}
         <p className="course-credit-right">
-          {/* Credits on next line, right-aligned */}3 1 0 4
+          {courseDetails.lecture} {courseDetails.tutorial}{" "}
+          {courseDetails.practical} {courseDetails.credits}
         </p>
       </div>
 
@@ -29,7 +30,12 @@ function CourseDetailsPage() {
         {courseDetails.co.map((co, i) => (
           <div key={i} className="course-topic">
             <p className="topic">
-              <b>{co.name}:</b> {co.desc}
+              <b>{co.name}:</b> {co.desc}{" "}
+              {courseDetails.credits === 4
+                ? "   (9+3)"
+                : courseDetails.credits === 3
+                ? "   (9)"
+                : ""}
             </p>
           </div>
         ))}
@@ -38,7 +44,8 @@ function CourseDetailsPage() {
       {/* Total Hours */}
       <div className="total-hours">
         <p>
-          <b>Total L:</b> 45 <b>+T:</b> 15 <b>=</b> 60
+          <b>Total =</b> L: 45{" "}
+          {courseDetails.credits === 4 ? "+ T: 15 = 60" : ""}
         </p>
       </div>
 
