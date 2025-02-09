@@ -10,47 +10,70 @@ function CourseDetailsPage() {
     return <p className="error-message">No course details found.</p>;
   }
 
+  const textbooks = courseDetails.textbooks || [];
+  const refs = courseDetails.references || [];
+
   return (
     <div className="course-details-container">
-      <div className="course-card">
-        <h1 className="course-title">📘 {courseName}</h1>
+      <h2 className="semester-title">SEMESTER – I</h2>
+      <div className="course-header">
+        <h1 className="course-title">{courseName}</h1>{" "}
+        {/* Displays "course code - course name" */}
+        <p className="course-credit-right">
+          {/* Credits on next line, right-aligned */}3 1 0 4
+        </p>
+      </div>
 
-        {/* Course Outcomes Section */}
-        <div className="section">
-          <h2 className="section-title">📌 Course Outcomes</h2>
-          <div className="co-grid">
-            {courseDetails.co.map((co, i) => (
-              <div key={i} className="co-box">
-                <h3>{co.name}</h3>
-                <p>{co.desc}</p>
-              </div>
-            ))}
+      {/* Detailed Course Topics Section */}
+      <div className="section">
+        {courseDetails.co.map((co, i) => (
+          <div key={i} className="course-topic">
+            <p className="topic">
+              <b>{co.name}:</b> {co.desc}
+            </p>
           </div>
-        </div>
+        ))}
+      </div>
 
-        {/* Textbooks Section */}
-        <div className="section">
-          <h2 className="section-title">📖 Textbooks</h2>
-          <ul className="styled-list">
-            {courseDetails.textbooks.map((book, i) => (
-              <li key={i} className="styled-list-item">
-                📚 {book}
+      {/* Total Hours */}
+      <div className="total-hours">
+        <p>
+          <b>Total L:</b> 45 <b>+T:</b> 15 <b>=</b> 60
+        </p>
+      </div>
+
+      {/* Textbooks Section */}
+      <div className="section">
+        <h2 className="section-title">TEXT BOOKS</h2>
+        {textbooks.length > 0 ? (
+          <ol className="book-list">
+            {textbooks.map((book, i) => (
+              <li key={i} className="book-item">
+                <b>{book.author}</b>, {book.title}, {book.publisher},{" "}
+                {book.place}, {book.year}.
               </li>
             ))}
-          </ul>
-        </div>
+          </ol>
+        ) : (
+          <p className="no-data">No textbooks available.</p>
+        )}
+      </div>
 
-        {/* References Section */}
-        <div className="section">
-          <h2 className="section-title">🔍 References</h2>
-          <ul className="styled-list">
-            {courseDetails.references.map((ref, i) => (
-              <li key={i} className="styled-list-item">
-                📖 {ref}
+      {/* References Section */}
+      <div className="section">
+        <h2 className="section-title">REFERENCES</h2>
+        {refs.length > 0 ? (
+          <ol className="book-list">
+            {refs.map((ref, i) => (
+              <li key={i} className="book-item">
+                <b>{ref.author}</b>, {ref.title}, {ref.publisher}, {ref.place},{" "}
+                {ref.year}.
               </li>
             ))}
-          </ul>
-        </div>
+          </ol>
+        ) : (
+          <p className="no-data">No references available.</p>
+        )}
       </div>
     </div>
   );
