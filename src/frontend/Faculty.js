@@ -44,6 +44,32 @@ function Faculty() {
     }
   };
 
+  const getCourseDetails = async () => {
+    if (!selectedCourse) {
+      alert("Please select a course first.");
+      return;
+    }
+
+    const [courseCode] = selectedCourse.split(" - ");
+    try {
+      const response = await axios.get(
+        "http://localhost:4000/getCourseDetails",
+        {
+          params: { courseCode },
+        }
+      );
+
+      if (response.data.success) {
+        setCourseDetails(response.data.courseDetails);
+      } else {
+        alert("Failed to fetch course details.");
+      }
+    } catch (error) {
+      console.error("Error fetching course details:", error);
+      alert("Unexpected error while fetching course details.");
+    }
+  };
+
   // Handle dropdown change
   const handleCourseSelection = (event) => {
     setSelectedCourse(event.target.value);
@@ -72,26 +98,25 @@ function Faculty() {
       return;
     }
 
+    const [courseCode, courseName] = selectedCourse.split(" - ");
+
     try {
       const response = await axios.post(
         "http://localhost:4000/updateCourseDetails",
         {
-          courseCode: selectedCourse,
+          courseCode,
           facultyName,
           coDetails: courseDetails.co,
           textbooks: courseDetails.textbooks,
-          refs: courseDetails.refs,
+          references: courseDetails.references, // Change this from 'refs' to 'references'
         }
       );
-
-      console.log("Server response:", response.data);
 
       if (response.data.success) {
         alert("Course details updated successfully!");
         navigate("/course-details", {
           state: {
-            courseName: courses.find((c) => c.course_code === selectedCourse)
-              ?.course_name,
+            courseName: `${courseCode} - ${courseName}`, // Ensure both code and name are passed
             courseDetails,
           },
         });
@@ -154,11 +179,17 @@ function Faculty() {
         >
           <option value="">-- Select a Course --</option>
           {courses.map((course) => (
-            <option key={course.course_code} value={course.course_code}>
-              {course.course_name} ({course.course_code})
+            <option
+              key={course.course_code}
+              value={`${course.course_code} - ${course.course_name}`}
+            >
+              {course.course_code} - {course.course_name}
             </option>
           ))}
         </select>
+        <button className="view-button" onClick={getCourseDetails}>
+          View Course Details
+        </button>
       </div>
 
       {/* Course Details Box */}

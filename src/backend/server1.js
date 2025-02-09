@@ -1048,6 +1048,68 @@ app.get("/getCourse", async (req, res) => {
   }
 });
 
+// Get course details by course code
+app.get("/getCourseDetails", async (req, res) => {
+  try {
+    const courseCode = req.query.courseCode;
+
+    if (!courseCode) {
+      return res.status(400).send({ message: "Course code is required" });
+    }
+
+    // Fetch course details
+    const { data: courseDetails, error: courseDetailsError } = await supabase
+      .from("course_details")
+      .select(
+        "co1_name, co1_desc, co2_name, co2_desc, co3_name, co3_desc, co4_name, co4_desc, co5_name, co5_desc"
+      )
+      .eq("course_code", courseCode)
+      .maybeSingle();
+
+    if (courseDetailsError) throw courseDetailsError;
+
+    if (!courseDetails) {
+      return res
+        .status(404)
+        .send({ success: false, message: "Course details not found." });
+    }
+
+    // Fetch textbooks for the course
+    const { data: textbooks, error: textbooksError } = await supabase
+      .from("textbooks")
+      .select("*")
+      .eq("course_code", courseCode);
+
+    if (textbooksError) throw textbooksError;
+
+    // Fetch references for the course
+    const { data: references, error: referencesError } = await supabase
+      .from("refs")
+      .select("*")
+      .eq("course_code", courseCode);
+
+    if (referencesError) throw referencesError;
+
+    // Combine course details, textbooks, and references into one response
+    const courseData = {
+      co: [
+        { name: courseDetails.co1_name, desc: courseDetails.co1_desc },
+        { name: courseDetails.co2_name, desc: courseDetails.co2_desc },
+        { name: courseDetails.co3_name, desc: courseDetails.co3_desc },
+        { name: courseDetails.co4_name, desc: courseDetails.co4_desc },
+        { name: courseDetails.co5_name, desc: courseDetails.co5_desc },
+      ],
+      textbooks,
+      references,
+    };
+
+    res.json({ success: true, courseDetails: courseData });
+  } catch (err) {
+    console.error("❌ Server Error:", err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 const PORT = 4000;
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);

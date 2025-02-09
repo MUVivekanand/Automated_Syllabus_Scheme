@@ -156,3 +156,25 @@
 .save-button:hover {
   background-color: #218838;
 }
+
+.view-button {
+  background-color: #4CAF50; /* Green background */
+  color: white; /* White text */
+  font-size: 16px; /* Font size */
+  padding: 10px 20px; /* Padding for button */
+  border: none; /* Remove default border */
+  border-radius: 5px; /* Rounded corners */
+  cursor: pointer; /* Pointer cursor on hover */
+  transition: background-color 0.3s ease; /* Smooth background change on hover */
+  margin-top: 20px;
+  margin-left: 10px; /* Space between the dropdown and the button */
+}
+
+.view-button:hover {
+  background-color: #45a049; /* Darker green when hovered */
+}
+
+.view-button:focus {
+  outline: none; /* Remove focus outline */
+  box-shadow: 0 0 5px rgba(72, 193, 131, 0.7); /* Shadow effect on focus */
+}
