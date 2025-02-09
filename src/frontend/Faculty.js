@@ -12,8 +12,8 @@ function Faculty() {
   const [selectedCourse, setSelectedCourse] = useState(""); // Selected course code
   const [courseDetails, setCourseDetails] = useState({
     co: Array(5).fill({ name: "", desc: "" }),
-    textbooks: Array(4).fill(""),
-    references: Array(4).fill(""),
+    textbooks: [],
+    references: [],
   });
 
   useEffect(() => {
@@ -49,17 +49,17 @@ function Faculty() {
     setSelectedCourse(event.target.value);
     setCourseDetails({
       co: Array(5).fill({ name: "", desc: "" }),
-      textbooks: Array(4).fill(""),
-      references: Array(4).fill(""),
+      textbooks: [],
+      references: [],
     });
   };
 
   // Handles input changes dynamically
-  const handleChange = (field, index, value) => {
+  const handleChange = (field, index, key, value) => {
     setCourseDetails((prevDetails) => ({
       ...prevDetails,
       [field]: prevDetails[field].map((item, i) =>
-        i === index ? value : item
+        i === index ? { ...item, [key]: value } : item
       ),
     }));
   };
@@ -80,9 +80,11 @@ function Faculty() {
           facultyName,
           coDetails: courseDetails.co,
           textbooks: courseDetails.textbooks,
-          references: courseDetails.references,
+          refs: courseDetails.refs,
         }
       );
+
+      console.log("Server response:", response.data);
 
       if (response.data.success) {
         alert("Course details updated successfully!");
@@ -94,13 +96,16 @@ function Faculty() {
           },
         });
       } else {
-        alert("Failed to update course details.");
+        alert(`Failed to update course details: ${response.data.error}`);
       }
     } catch (error) {
       console.error("Error updating course details:", error);
-      alert("An unexpected error occurred.");
+      alert(
+        `Unexpected error: ${error.response?.data?.error || error.message}`
+      );
     }
   };
+
   return (
     <div className="faculty-container">
       <h1 className="faculty-title">Faculty Dashboard</h1>
@@ -139,7 +144,7 @@ function Faculty() {
         )}
       </div>
 
-      {/* Select Course Dropdown Outside Box */}
+      {/* Select Course Dropdown */}
       <div className="course-dropdown-container">
         <label className="dropdown-label">Select Course:</label>
         <select
@@ -169,7 +174,7 @@ function Faculty() {
                   placeholder={`CO${i + 1} Name`}
                   value={co.name}
                   onChange={(e) =>
-                    handleChange("co", i, { ...co, name: e.target.value })
+                    handleChange("co", i, "name", e.target.value)
                   }
                 />
                 <input
@@ -178,39 +183,109 @@ function Faculty() {
                   placeholder={`CO${i + 1} Description`}
                   value={co.desc}
                   onChange={(e) =>
-                    handleChange("co", i, { ...co, desc: e.target.value })
+                    handleChange("co", i, "desc", e.target.value)
                   }
                 />
               </div>
             ))}
           </div>
 
+          {/* Textbooks Section */}
           <h4 className="section-title">Textbooks</h4>
           <div className="textbook-section">
             {courseDetails.textbooks.map((textbook, i) => (
-              <input
-                key={i}
-                className="input-field"
-                type="text"
-                placeholder={`Textbook ${i + 1}`}
-                value={textbook}
-                onChange={(e) => handleChange("textbooks", i, e.target.value)}
-              />
+              <div key={i} className="textbook-entry">
+                {[
+                  "title",
+                  "author",
+                  "edition",
+                  "publisher",
+                  "place",
+                  "year",
+                ].map((field) => (
+                  <input
+                    key={field}
+                    className="input-field"
+                    type="text"
+                    placeholder={`Textbook ${i + 1} ${field}`}
+                    value={textbook[field] || ""}
+                    onChange={(e) =>
+                      handleChange("textbooks", i, field, e.target.value)
+                    }
+                  />
+                ))}
+              </div>
             ))}
+            <button
+              className="add-button"
+              onClick={() =>
+                setCourseDetails((prev) => ({
+                  ...prev,
+                  textbooks: [
+                    ...prev.textbooks,
+                    {
+                      title: "",
+                      author: "",
+                      edition: "",
+                      publisher: "",
+                      place: "",
+                      year: "",
+                    },
+                  ],
+                }))
+              }
+            >
+              + Add Textbook
+            </button>
           </div>
 
+          {/* References Section */}
           <h4 className="section-title">References</h4>
           <div className="reference-section">
             {courseDetails.references.map((reference, i) => (
-              <input
-                key={i}
-                className="input-field"
-                type="text"
-                placeholder={`Reference ${i + 1}`}
-                value={reference}
-                onChange={(e) => handleChange("references", i, e.target.value)}
-              />
+              <div key={i} className="reference-entry">
+                {[
+                  "title",
+                  "author",
+                  "edition",
+                  "publisher",
+                  "place",
+                  "year",
+                ].map((field) => (
+                  <input
+                    key={field}
+                    className="input-field"
+                    type="text"
+                    placeholder={`Reference ${i + 1} ${field}`}
+                    value={reference[field] || ""}
+                    onChange={(e) =>
+                      handleChange("references", i, field, e.target.value)
+                    }
+                  />
+                ))}
+              </div>
             ))}
+            <button
+              className="add-button"
+              onClick={() =>
+                setCourseDetails((prev) => ({
+                  ...prev,
+                  references: [
+                    ...prev.references,
+                    {
+                      title: "",
+                      author: "",
+                      edition: "",
+                      publisher: "",
+                      place: "",
+                      year: "",
+                    },
+                  ],
+                }))
+              }
+            >
+              + Add Reference
+            </button>
           </div>
 
           <button className="save-button" onClick={handleSave}>

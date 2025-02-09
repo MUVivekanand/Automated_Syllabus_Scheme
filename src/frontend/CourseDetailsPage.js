@@ -10,6 +10,10 @@ function CourseDetailsPage() {
     return <p className="error-message">No course details found.</p>;
   }
 
+  // ✅ Ensure textbooks and refs are at least empty arrays to avoid errors
+  const textbooks = courseDetails.textbooks || [];
+  const refs = courseDetails.references || [];
+
   return (
     <div className="course-details-container">
       <div className="course-card">
@@ -31,25 +35,47 @@ function CourseDetailsPage() {
         {/* Textbooks Section */}
         <div className="section">
           <h2 className="section-title">📖 Textbooks</h2>
-          <ul className="styled-list">
-            {courseDetails.textbooks.map((book, i) => (
-              <li key={i} className="styled-list-item">
-                📚 {book}
-              </li>
-            ))}
-          </ul>
+          {textbooks.length > 0 ? (
+            <ul className="styled-list">
+              {textbooks.map((book, i) => (
+                <li key={i} className="styled-list-item">
+                  📚 <b>{book.title || "Unknown Title"}</b> <br />
+                  <small>
+                    {book.author && `by ${book.author}, `}
+                    {book.edition && `Edition: ${book.edition}, `}
+                    {book.publisher && `Published by ${book.publisher}, `}
+                    {book.place && `Place: ${book.place}, `}
+                    {book.year && `Year: ${book.year}`}
+                  </small>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="no-data">No textbooks available.</p>
+          )}
         </div>
 
         {/* References Section */}
         <div className="section">
           <h2 className="section-title">🔍 References</h2>
-          <ul className="styled-list">
-            {courseDetails.references.map((ref, i) => (
-              <li key={i} className="styled-list-item">
-                📖 {ref}
-              </li>
-            ))}
-          </ul>
+          {refs.length > 0 ? (
+            <ul className="styled-list">
+              {refs.map((ref, i) => (
+                <li key={i} className="styled-list-item">
+                  📖 <b>{ref.title || "Unknown Title"}</b> <br />
+                  <small>
+                    {ref.author && `by ${ref.author}, `}
+                    {ref.edition && `Edition: ${ref.edition}, `}
+                    {ref.publisher && `Published by ${ref.publisher}, `}
+                    {ref.place && `Place: ${ref.place}, `}
+                    {ref.year && `Year: ${ref.year}`}
+                  </small>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="no-data">No references available.</p>
+          )}
         </div>
       </div>
     </div>

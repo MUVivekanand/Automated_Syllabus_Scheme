@@ -928,7 +928,29 @@ app.post("/updateCourseDetails", async (req, res) => {
   try {
     const { courseCode, coDetails, textbooks, references } = req.body;
 
-    const { data, error } = await supabase
+    // Check if the course exists
+    const { data: existingCourse, error: fetchError } = await supabase
+      .from("course_details")
+      .select("*")
+      .eq("course_code", courseCode)
+      .maybeSingle();
+
+    if (fetchError) {
+      console.error("❌ Error fetching course details:", fetchError);
+      return res
+        .status(500)
+        .json({ success: false, error: fetchError.message });
+    }
+
+    if (!existingCourse) {
+      console.warn("🚨 Course not found:", courseCode);
+      return res
+        .status(400)
+        .json({ success: false, error: "Course not found." });
+    }
+
+    // ✅ Update Course Outcomes in `course_details`
+    const { error: updateError } = await supabase
       .from("course_details")
       .update({
         co1_name: coDetails[0]?.name || null,
@@ -941,21 +963,58 @@ app.post("/updateCourseDetails", async (req, res) => {
         co4_desc: coDetails[3]?.desc || null,
         co5_name: coDetails[4]?.name || null,
         co5_desc: coDetails[4]?.desc || null,
-        textbook1: textbooks[0] || null,
-        textbook2: textbooks[1] || null,
-        textbook3: textbooks[2] || null,
-        textbook4: textbooks[3] || null,
-        reference1: references[0] || null,
-        reference2: references[1] || null,
-        reference3: references[2] || null,
-        reference4: references[3] || null,
       })
       .eq("course_code", courseCode);
 
-    if (error) throw error;
+    if (updateError) throw updateError;
 
-    res.json({ success: true, data });
+    // ✅ Delete old textbooks and references
+    await supabase.from("textbooks").delete().eq("course_code", courseCode);
+    await supabase.from("refs").delete().eq("course_code", courseCode);
+
+    // ✅ Check if textbooks is an array of objects
+    if (Array.isArray(textbooks) && textbooks.length > 0) {
+      const textbookData = textbooks.map((t) => ({
+        course_code: courseCode,
+        title: t.title || "Unknown Title",
+        author: t.author || "Unknown Author",
+        edition: t.edition || "N/A",
+        publisher: t.publisher || "N/A",
+        place: t.place || "N/A",
+        year: t.year || "N/A",
+      }));
+
+      if (textbookData.length > 0) {
+        const { error: textbookError } = await supabase
+          .from("textbooks")
+          .insert(textbookData);
+        if (textbookError) throw textbookError;
+      }
+    }
+
+    // ✅ Check if references is an array of objects
+    if (Array.isArray(references) && references.length > 0) {
+      const referenceData = references.map((r) => ({
+        course_code: courseCode,
+        title: r.title || "Unknown Title",
+        author: r.author || "Unknown Author",
+        edition: r.edition || "N/A",
+        publisher: r.publisher || "N/A",
+        place: r.place || "N/A",
+        year: r.year || "N/A",
+      }));
+
+      if (referenceData.length > 0) {
+        const { error: referenceError } = await supabase
+          .from("refs")
+          .insert(referenceData);
+        if (referenceError) throw referenceError;
+      }
+    }
+
+    res.json({ success: true });
   } catch (err) {
+    console.error("❌ Server Error:", err);
     res.status(500).json({ success: false, error: err.message });
   }
 });
