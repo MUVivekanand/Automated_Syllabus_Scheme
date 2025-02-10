@@ -21,8 +21,8 @@ function Summary() {
     try {
       // Fetch both credits summary and total credits
       const [creditsSummaryResponse, totalCreditsResponse] = await Promise.all([
-        axios.get("http://localhost:4000/api/creditsSummary"),
-        axios.get("http://localhost:4000/api/getTotalCredits")
+        axios.get("http://localhost:4000/api/summary/creditsSummary"),
+        axios.get("http://localhost:4000/api/summary/getTotalCredits")
       ]);
 
       const backendData = creditsSummaryResponse.data;

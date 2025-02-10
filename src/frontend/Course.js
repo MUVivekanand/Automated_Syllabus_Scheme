@@ -36,6 +36,10 @@ function Course() {
     navigate("/Summary");
   };
 
+  const navigateRegulations = () => {
+    navigate("/Regulations");
+  };
+
   // Fetch data when semester changes
   // useEffect(() => {
   //   const fetchData = async () => {
@@ -111,10 +115,10 @@ function Course() {
       setTotalRow({ lecture: 0, tutorial: 0, practical: 0, credits: 0 });
 
 
-      const semResponse = await axios.get(`http://localhost:4000/api/seminfo/${currentSem}`);
+      const semResponse = await axios.get(`http://localhost:4000/api/course/seminfo/${currentSem}`);
       const semInfo = semResponse.data;
 
-      const coursesResponse = await axios.get(`http://localhost:4000/api/courses/${currentSem}`);
+      const coursesResponse = await axios.get(`http://localhost:4000/api/course/courses/${currentSem}`);
       const existingCoursesData = coursesResponse.data;
 
       setCommonInfo(prev => ({
@@ -188,7 +192,7 @@ function Course() {
   // Fetch table data
   const fetchTableData = async () => {
     try {
-      const response = await axios.get('http://localhost:4000/getTableData');
+      const response = await axios.get('http://localhost:4000/api/course/getTableData');
       if (response.data.success) {
         setTableData(response.data.data);
       }
@@ -198,43 +202,43 @@ function Course() {
   };
 
   // Filter table
-  const filtertable = async () => {
-    const filterData = {
-      filterSem: Number(filterForm.filterSem),
-      FilterDep: filterForm.FilterDep
-    };
+  // const filtertable = async () => {
+  //   const filterData = {
+  //     filterSem: Number(filterForm.filterSem),
+  //     FilterDep: filterForm.FilterDep
+  //   };
 
-    try {
-      const response = await axios.post('http://localhost:4000/filtertable', filterData);
-      if (response.data.success) {
-        setIsFiltered(true);
-        await fetchTableData();
-        alert("Filter applied successfully");
-      }
-    } catch (error) {
-      console.error('Error:', error.response?.data || error.message);
-      alert(`Failed to apply filter: ${error.response?.data?.error || error.message}`);
-    }
-  };
+  //   try {
+  //     const response = await axios.post('http://localhost:4000/filtertable', filterData);
+  //     if (response.data.success) {
+  //       setIsFiltered(true);
+  //       await fetchTableData();
+  //       alert("Filter applied successfully");
+  //     }
+  //   } catch (error) {
+  //     console.error('Error:', error.response?.data || error.message);
+  //     alert(`Failed to apply filter: ${error.response?.data?.error || error.message}`);
+  //   }
+  // };
 
-  // Clear filters
-  const clearFilters = async () => {
-    try {
-      const response = await axios.post('http://localhost:4000/clearFilters');
-      if (response.data.success) {
-        setIsFiltered(false);
-        setFilterForm({
-          filterSem: "",
-          FilterDep: "",
-        });
-        await fetchTableData();
-        alert("Filters cleared successfully");
-      }
-    } catch (error) {
-      console.error('Error clearing filters:', error);
-      alert('Failed to clear filters');
-    }
-  };
+  // // Clear filters
+  // const clearFilters = async () => {
+  //   try {
+  //     const response = await axios.post('http://localhost:4000/clearFilters');
+  //     if (response.data.success) {
+  //       setIsFiltered(false);
+  //       setFilterForm({
+  //         filterSem: "",
+  //         FilterDep: "",
+  //       });
+  //       await fetchTableData();
+  //       alert("Filters cleared successfully");
+  //     }
+  //   } catch (error) {
+  //     console.error('Error clearing filters:', error);
+  //     alert('Failed to clear filters');
+  //   }
+  // };
 
   // Calculate credits function
   function calculateCredits(lecture, tutorial, practical) {
@@ -298,7 +302,7 @@ function Course() {
     try {
       // Map the serial_no to update the existing rows
       for (const course of courses) {
-        await axios.patch(`http://localhost:4000/api/credits/${course.serial_no}`, {
+        await axios.patch(`http://localhost:4000/api/course/credits/${course.serial_no}`, {
           course_code: course.courseCode,
           course_name: course.courseTitle,
           lecture: course.lecture,
@@ -693,69 +697,14 @@ function Course() {
         <button onClick={handleNext} disabled={currentSem >= 8}>Next Semester</button>
         <button onClick={handleBack} disabled={currentSem <= 1}>Back to Previous Semester</button>
         <button onClick={navigateSummary}>Generate Summary</button>
+        <button onClick={navigateRegulations}>New Regulations</button>
       </div>
 
-      {/* Filter Section */}
-      <div className="filter-container">
-        <div className="form-part">
-          <h4 className="part-title">Filter Details</h4>
-          <div className="form-fields">
-            <input
-              type="number"
-              name="filterSem"
-              placeholder="Enter sem no"
-              value={filterForm.filterSem}
-              onChange={handleFilterChange}
-            />
-            <input
-              type="text"
-              name="FilterDep"
-              placeholder="Enter the department"
-              value={filterForm.FilterDep}
-              onChange={handleFilterChange}
-            />
-          </div>
-          <button onClick={filtertable} className="generate-table-button">Apply filter</button>
-          <button onClick={clearFilters} disabled={!isFiltered} className="generate-table-button">Clear Filters</button>
-        </div>
-      </div>
+
 
       {/* Filtered Results Table */}
 {tableData.length > 0 && (
   <div className="filtered-results-container">
-    <h3>Filtered Results</h3>
-    <table className="data-table">
-      <thead>
-        <tr>
-          <th>Course Code</th>
-          <th>Course Name</th>
-          <th>Lecture</th>
-          <th>Tutorial</th>
-          <th>Practical</th>
-          <th>Credits</th>
-          <th>CA Marks</th>
-          <th>FE Marks</th>
-          <th>Total Marks</th>
-          <th>Type</th>
-        </tr>
-      </thead>
-      <tbody>
-        {tableData.map((course, index) => (
-          <tr key={index}>
-            <td>{course.course_code}</td>
-            <td>{course.course_name}</td>
-            <td>{course.lecture}</td>
-            <td>{course.tutorial}</td>
-            <td>{course.practical}</td>
-            <td>{course.credits}</td>
-            <td>{course.ca_marks}</td>
-            <td>{course.fe_marks}</td>
-            <td>{course.total_marks}</td>
-            <td>{course.type}</td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
   </div>
 )}
     </div>

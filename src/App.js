@@ -8,6 +8,7 @@ import Course from "./frontend/Course.js";
 import Summary from "./frontend/Summary.js";
 import FacultyLogin from "./frontend/FacultyLogin.js";
 import CourseDetailsPage from "./frontend/CourseDetailsPage.js";
+import Regulations from "./frontend/Regulations.js";
 
 function App() {
   return (
@@ -21,6 +22,7 @@ function App() {
         <Route path="/faculty" element={<Faculty />} /> {/* Syllabus route */}
         <Route path="/course-details" element={<CourseDetailsPage />} />
         <Route path="/Summary" element={<Summary />} />
+        <Route path="/Regulations" element={<Regulations />} />
       </Routes>
     </div>
   );
