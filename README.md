@@ -23,3 +23,13 @@ summary table added
 
 26/1/2025:
 modified the supabase table structure in backend, categorised and formatted the project.
+
+4/2/2025:
+Handling the feature "new regulations" without retyping every course once again every four years.
+
+9/2/2025:
+Completed faculty login part, formatted inputs, assigned courses to faculties.
+Added a new category "mandatory" and classified further.
+
+10/2/2025:
+Formatted the entire backend part.
