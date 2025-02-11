@@ -1055,7 +1055,7 @@ app.patch("/api/credits/:serial_no", async (req, res) => {
     const parsedCaMarks = isNaN(ca_marks) || ca_marks === "" ? 0 : parseInt(ca_marks);
     const parsedFeMarks = isNaN(fe_marks) || fe_marks === "" ? 0 : parseInt(fe_marks);
     const parsedTotalMarks = isNaN(total_marks) || total_marks === "" ? 0 : parseInt(total_marks);
-
+    
     const { data, error } = await supabase
       .from("credits")
       .update({

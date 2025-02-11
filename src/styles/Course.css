@@ -101,3 +101,52 @@
 }
 
 
+
+
+
+
+
+
+
+.existing-courses-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed; /* Ensures fixed column width */
+}
+
+.existing-courses-table th,
+.existing-courses-table td {
+  border: 1px solid #ddd;
+  padding: 8px;
+  text-align: center;
+  word-wrap: break-word; /* Ensures text wraps within the column */
+  white-space: normal; /* Allows text to wrap naturally */
+}
+
+.existing-courses-table th:nth-child(1), 
+.existing-courses-table td:nth-child(1) { width: 10%; } /* Course Code */
+.existing-courses-table th:nth-child(2), 
+.existing-courses-table td:nth-child(2) { width: 20%; } /* Course Title */
+.existing-courses-table th:nth-child(3), 
+.existing-courses-table td:nth-child(3) { width: 10%; } /* Lecture */
+.existing-courses-table th:nth-child(4), 
+.existing-courses-table td:nth-child(4) { width: 10%; } /* Tutorial */
+.existing-courses-table th:nth-child(5), 
+.existing-courses-table td:nth-child(5) { width: 10%; } /* Practical */
+.existing-courses-table th:nth-child(6), 
+.existing-courses-table td:nth-child(6) { width: 11%; } /* Credits */
+.existing-courses-table th:nth-child(7), 
+.existing-courses-table td:nth-child(7) { width: 7%; } /* CA */
+.existing-courses-table th:nth-child(8), 
+.existing-courses-table td:nth-child(8) { width: 7%; } /* FE */
+.existing-courses-table th:nth-child(9), 
+.existing-courses-table td:nth-child(9) { width: 7%; } /* Total */
+.existing-courses-table th:nth-child(10), 
+.existing-courses-table td:nth-child(10) { width: 12%; } /* Type */
+
+
+th.sno-column,
+td.sno-column {
+  width: 300px; /* Adjust this value as needed */
+  text-align: center; /* Optional: Centers the text */
+}

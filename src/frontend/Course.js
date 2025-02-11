@@ -40,139 +40,249 @@ function Course() {
     navigate("/Regulations");
   };
 
-  // Fetch data when semester changes
-  // useEffect(() => {
-  //   const fetchData = async () => {
-  //     try {
-  //       // Fetch semester info
-  //       const semResponse = await axios.get(`http://localhost:4000/api/seminfo/${currentSem}`);
-  //       const semInfo = semResponse.data;
-
-  //       // Fetch courses for the current semester
-  //       const coursesResponse = await axios.get(`http://localhost:4000/api/courses/${currentSem}`);
-  //       const existingCoursesData = coursesResponse.data;
-
-  //       // Update common info
-  //       setCommonInfo(prev => ({
-  //         ...prev,
-  //         practicalCourses: semInfo.practical_courses,
-  //         theoryCourses: semInfo.theory_courses,
-  //         semNo: currentSem
-  //       }));
-
-  //       // Format courses and existing courses
-  //       if (existingCoursesData.length > 0) {
-  //         const formattedCourses = existingCoursesData.map((course) => ({
-  //           serial_no: course.serial_no,
-  //           courseCode: course.course_code,
-  //           courseTitle: course.course_name,
-  //           lecture: course.lecture || 0,
-  //           tutorial: course.tutorial || 0,
-  //           practical: course.practical || 0,
-  //           credits: course.credits || 0,
-  //           type: course.type || "",
-  //           faculty: course.faculty || "",
-  //           courseType: course.category || "",
-  //         }));
-
-  //         setCourses(formattedCourses);
-  //         setExistingCourses(existingCoursesData);
-
-  //         // Calculate total row
-  //         const totals = formattedCourses.reduce(
-  //           (acc, course) => ({
-  //             lecture: acc.lecture + Number(course.lecture || 0),
-  //             tutorial: acc.tutorial + Number(course.tutorial || 0),
-  //             practical: acc.practical + Number(course.practical || 0),
-  //             credits: acc.credits + Number(course.credits || 0),
-  //           }),
-  //           { lecture: 0, tutorial: 0, practical: 0, credits: 0 }
-  //         );
-  //         setTotalRow(totals);
-  //       } else {
-  //         // Reset courses and totals if no data for current semester
-  //         setCourses([]);
-  //         setExistingCourses([]);
-  //         setTotalRow({ lecture: 0, tutorial: 0, practical: 0, credits: 0 });
-  //       }
-  //     } catch (error) {
-  //       console.error("Error fetching data:", error);
-  //       // Reset all states on error
-  //       setCourses([]);
-  //       setExistingCourses([]);
-  //       setTotalRow({ lecture: 0, tutorial: 0, practical: 0, credits: 0 });
+  // const fetchData = async () => {
+  //   try {
+  //     // Reset existing states
+  //     setCourses([]);
+  //     setExistingCourses([]);
+  //     setTotalRow({ lecture: 0, tutorial: 0, practical: 0, credits: 0 });
+  
+  //     // Fetch semester info first
+  //     const semResponse = await axios.get(`http://localhost:4000/api/course/seminfo/${currentSem}`);
+  //     const semInfo = semResponse.data;
+  
+  //     // Fetch existing courses for this semester
+  //     const coursesResponse = await axios.get(`http://localhost:4000/api/course/courses/${currentSem}`);
+  //     const existingCoursesData = coursesResponse.data;
+  
+  //     // Determine starting serial number based on the last existing course
+  //     let lastSerialNo = 0;
+  //     if (existingCoursesData.length > 0) {
+  //       lastSerialNo = Math.max(...existingCoursesData.map(course => course.serial_no), 0);
   //     }
-  //   };
+  
+  //     // Function to generate serial numbers dynamically if no existing data
+  //     const generateSerialNumbers = (count, category) => {
+  //       return Array.from({ length: count }, () => ({
+  //         sem_no: currentSem,
+  //         serial_no: ++lastSerialNo, // Incrementing serial number
+  //         courseCode: '',
+  //         courseTitle: '',
+  //         lecture: 0,
+  //         tutorial: 0,
+  //         practical: 0,
+  //         credits: 0,
+  //         type: '',
+  //         faculty: '',
+  //         courseType: category
+  //       }));
+  //     };
+  
+  //     let generatedCourses = [];
+  //     if (existingCoursesData.length === 0) {
+  //       // No existing courses, generate serial numbers dynamically
+  //       generatedCourses = [
+  //         ...generateSerialNumbers(semInfo.theory_courses, 'theory'),
+  //         ...generateSerialNumbers(semInfo.practical_courses, 'practical'),
+  //         ...generateSerialNumbers(semInfo.mandatory_courses, 'mandatory')
+  //       ];
+  //     } else {
+  //       // Use existing courses data with serial numbers from the database
+  //       generatedCourses = existingCoursesData.map(course => ({
+  //         serial_no: course.serial_no,
+  //         courseCode: course.course_code,
+  //         courseTitle: course.course_name,
+  //         lecture: course.lecture,
+  //         tutorial: course.tutorial,
+  //         practical: course.practical,
+  //         credits: course.credits,
+  //         type: course.type,
+  //         faculty: course.faculty,
+  //         courseType: course.category
+  //       }));
+  //     }
+  
+  //     // Update state with the new course data
+  //     setCourses(generatedCourses);
+  //     setExistingCourses(existingCoursesData);
+  
+  //     // Update common info
+  //     setCommonInfo(prev => ({
+  //       ...prev,
+  //       practicalCourses: semInfo.practical_courses,
+  //       theoryCourses: semInfo.theory_courses,
+  //       mandatoryCourses: semInfo.mandatory_courses || 0,
+  //       semNo: currentSem
+  //     }));
+  
+  //     // Calculate total row
+  //     const totals = generatedCourses.reduce(
+  //       (acc, course) => ({
+  //         lecture: acc.lecture + Number(course.lecture || 0),
+  //         tutorial: acc.tutorial + Number(course.tutorial || 0),
+  //         practical: acc.practical + Number(course.practical || 0),
+  //         credits: acc.credits + Number(course.credits || 0),
+  //       }),
+  //       { lecture: 0, tutorial: 0, practical: 0, credits: 0 }
+  //     );
+  //     setTotalRow(totals);
+  //   } catch (error) {
+  //     console.error("Error fetching data:", error);
+  //     setCourses([]);
+  //     setExistingCourses([]);
+  //     setTotalRow({ lecture: 0, tutorial: 0, practical: 0, credits: 0 });
+  //   }
+  // };
+  
+  
+  
 
+
+  // // Helper function to merge existing courses with empty rows
+  // const mergeExistingCourses = (emptyRows, existingCourses, courseType) => {
+  //   // Filter existing courses by the specific course type
+  //   const filteredCourses = existingCourses.filter(
+  //     course => course.category.toLowerCase() === courseType
+  //   );
+  
+  //   return emptyRows.map((emptyRow, index) => {
+  //     const matchingCourse = filteredCourses[index];
+      
+  //     return matchingCourse ? {
+  //       ...emptyRow,
+  //       courseCode: matchingCourse.course_code,
+  //       courseTitle: matchingCourse.course_name,
+  //       lecture: matchingCourse.lecture,
+  //       tutorial: matchingCourse.tutorial,
+  //       practical: matchingCourse.practical,
+  //       credits: matchingCourse.credits,
+  //       type: matchingCourse.type,
+  //       faculty: matchingCourse.faculty
+  //     } : emptyRow;
+  //   });
+  // };
+
+
+  // // Initial data fetch
+  // useEffect(() => {
   //   fetchData();
+  //   fetchTableData();
   // }, [currentSem]);
 
   const fetchData = async () => {
     try {
-
       setCourses([]);
       setExistingCourses([]);
       setTotalRow({ lecture: 0, tutorial: 0, practical: 0, credits: 0 });
 
-
+      // Fetch semester info
       const semResponse = await axios.get(`http://localhost:4000/api/course/seminfo/${currentSem}`);
       const semInfo = semResponse.data;
 
+      // Create empty course templates
+      const createEmptyRows = (count, category) => {
+        return Array.from({ length: count }, () => ({
+          serial_no: "",
+          courseCode: "",
+          courseTitle: "",
+          lecture: 0,
+          tutorial: 0,
+          practical: 0,
+          credits: 0,
+          type: "",
+          faculty: "",
+          courseType: category
+        }));
+      };
+
+      // Generate empty rows based on semInfo
+      const emptyRows = {
+        theory: createEmptyRows(semInfo.theory_courses, "theory"),
+        practical: createEmptyRows(semInfo.practical_courses, "practical"),
+        mandatory: createEmptyRows(semInfo.mandatory_courses || 0, "mandatory")
+      };
+
+      // Fetch existing courses
       const coursesResponse = await axios.get(`http://localhost:4000/api/course/courses/${currentSem}`);
       const existingCoursesData = coursesResponse.data;
 
-      setCommonInfo(prev => ({
-        ...prev,
-        practicalCourses: semInfo.practical_courses,
-        theoryCourses: semInfo.theory_courses,
-        mandatoryCourses: semInfo.mandatory_courses || 0,
-        semNo: currentSem
-      }));
+      // Sort and organize existing courses by category
+      const organizedCourses = {
+        theory: [],
+        practical: [],
+        mandatory: []
+      };
 
-      if (existingCoursesData.length > 0) {
-        const formattedCourses = existingCoursesData.map((course) => ({
-          serial_no: course.serial_no,
-          courseCode: course.course_code,
-          courseTitle: course.course_name,
-          lecture: course.lecture || 0,
-          tutorial: course.tutorial || 0,
-          practical: course.practical || 0,
-          credits: course.credits || 0,
-          type: course.type || "",
-          faculty: course.faculty || "",
-          courseType: course.category || "",
-        }));
+      existingCoursesData.forEach(course => {
+        if (organizedCourses[course.category.toLowerCase()]) {
+          organizedCourses[course.category.toLowerCase()].push({
+            serial_no: course.serial_no,
+            courseCode: course.course_code,
+            courseTitle: course.course_name,
+            lecture: course.lecture,
+            tutorial: course.tutorial,
+            practical: course.practical,
+            credits: course.credits,
+            type: course.type,
+            faculty: course.faculty,
+            courseType: course.category.toLowerCase()
+          });
+        }
+      });
 
-        setCourses(formattedCourses);
-        setExistingCourses(existingCoursesData);
+      // Sort each category by serial number
+      Object.keys(organizedCourses).forEach(category => {
+        organizedCourses[category].sort((a, b) => a.serial_no - b.serial_no);
+      });
 
-        const totals = formattedCourses.reduce(
-          (acc, course) => ({
-            lecture: acc.lecture + Number(course.lecture || 0),
-            tutorial: acc.tutorial + Number(course.tutorial || 0),
-            practical: acc.practical + Number(course.practical || 0),
-            credits: acc.credits + Number(course.credits || 0),
-          }),
-          { lecture: 0, tutorial: 0, practical: 0, credits: 0 }
-        );
-        setTotalRow(totals);
-      } else {
-        setCourses([]);
-        setExistingCourses([]);
-        setTotalRow({ lecture: 0, tutorial: 0, practical: 0, credits: 0 });
-      }
+      // Merge existing courses with empty rows
+      const mergedCourses = Object.keys(emptyRows).flatMap(category => {
+        const existing = organizedCourses[category];
+        const empty = emptyRows[category];
+        return existing.concat(empty.slice(existing.length));
+      });
+
+      setCourses(mergedCourses);
+      setExistingCourses(existingCoursesData);
+      updateCommonInfo(semInfo);
+      calculateTotalRow(mergedCourses);
     } catch (error) {
       console.error("Error fetching data:", error);
-      setCourses([]);
-      setExistingCourses([]);
-      setTotalRow({ lecture: 0, tutorial: 0, practical: 0, credits: 0 });
+      resetStates();
     }
   };
 
-  // Initial data fetch
+  const updateCommonInfo = (semInfo) => {
+    setCommonInfo(prev => ({
+      ...prev,
+      practicalCourses: semInfo.practical_courses,
+      theoryCourses: semInfo.theory_courses,
+      mandatoryCourses: semInfo.mandatory_courses || 0,
+      semNo: currentSem
+    }));
+  };
+
+  const calculateTotalRow = (courseData) => {
+    const totals = courseData.reduce(
+      (acc, course) => ({
+        lecture: acc.lecture + Number(course.lecture || 0),
+        tutorial: acc.tutorial + Number(course.tutorial || 0),
+        practical: acc.practical + Number(course.practical || 0),
+        credits: acc.credits + Number(course.credits || 0),
+      }),
+      { lecture: 0, tutorial: 0, practical: 0, credits: 0 }
+    );
+    setTotalRow(totals);
+  };
+
+  const resetStates = () => {
+    setCourses([]);
+    setExistingCourses([]);
+    setTotalRow({ lecture: 0, tutorial: 0, practical: 0, credits: 0 });
+  };
+
   useEffect(() => {
     fetchData();
-    fetchTableData();
   }, [currentSem]);
 
   const handleCommonInfoChange = useCallback((e) => {
@@ -200,45 +310,6 @@ function Course() {
       console.error('Error fetching data:', error);
     }
   };
-
-  // Filter table
-  // const filtertable = async () => {
-  //   const filterData = {
-  //     filterSem: Number(filterForm.filterSem),
-  //     FilterDep: filterForm.FilterDep
-  //   };
-
-  //   try {
-  //     const response = await axios.post('http://localhost:4000/filtertable', filterData);
-  //     if (response.data.success) {
-  //       setIsFiltered(true);
-  //       await fetchTableData();
-  //       alert("Filter applied successfully");
-  //     }
-  //   } catch (error) {
-  //     console.error('Error:', error.response?.data || error.message);
-  //     alert(`Failed to apply filter: ${error.response?.data?.error || error.message}`);
-  //   }
-  // };
-
-  // // Clear filters
-  // const clearFilters = async () => {
-  //   try {
-  //     const response = await axios.post('http://localhost:4000/clearFilters');
-  //     if (response.data.success) {
-  //       setIsFiltered(false);
-  //       setFilterForm({
-  //         filterSem: "",
-  //         FilterDep: "",
-  //       });
-  //       await fetchTableData();
-  //       alert("Filters cleared successfully");
-  //     }
-  //   } catch (error) {
-  //     console.error('Error clearing filters:', error);
-  //     alert('Failed to clear filters');
-  //   }
-  // };
 
   // Calculate credits function
   function calculateCredits(lecture, tutorial, practical) {
@@ -298,34 +369,65 @@ function Course() {
   }, []);
 
   // Submit handler
+  // const handleSubmit = useCallback(async () => {
+  //   try {
+  //     // Map the serial_no to update the existing rows
+  //     for (const course of courses) {
+  //       await axios.patch(`http://localhost:4000/api/course/credits/${course.serial_no}`, {
+  //         course_code: course.courseCode,
+  //         course_name: course.courseTitle,
+  //         lecture: course.lecture,
+  //         tutorial: course.tutorial,
+  //         practical: course.practical,
+  //         credits: course.credits,
+  //         ca_marks: commonInfo.caMarks,
+  //         fe_marks: commonInfo.feMarks,
+  //         total_marks: commonInfo.totalMarks,
+  //         type: course.type,
+  //         faculty: course.faculty,
+  //         department: commonInfo.department,
+  //         sem_no: currentSem, // Added semester number
+  //       });
+  //     }
+  //     alert("Data updated successfully!");
+  //     // Refresh data after submission
+  //     fetchData();
+  //   } catch (error) {
+  //     console.error("Error updating data:", error);
+  //     alert("Failed to update data.");
+  //   }
+  // }, [courses, commonInfo, currentSem]);
+
   const handleSubmit = useCallback(async () => {
     try {
-      // Map the serial_no to update the existing rows
       for (const course of courses) {
-        await axios.patch(`http://localhost:4000/api/course/credits/${course.serial_no}`, {
-          course_code: course.courseCode,
-          course_name: course.courseTitle,
-          lecture: course.lecture,
-          tutorial: course.tutorial,
-          practical: course.practical,
-          credits: course.credits,
-          ca_marks: commonInfo.caMarks,
-          fe_marks: commonInfo.feMarks,
-          total_marks: commonInfo.totalMarks,
-          type: course.type,
-          faculty: course.faculty,
-          department: commonInfo.department,
-          sem_no: currentSem, // Added semester number
-        });
+        if (course.courseCode && course.serial_no) {
+          await axios.patch(`http://localhost:4000/api/course/credits/${course.courseCode}`, {
+            serial_no: course.serial_no,
+            course_name: course.courseTitle,
+            lecture: course.lecture,
+            tutorial: course.tutorial,
+            practical: course.practical,
+            credits: course.credits,
+            ca_marks: commonInfo.caMarks,
+            fe_marks: commonInfo.feMarks,
+            total_marks: commonInfo.totalMarks,
+            type: course.type,
+            faculty: course.faculty,
+            department: commonInfo.department,
+            sem_no: currentSem,
+            category: course.courseType
+          });
+        }
       }
       alert("Data updated successfully!");
-      // Refresh data after submission
       fetchData();
     } catch (error) {
       console.error("Error updating data:", error);
       alert("Failed to update data.");
     }
   }, [courses, commonInfo, currentSem]);
+
 
   // Navigation handlers
   const handleNext = useCallback(() => {
@@ -428,7 +530,7 @@ function Course() {
         <table className="data-table">
           <thead>
             <tr>
-              <th>Serial No</th>
+              <th className="sno-column">Serial No</th>
               <th className="wide-column">Course Code</th>
               <th className="extra-wide-column">Course Title</th>
               <th>Lecture</th>
@@ -444,7 +546,14 @@ function Course() {
               .filter((course) => course.courseType === "theory")
               .map((course, index) => (
                 <tr key={`theory-${index}`}>
-                  <td>{course.serial_no}</td>
+                  <td>
+  <input
+    type="number"
+    value={course.serial_no || ""}
+    onChange={(e) => handleCourseChange(courses.findIndex((c) => c === course), "serial_no", e.target.value)}
+  />
+</td>
+
                   {Object.keys(course)
                     .filter((key) => key !== "courseType" && key !== "serial_no")
                     .map((field) => (
@@ -486,7 +595,14 @@ function Course() {
               .filter((course) => course.courseType === "practical")
               .map((course, index) => (
                 <tr key={`practical-${index}`}>
-                  <td>{course.serial_no}</td>
+                  <td>
+  <input
+    type="number"
+    value={course.serial_no || ""}
+    onChange={(e) => handleCourseChange(courses.findIndex((c) => c === course), "serial_no", e.target.value)}
+  />
+</td>
+
                   {Object.keys(course)
                     .filter((key) => key !== "courseType" && key !== "serial_no")
                     .map((field) => (
@@ -508,11 +624,11 @@ function Course() {
         </table>
 
         {/* Mandatory Courses Section */}
-        <h4>Mandatory Courses</h4>
+        {/* <h4>Mandatory Courses</h4>
         <table className="data-table">
           <thead>
             <tr>
-              <th>Serial No</th>
+              <th className="sno-column">Serial No</th>
               <th className="wide-column">Course Code</th>
               <th className="extra-wide-column">Course Title</th>
               <th>Lecture</th>
@@ -528,7 +644,14 @@ function Course() {
               .filter((course) => course.courseType === "mandatory")
               .map((course, index) => (
                 <tr key={`mandatory-${index}`}>
-                  <td>{course.serial_no}</td>
+                  <td>
+                    <input
+                      type="number"
+                      value={course.serial_no || ""}
+                      onChange={(e) => handleCourseChange(courses.findIndex((c) => c === course), "serial_no", e.target.value)}
+                    />
+                  </td>
+
                   {Object.keys(course)
                     .filter((key) => key !== "courseType" && key !== "serial_no")
                     .map((field) => (
@@ -557,7 +680,127 @@ function Course() {
               <td colSpan="2"></td>
             </tr>
           </tbody>
-        </table>
+        </table> */}
+
+<h4>Mandatory Courses</h4>
+<table className="data-table">
+  <thead>
+    <tr>
+      <th className="sno-column">Serial No</th>
+      <th className="wide-column">Course Code</th>
+      <th className="extra-wide-column">Course Title</th>
+      <th>Lecture</th>
+      <th>Tutorial</th>
+      <th>Practical</th>
+      <th>Credits</th>
+      <th className="wide-column">Type</th>
+      <th className="wide-column">Faculty Assigned</th>
+    </tr>
+  </thead>
+  <tbody>
+    {courses
+      .filter((course) => course.courseType === "mandatory")
+      .map((course, index) => (
+        <tr key={`mandatory-${index}`}>
+          <td>
+            <input
+              type="number"
+              value={course.serial_no || ""}
+              onChange={(e) =>
+                handleCourseChange(courses.findIndex((c) => c === course), "serial_no", e.target.value)
+              }
+            />
+          </td>
+          <td>
+            <input
+              type="text"
+              value={course.courseCode || ""}
+              onChange={(e) =>
+                handleCourseChange(courses.findIndex((c) => c === course), "courseCode", e.target.value)
+              }
+            />
+          </td>
+          <td>
+            <input
+              type="text"
+              value={course.courseTitle || ""}
+              onChange={(e) =>
+                handleCourseChange(courses.findIndex((c) => c === course), "courseTitle", e.target.value)
+              }
+            />
+          </td>
+          <td>
+            <input
+              type="number"
+              value={course.lecture || ""}
+              onChange={(e) =>
+                handleCourseChange(courses.findIndex((c) => c === course), "lecture", e.target.value)
+              }
+            />
+          </td>
+          <td>
+            <input
+              type="number"
+              value={course.tutorial || ""}
+              onChange={(e) =>
+                handleCourseChange(courses.findIndex((c) => c === course), "tutorial", e.target.value)
+              }
+            />
+          </td>
+          <td>
+            <input
+              type="number"
+              value={course.practical || ""}
+              onChange={(e) =>
+                handleCourseChange(courses.findIndex((c) => c === course), "practical", e.target.value)
+              }
+            />
+          </td>
+          <td>
+            <input
+              type="number"
+              value={course.credits || ""}
+              onChange={(e) =>
+                handleCourseChange(courses.findIndex((c) => c === course), "credits", e.target.value)
+              }
+            />
+          </td>
+          <td>
+            <input
+              type="text"
+              value={course.type || ""}
+              onChange={(e) =>
+                handleCourseChange(courses.findIndex((c) => c === course), "type", e.target.value)
+              }
+            />
+          </td>
+          <td>
+            <input
+              type="text"
+              value={course.faculty || ""}
+              onChange={(e) =>
+                handleCourseChange(courses.findIndex((c) => c === course), "faculty", e.target.value)
+              }
+            />
+          </td>
+        </tr>
+      ))}
+  </tbody>
+  <tbody>
+    <tr className="total-row">
+      <td colSpan="3" style={{ textAlign: "center", fontWeight: "bold" }}>Total</td>
+      <td style={{ textAlign: "center", fontWeight: "bold" }}>{totalRow.lecture}</td>
+      <td style={{ textAlign: "center", fontWeight: "bold" }}>{totalRow.tutorial}</td>
+      <td style={{ textAlign: "center", fontWeight: "bold" }}>{totalRow.practical}</td>
+      <td style={{ textAlign: "center", fontWeight: "bold" }}>{totalRow.credits}</td>
+      <td colSpan="2"></td>
+    </tr>
+  </tbody>
+</table>
+
+
+
+
       </div>
 
       {/* Existing Courses Section */}
@@ -712,3 +955,50 @@ function Course() {
 }
 
 export default Course;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

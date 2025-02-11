@@ -232,11 +232,11 @@ function SemInfo() {
       });
 
       // API calls
-      const semInfoResponse = await axios.post("http://localhost:4000/api/updateSemInfo", {
+      const semInfoResponse = await axios.post("http://localhost:4000/api/seminfo/updateSemInfo", {
         semData: semInfoPayload,
       });
 
-      const creditsResponse = await axios.post("http://localhost:4000/api/updateCredits", {
+      const creditsResponse = await axios.post("http://localhost:4000/api/seminfo/updateCredits", {
         creditsData: creditsPayload,
       });
 
