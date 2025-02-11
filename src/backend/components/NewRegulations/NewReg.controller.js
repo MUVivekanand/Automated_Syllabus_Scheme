@@ -17,14 +17,14 @@ const getAllCourses = async (req, res) => {
 };
 
 const updateCourse = async (req, res) => {
-  const { serial_no } = req.params;
+  const { course_code } = req.params;
   const updatedCourse = req.body;
 
   try {
     const { error } = await supabase
       .from("credits")
       .update(updatedCourse)
-      .eq("serial_no", serial_no);
+      .eq("course_code", course_code);
 
     if (error) throw error;
 
@@ -34,14 +34,15 @@ const updateCourse = async (req, res) => {
   }
 };
 
+
 const deleteCourse = async (req, res) => {
-  const { serial_no } = req.params;
+  const { course_code } = req.params;
 
   try {
     const { data, error } = await supabase
       .from("credits")
       .delete()
-      .eq("serial_no", serial_no);
+      .eq("course_code", course_code);
 
     if (error) throw error;
 
@@ -55,7 +56,9 @@ const addCourse = async (req, res) => {
   const newCourse = req.body;
 
   try {
-    const { data, error } = await supabase.from("credits").upsert(newCourse, { onConflict: ["serial_no"] });
+    const { data, error } = await supabase
+      .from("credits")
+      .upsert(newCourse, { onConflict: ["course_code"] });
 
     if (error) throw error;
 
