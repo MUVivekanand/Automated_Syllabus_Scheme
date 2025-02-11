@@ -24,9 +24,12 @@ function Faculty() {
 
   const getCourses = async () => {
     try {
-      const response = await axios.get("http://localhost:4000/getCourse", {
-        params: { facultyName },
-      });
+      const response = await axios.get(
+        "http://localhost:4000/api/faculty/getCourse",
+        {
+          params: { facultyName },
+        }
+      );
 
       if (response.data.success) {
         setCourses(response.data.courses);
@@ -53,7 +56,7 @@ function Faculty() {
     const [courseCode] = selectedCourse.split(" - ");
     try {
       const response = await axios.get(
-        "http://localhost:4000/getCourseDetails",
+        "http://localhost:4000/api/faculty/getCourseDetails",
         {
           params: { courseCode },
         }
@@ -102,7 +105,7 @@ function Faculty() {
 
     try {
       const response = await axios.post(
-        "http://localhost:4000/updateCourseDetails",
+        "http://localhost:4000/api/faculty/updateCourseDetails",
         {
           courseCode,
           facultyName,
