@@ -66,10 +66,6 @@ if (!supabase) {
 //   }
 // });
 
-
-
-
-
 app.get("/api/seminfo/:semNo", async (req, res) => {
   const { semNo } = req.params;
 
@@ -87,7 +83,7 @@ app.get("/api/seminfo/:semNo", async (req, res) => {
     if (data) {
       res.json({
         ...data,
-        mandatory_courses: data.mandatory_courses || 0
+        mandatory_courses: data.mandatory_courses || 0,
       });
     } else {
       res.status(404).json({ message: "Semester data not found" });
@@ -97,9 +93,6 @@ app.get("/api/seminfo/:semNo", async (req, res) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 });
-
-
-
 
 // app.post("/api/courses", async (req, res) => {
 //   try {
@@ -809,9 +802,6 @@ app.put("/updateTableData", async (req, res) => {
 //   }
 // });
 
-
-
-
 app.post("/api/updateSemInfo", async (req, res) => {
   const { semData } = req.body;
 
@@ -860,7 +850,6 @@ app.post("/api/updateSemInfo", async (req, res) => {
   }
 });
 
-
 app.post("/api/updateCredits", async (req, res) => {
   const { creditsData } = req.body;
 
@@ -873,7 +862,9 @@ app.post("/api/updateCredits", async (req, res) => {
 
   try {
     // First, delete existing credits for the semesters being updated
-    const semesterNumbers = [...new Set(creditsData.map((item) => item.sem_no))];
+    const semesterNumbers = [
+      ...new Set(creditsData.map((item) => item.sem_no)),
+    ];
 
     const { error: deleteError } = await supabase
       .from("credits")
@@ -940,7 +931,6 @@ app.post("/api/updateCredits", async (req, res) => {
     });
   }
 });
-
 
 app.get("/api/seminfo/:semNo", async (req, res) => {
   const { semNo } = req.params;
@@ -1027,9 +1017,6 @@ app.get("/api/seminfo/:semNo", async (req, res) => {
 //   }
 // });
 
-
-
-
 app.patch("/api/credits/:serial_no", async (req, res) => {
   try {
     const { serial_no } = req.params;
@@ -1046,16 +1033,22 @@ app.patch("/api/credits/:serial_no", async (req, res) => {
       type,
       faculty,
       department,
-      category // Add category field to handle mandatory courses
+      category, // Add category field to handle mandatory courses
     } = req.body;
 
-    const parsedLecture = isNaN(lecture) || lecture === "" ? 0 : parseInt(lecture);
-    const parsedTutorial = isNaN(tutorial) || tutorial === "" ? 0 : parseInt(tutorial);
-    const parsedPractical = isNaN(practical) || practical === "" ? 0 : parseInt(practical);
-    const parsedCaMarks = isNaN(ca_marks) || ca_marks === "" ? 0 : parseInt(ca_marks);
-    const parsedFeMarks = isNaN(fe_marks) || fe_marks === "" ? 0 : parseInt(fe_marks);
-    const parsedTotalMarks = isNaN(total_marks) || total_marks === "" ? 0 : parseInt(total_marks);
-    
+    const parsedLecture =
+      isNaN(lecture) || lecture === "" ? 0 : parseInt(lecture);
+    const parsedTutorial =
+      isNaN(tutorial) || tutorial === "" ? 0 : parseInt(tutorial);
+    const parsedPractical =
+      isNaN(practical) || practical === "" ? 0 : parseInt(practical);
+    const parsedCaMarks =
+      isNaN(ca_marks) || ca_marks === "" ? 0 : parseInt(ca_marks);
+    const parsedFeMarks =
+      isNaN(fe_marks) || fe_marks === "" ? 0 : parseInt(fe_marks);
+    const parsedTotalMarks =
+      isNaN(total_marks) || total_marks === "" ? 0 : parseInt(total_marks);
+
     const { data, error } = await supabase
       .from("credits")
       .update({
@@ -1071,7 +1064,7 @@ app.patch("/api/credits/:serial_no", async (req, res) => {
         type,
         faculty,
         department,
-        category
+        category,
       })
       .eq("serial_no", serial_no);
 
@@ -1085,10 +1078,6 @@ app.patch("/api/credits/:serial_no", async (req, res) => {
     res.status(500).json({ message: "Failed to update course" });
   }
 });
-
-
-
-
 
 app.get("/api/courses/:semNo", async (req, res) => {
   try {

@@ -13,10 +13,13 @@ function FacultyLogin() {
     e.preventDefault();
 
     try {
-      const response = await axios.post("http://localhost:4000/facultyLogin", {
-        username: username.trim(),
-        password: password.trim(), // Include password in the request
-      });
+      const response = await axios.post(
+        "http://localhost:4000/api/faculty/facultyLogin",
+        {
+          username: username.trim(),
+          password: password.trim(), // Include password in the request
+        }
+      );
 
       if (response.data.success) {
         localStorage.setItem("facultyName", response.data.facultyName); // Store name for later use

@@ -1,4 +1,5 @@
 const express = require("express");
+
 const {
   getSemesterInfo,
   updateCourse,
@@ -11,6 +12,6 @@ const router = express.Router();
 router.get("/seminfo/:semNo", getSemesterInfo);
 router.patch("/credits/:course_code", updateCourse);
 router.get("/getTableData", getTableData);
-router.get("/courses/:semNo",getCourses);
+router.get("/courses/:semNo", getCourses);
 
 module.exports = router;
