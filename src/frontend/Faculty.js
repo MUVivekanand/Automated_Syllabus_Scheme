@@ -236,7 +236,7 @@ function Faculty() {
       {/* Course Details Box */}
       {selectedCourse && (
         <div className="course-details-box">
-          <h4 className="section-title">Course Outcomes (COs)</h4>
+          <h4 className="section-title">Course Syllabus</h4>
           <div className="co-section">
             {courseDetails.co.map((co, i) => (
               <div key={i} className="co-entry">
