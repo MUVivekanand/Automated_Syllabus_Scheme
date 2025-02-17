@@ -12,6 +12,7 @@ function Faculty() {
   const [selectedCourse, setSelectedCourse] = useState(""); // Selected course code
   const [courseDetails, setCourseDetails] = useState({
     co: Array(5).fill({ name: "", desc: "" }),
+    hours: Array(5).fill({ hour1: "", hour2: "" }),
     textbooks: [],
     references: [],
   });
@@ -78,6 +79,7 @@ function Faculty() {
     setSelectedCourse(event.target.value);
     setCourseDetails({
       co: Array(5).fill({ name: "", desc: "" }),
+      hours: Array(5).fill({ hour1: "", hour2: "" }),
       textbooks: [],
       references: [],
     });
@@ -103,6 +105,35 @@ function Faculty() {
 
     const [courseCode, courseName] = selectedCourse.split(" - ");
 
+    // Find the selected course by course code
+    const selectedCourseDetails = courses.find(
+      (course) => course.course_code === courseCode
+    );
+
+    if (!selectedCourseDetails) {
+      alert("Course not found.");
+      return;
+    }
+
+    const { credits } = selectedCourseDetails;
+
+    // Calculate total hours by summing up the hours for each CO
+    const totalHours = courseDetails.hours.reduce(
+      (total, hour) =>
+        total + (parseInt(hour.hour1) || 0) + (parseInt(hour.hour2) || 0),
+      0
+    );
+
+    // Validate total hours based on course credits
+    const requiredHours = credits === 4 ? 60 : credits === 3 ? 45 : 0;
+
+    if (totalHours !== requiredHours) {
+      alert(
+        `Total hours must be ${requiredHours} for a course with ${credits} credits.`
+      );
+      return;
+    }
+
     try {
       const response = await axios.post(
         "http://localhost:4000/api/faculty/updateCourseDetails",
@@ -110,8 +141,9 @@ function Faculty() {
           courseCode,
           facultyName,
           coDetails: courseDetails.co,
+          hours: courseDetails.hours,
           textbooks: courseDetails.textbooks,
-          references: courseDetails.references, // Change this from 'refs' to 'references'
+          references: courseDetails.references,
         }
       );
 
@@ -122,16 +154,10 @@ function Faculty() {
             courseName: `${courseCode} - ${courseName}`,
             courseDetails: {
               ...courseDetails,
-              lecture:
-                courses.find((c) => c.course_code === courseCode)?.lecture || 0,
-              tutorial:
-                courses.find((c) => c.course_code === courseCode)?.tutorial ||
-                0,
-              practical:
-                courses.find((c) => c.course_code === courseCode)?.practical ||
-                0,
-              credits:
-                courses.find((c) => c.course_code === courseCode)?.credits || 0,
+              lecture: selectedCourseDetails.lecture || 0,
+              tutorial: selectedCourseDetails.tutorial || 0,
+              practical: selectedCourseDetails.practical || 0,
+              credits: selectedCourseDetails.credits || 0,
             },
           },
         });
@@ -229,6 +255,24 @@ function Faculty() {
                   value={co.desc}
                   onChange={(e) =>
                     handleChange("co", i, "desc", e.target.value)
+                  }
+                />
+                <input
+                  className="input-field"
+                  type="number"
+                  placeholder={`Hour 1 for CO${i + 1}`}
+                  value={courseDetails.hours[i].hour1}
+                  onChange={(e) =>
+                    handleChange("hours", i, "hour1", e.target.value)
+                  }
+                />
+                <input
+                  className="input-field"
+                  type="number"
+                  placeholder={`Hour 2 for CO${i + 1}`}
+                  value={courseDetails.hours[i].hour2}
+                  onChange={(e) =>
+                    handleChange("hours", i, "hour2", e.target.value)
                   }
                 />
               </div>
