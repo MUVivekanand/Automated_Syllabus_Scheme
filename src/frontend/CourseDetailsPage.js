@@ -31,11 +31,8 @@ function CourseDetailsPage() {
           <div key={i} className="course-topic">
             <p className="topic">
               <b>{co.name}:</b> {co.desc}{" "}
-              {courseDetails.credits === 4
-                ? "   (9+3)"
-                : courseDetails.credits === 3
-                ? "   (9)"
-                : ""}
+              {/* Display the hours as (hour1 + hour2) */}
+              {`(${courseDetails.hours[i].hour1} + ${courseDetails.hours[i].hour2})`}
             </p>
           </div>
         ))}
