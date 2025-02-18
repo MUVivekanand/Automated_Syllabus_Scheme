@@ -257,58 +257,62 @@ function SemInfo() {
       <h1 className="page-title">Semester Information</h1>
       <h3 className="subtitle">Add Total Courses for Each Semester</h3>
 
-      <div className="table-container">
-        <table className="data-table">
-          <thead>
-            <tr>
-              <th>Semester No</th>
-              <th>Theory Courses</th>
-              <th>Practical Courses</th>
-              <th>Mandatory Courses</th> {/* New Column */}
-            </tr>
-          </thead>
-          <tbody>
-            {semData.map((row, index) => (
-              <tr key={index}>
-                <td>{row.sem_no}</td>
-                <td>
-                  <input
-                    type="number"
-                    name="theoryCourses"
-                    placeholder="Enter theory courses"
-                    value={row.theory_courses}
-                    onChange={(e) =>
-                      handleInputChange(index, "theory_courses", e.target.value)
-                    }
-                  />
-                </td>
-                <td>
-                  <input
-                    type="number"
-                    name="practicalCourses"
-                    placeholder="Enter practical courses"
-                    value={row.practical_courses}
-                    onChange={(e) =>
-                      handleInputChange(index, "practical_courses", e.target.value)
-                    }
-                  />
-                </td>
-                <td>
-                  <input
-                    type="number"
-                    name="mandatoryCourses"
-                    placeholder="Enter mandatory courses"
-                    value={row.mandatory_courses}
-                    onChange={(e) =>
-                      handleInputChange(index, "mandatory_courses", e.target.value)
-                    }
-                  />
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <div className="table-container-sem">
+  <table className="data-table-sem">
+    <thead>
+      <tr>
+        <th>Semester No</th>
+        <th>Theory Courses</th>
+        <th>Practical Courses</th>
+        <th>Mandatory Courses</th>
+      </tr>
+    </thead>
+    <tbody>
+      {semData.map((row, index) => (
+        <tr key={index}>
+          <td>{row.sem_no}</td>
+          <td>
+            <input
+              type="number"
+              name="theoryCourses"
+              className="input-sem"
+              placeholder="Enter theory courses"
+              value={row.theory_courses}
+              onChange={(e) =>
+                handleInputChange(index, "theory_courses", e.target.value)
+              }
+            />
+          </td>
+          <td>
+            <input
+              type="number"
+              name="practicalCourses"
+              className="input-sem"
+              placeholder="Enter practical courses"
+              value={row.practical_courses}
+              onChange={(e) =>
+                handleInputChange(index, "practical_courses", e.target.value)
+              }
+            />
+          </td>
+          <td>
+            <input
+              type="number"
+              name="mandatoryCourses"
+              className="input-sem"
+              placeholder="Enter mandatory courses"
+              value={row.mandatory_courses}
+              onChange={(e) =>
+                handleInputChange(index, "mandatory_courses", e.target.value)
+              }
+            />
+          </td>
+        </tr>
+      ))}
+    </tbody>
+  </table>
+</div>
+
 
       <div className="total-credits-container">
         <label htmlFor="totalCredits">Total Credits:</label>

@@ -325,6 +325,9 @@ function Course() {
     } else if (parsedPractical === 2 && parsedLecture === 0 && parsedTutorial === 0) {
       credits = 1; // Practical-only case with 2 practicals
     }
+    else if (parsedPractical == 8 && parsedLecture ===0 && parsedTutorial === 0){
+      credits = 4;
+    }
     // Check lecture and tutorial combinations
     else if (parsedLecture + parsedTutorial === 4) {
       credits = 4; // Combination of lecture and tutorial adds up to 4
@@ -530,7 +533,7 @@ function Course() {
         <table className="data-table">
           <thead>
             <tr>
-              <th className="sno-column">Serial No</th>
+              <th>Serial No</th>
               <th className="wide-column">Course Code</th>
               <th className="extra-wide-column">Course Title</th>
               <th>Lecture</th>
@@ -547,12 +550,12 @@ function Course() {
               .map((course, index) => (
                 <tr key={`theory-${index}`}>
                   <td>
-  <input
-    type="number"
-    value={course.serial_no || ""}
-    onChange={(e) => handleCourseChange(courses.findIndex((c) => c === course), "serial_no", e.target.value)}
-  />
-</td>
+                      <input
+                        type="number"
+                        value={course.serial_no || ""}
+                        onChange={(e) => handleCourseChange(courses.findIndex((c) => c === course), "serial_no", e.target.value)}
+                      />
+                    </td>
 
                   {Object.keys(course)
                     .filter((key) => key !== "courseType" && key !== "serial_no")
@@ -596,12 +599,12 @@ function Course() {
               .map((course, index) => (
                 <tr key={`practical-${index}`}>
                   <td>
-  <input
-    type="number"
-    value={course.serial_no || ""}
-    onChange={(e) => handleCourseChange(courses.findIndex((c) => c === course), "serial_no", e.target.value)}
-  />
-</td>
+                      <input
+                        type="number"
+                        value={course.serial_no || ""}
+                        onChange={(e) => handleCourseChange(courses.findIndex((c) => c === course), "serial_no", e.target.value)}
+                      />
+                    </td>
 
                   {Object.keys(course)
                     .filter((key) => key !== "courseType" && key !== "serial_no")

@@ -17,6 +17,11 @@
   gap: 20px;
 }
 
+.data-table input[type="number"] {
+  width: 50px; /* Adjust width to match Lecture, Tutorial, Practical */
+  text-align: center;
+}
+
 .form-fields div {
   display: flex;
   flex-direction: column;
