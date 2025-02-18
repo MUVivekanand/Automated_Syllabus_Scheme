@@ -243,7 +243,7 @@ function Faculty() {
                 <input
                   className="input-field"
                   type="text"
-                  placeholder={`CO${i + 1} Name`}
+                  placeholder={`Unit${i + 1} Name`}
                   value={co.name}
                   onChange={(e) =>
                     handleChange("co", i, "name", e.target.value)
@@ -251,7 +251,7 @@ function Faculty() {
                 />
                 <textarea
                   className="input-field textarea-field"
-                  placeholder={`CO${i + 1} Description`}
+                  placeholder={`Unit${i + 1} Description`}
                   value={co.desc}
                   onChange={(e) =>
                     handleChange("co", i, "desc", e.target.value)
@@ -260,7 +260,7 @@ function Faculty() {
                 <input
                   className="input-field"
                   type="number"
-                  placeholder={`Hour 1 for CO${i + 1}`}
+                  placeholder={`Lecture Hour for Unit${i + 1}`}
                   value={courseDetails.hours[i].hour1}
                   onChange={(e) =>
                     handleChange("hours", i, "hour1", e.target.value)
@@ -269,7 +269,7 @@ function Faculty() {
                 <input
                   className="input-field"
                   type="number"
-                  placeholder={`Hour 2 for CO${i + 1}`}
+                  placeholder={`Pratical Hour for Unit${i + 1}`}
                   value={courseDetails.hours[i].hour2}
                   onChange={(e) =>
                     handleChange("hours", i, "hour2", e.target.value)
