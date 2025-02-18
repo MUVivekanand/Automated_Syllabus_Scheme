@@ -72,6 +72,54 @@
     background-color: #45a049;
   }
 
+  .table-container-sem {
+    width: 100%;
+    overflow-x: auto;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  }
+  
+  .data-table-sem {
+    width: 100%;
+    border-collapse: collapse;
+    background: #fff;
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  
+  .data-table-sem thead {
+    background: #007bff;
+    color: #ffffff;
+  }
+  
+  .data-table-sem th,
+  .data-table-sem td {
+    padding: 12px;
+    text-align: center;
+    border-bottom: 1px solid #ddd;
+  }
+  
+  .data-table-sem tr:nth-child(even) {
+    background: #f2f2f2;
+  }
+  
+  .input-sem {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 14px;
+    text-align: center;
+  }
+  
+  .input-sem:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
+  }
+  
   /* Style for the Total Credits input section */
 .total-credits-container {
   margin-top: 20px;
