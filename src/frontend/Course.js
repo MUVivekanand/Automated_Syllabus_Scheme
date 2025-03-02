@@ -38,10 +38,6 @@ function Course() {
     navigate("/Summary");
   };
 
-  const navigateRegulations = () => {
-    navigate("/Regulations");
-  };
-
   const navigateWordPage = () => {
     navigate("/wordPage");
   }
@@ -174,6 +170,31 @@ function Course() {
   //   fetchData();
   //   fetchTableData();
   // }, [currentSem]);
+
+  const [semesterOptions] = useState([
+    { value: 1, label: 'Semester 1' },
+    { value: 2, label: 'Semester 2' },
+    { value: 3, label: 'Semester 3' },
+    { value: 4, label: 'Semester 4' },
+    { value: 5, label: 'Semester 5' },
+    { value: 6, label: 'Semester 6' },
+    { value: 7, label: 'Semester 7' },
+    { value: 8, label: 'Semester 8' }
+  ]);
+  
+  // Add this handler function with your other handler functions
+  const handleSemesterChange = useCallback((e) => {
+    const semNumber = parseInt(e.target.value);
+    setCurrentSem(semNumber);
+    setCommonInfo(prev => ({
+      ...prev,
+      caMarks: "",
+      feMarks: "",
+      totalMarks: "",
+      department: "",
+      semNo: semNumber
+    }));
+  }, []);
 
   const fetchData = async () => {
     try {
@@ -1048,25 +1069,39 @@ const handleSubmit = useCallback(async () => {
         </div>
       )}
 
-      {/* Action Buttons */}
-      <div className="actions">
+    <div className="semester-navigation">
+      <div className="semester-selector">
+        <label htmlFor="semester-select">Select Semester: </label>
+        <select 
+          id="semester-select" 
+          value={currentSem}
+          onChange={handleSemesterChange}
+          className="semester-dropdown"
+        >
+          {semesterOptions.map(option => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+      </div>
+      
+      <div className="action-buttons">
         <button onClick={handleSubmit}>Submit</button>
-        <button onClick={handleNext} disabled={currentSem >= 8}>Next Semester</button>
-        <button onClick={handleBack} disabled={currentSem <= 1}>Back to Previous Semester</button>
         <button onClick={navigateSummary}>Generate Summary</button>
         <button onClick={navigateWordPage}>Downloadable Word Format</button>
-        <button onClick={navigateRegulations}>New Regulations</button>
       </div>
-
+    </div>
 
 
       {/* Filtered Results Table */}
-{tableData.length > 0 && (
-  <div className="filtered-results-container">
-  </div>
-)}
-    </div>
+        {tableData.length > 0 && (
+          <div className="filtered-results-container">
+          </div>
+        )}
+            </div>
   );
 }
+
 
 export default Course;

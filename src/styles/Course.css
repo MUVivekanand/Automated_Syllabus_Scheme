@@ -155,3 +155,59 @@ td.sno-column {
   width: 300px; /* Adjust this value as needed */
   text-align: center; /* Optional: Centers the text */
 }
+
+
+/* Add these styles to your CSS file */
+.semester-navigation {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding: 10px 0;
+}
+
+.semester-selector {
+  display: flex;
+  align-items: center;
+}
+
+.semester-dropdown {
+  margin-left: 10px;
+  padding: 8px 12px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+  background-color: white;
+  font-size: 1rem;
+  min-width: 150px;
+  cursor: pointer;
+}
+
+.semester-dropdown:focus {
+  outline: none;
+  border-color: #4a90e2;
+  box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.2);
+}
+
+.action-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+.action-buttons button {
+  padding: 8px 16px;
+  border-radius: 4px;
+  background-color: #4a90e2;
+  color: white;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.action-buttons button:hover {
+  background-color: #3a80d2;
+}
+
+.action-buttons button:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+}
