@@ -34,7 +34,7 @@ const facultyLogin = async (req, res) => {
 
 const updateCourseDetails = async (req, res) => {
   try {
-    const { courseCode, coDetails, hours, textbooks, references } = req.body;
+    const { courseCode, coDetails, hours, textbooks, references, outcomes } = req.body;
 
     // Check if the course exists
     const { data: existingCourse, error: fetchError } = await supabase
@@ -93,6 +93,11 @@ const updateCourseDetails = async (req, res) => {
           hour2_4: hours[3]?.hour2 || null,
           hour1_5: hours[4]?.hour1 || null,
           hour2_5: hours[4]?.hour2 || null,
+          outcome1: outcomes[0] || null,
+          outcome2: outcomes[1] || null,
+          outcome3: outcomes[2] || null,
+          outcome4: outcomes[3] || null,
+          outcome5: outcomes[4] || null,
         })
         .eq("course_code", courseCode);
 
@@ -111,6 +116,11 @@ const updateCourseDetails = async (req, res) => {
         hour2_4: hours[3]?.hour2 || null,
         hour1_5: hours[4]?.hour1 || null,
         hour2_5: hours[4]?.hour2 || null,
+        outcome1: outcomes[0] || null,
+        outcome2: outcomes[1] || null,
+        outcome3: outcomes[2] || null,
+        outcome4: outcomes[3] || null,
+        outcome5: outcomes[4] || null,
       });
 
       if (insertError) throw insertError;
@@ -242,7 +252,7 @@ const getCourseDetails = async (req, res) => {
     const { data: timings, error: timingsError } = await supabase
       .from("timings")
       .select(
-        "hour1_1, hour2_1, hour1_2, hour2_2, hour1_3, hour2_3, hour1_4, hour2_4, hour1_5, hour2_5"
+        "hour1_1, hour2_1, hour1_2, hour2_2, hour1_3, hour2_3, hour1_4, hour2_4, hour1_5, hour2_5, outcome1, outcome2, outcome3, outcome4, outcome5"
       )
       .eq("course_code", courseCode)
       .maybeSingle();
@@ -254,6 +264,8 @@ const getCourseDetails = async (req, res) => {
         .status(404)
         .send({ success: false, message: "Timings not found for the course." });
     }
+    console.log("Fetched Timings Data:", timings);
+
 
     // Combine course details, textbooks, references, and hours into one response
     const courseData = {
@@ -273,6 +285,7 @@ const getCourseDetails = async (req, res) => {
         { hour1: timings.hour1_4, hour2: timings.hour2_4 },
         { hour1: timings.hour1_5, hour2: timings.hour2_5 },
       ],
+      outcomes: [timings.outcome1, timings.outcome2, timings.outcome3, timings.outcome4, timings.outcome5]
     };
 
     res.json({ success: true, courseDetails: courseData });
