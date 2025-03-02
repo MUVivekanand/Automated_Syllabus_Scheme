@@ -15,13 +15,13 @@ function Faculty() {
     hours: Array(5).fill({ hour1: "", hour2: "" }),
     textbooks: [],
     references: [],
-    outcomes: Array(5).fill("")
+    outcomes: Array(5).fill(""),
   });
   const [expandedSections, setExpandedSections] = useState({
     syllabus: false,
     textbooks: false,
     references: false,
-    courseOutcomes: false
+    courseOutcomes: false,
   });
 
   // Function to toggle individual sections
@@ -31,8 +31,6 @@ function Faculty() {
       [section]: !prev[section], // Toggle only the clicked section
     }));
   };
-
-
 
   useEffect(() => {
     if (facultyName) {
@@ -71,15 +69,15 @@ function Faculty() {
       return;
     }
 
-    const [courseCode] = selectedCourse.split(" - ");
+    const [, courseName] = selectedCourse.split(" - "); // ✅ Extract courseName
     try {
       const response = await axios.get(
         "http://localhost:4000/api/faculty/getCourseDetails",
         {
-          params: { courseCode },
+          params: { courseName }, // ✅ Send courseName instead of courseCode
         }
       );
-      console.log(response.data);
+
       if (response.data.success) {
         setCourseDetails(response.data.courseDetails);
       } else {
@@ -99,7 +97,7 @@ function Faculty() {
       hours: Array(5).fill({ hour1: "", hour2: "" }),
       textbooks: [],
       references: [],
-      outcomes: Array(5).fill("")
+      outcomes: Array(5).fill(""),
     });
   };
 
@@ -108,11 +106,11 @@ function Faculty() {
     setCourseDetails((prevDetails) => ({
       ...prevDetails,
       [field]: prevDetails[field].map((item, i) =>
-        i === index 
+        i === index
           ? Array.isArray(prevDetails[field]) && typeof item === "object"
-          ? { ...item, [key]: value } // Case 1: If item is an object, update its property
-          : value // Case 2: If item is a primitive, replace it directly
-        : item
+            ? { ...item, [key]: value } // Case 1: If item is an object, update its property
+            : value // Case 2: If item is a primitive, replace it directly
+          : item
       ),
     }));
   };
@@ -127,7 +125,6 @@ function Faculty() {
 
     const [courseCode, courseName] = selectedCourse.split(" - ");
 
-    // Find the selected course by course code
     const selectedCourseDetails = courses.find(
       (course) => course.course_code === courseCode
     );
@@ -138,15 +135,12 @@ function Faculty() {
     }
 
     const { credits } = selectedCourseDetails;
-
-    // Calculate total hours by summing up the hours for each CO
     const totalHours = courseDetails.hours.reduce(
       (total, hour) =>
         total + (parseInt(hour.hour1) || 0) + (parseInt(hour.hour2) || 0),
       0
     );
 
-    // Validate total hours based on course credits
     const requiredHours = credits === 4 ? 60 : credits === 3 ? 45 : 0;
 
     if (totalHours !== requiredHours) {
@@ -160,7 +154,7 @@ function Faculty() {
       const response = await axios.post(
         "http://localhost:4000/api/faculty/updateCourseDetails",
         {
-          courseCode,
+          courseName, // ✅ Send courseName instead of courseCode
           facultyName,
           coDetails: courseDetails.co,
           hours: courseDetails.hours,
@@ -257,11 +251,16 @@ function Faculty() {
       </div>
 
       {/* Course Details Box */}
-      
+
       {selectedCourse && (
         <div className="course-details-box">
           <h2 className="course-details-title">Course Details</h2>
-          <button className="toggle-btn" onClick={() => toggleExpand("syllabus")}>Course Syllabus</button>
+          <button
+            className="toggle-btn"
+            onClick={() => toggleExpand("syllabus")}
+          >
+            Course Syllabus
+          </button>
           {expandedSections.syllabus && (
             <div className="co-section content">
               <h4 className="section-title">Course Syllabus</h4>
@@ -306,10 +305,14 @@ function Faculty() {
               ))}
             </div>
           )}
-          
 
           {/* Textbooks Section */}
-          <button className="toggle-btn" onClick={() => toggleExpand("textbooks")}>Textbooks</button>
+          <button
+            className="toggle-btn"
+            onClick={() => toggleExpand("textbooks")}
+          >
+            Textbooks
+          </button>
           {expandedSections.textbooks && (
             <div className="textbook-section">
               <h4 className="section-title">Textbooks</h4>
@@ -362,7 +365,12 @@ function Faculty() {
           )}
 
           {/* References Section */}
-          <button className="toggle-btn" onClick={() => toggleExpand("references")}>References</button>
+          <button
+            className="toggle-btn"
+            onClick={() => toggleExpand("references")}
+          >
+            References
+          </button>
           {expandedSections.references && (
             <div className="reference-section">
               <h4 className="section-title">References</h4>
@@ -415,14 +423,19 @@ function Faculty() {
           )}
 
           {/* Course Outcome Section */}
-          <button className="toggle-btn" onClick={() => toggleExpand("courseOutcomes")}>Course Outcomes</button>
+          <button
+            className="toggle-btn"
+            onClick={() => toggleExpand("courseOutcomes")}
+          >
+            Course Outcomes
+          </button>
           {expandedSections.courseOutcomes && (
             <div className="course-outcome-section">
               <h4 className="section-title">Course Outcomes</h4>
-              {(courseDetails.outcomes).map((outcome, i) => (
+              {courseDetails.outcomes.map((outcome, i) => (
                 <div key={i} className="unit-outcome">
                   <h5 className="unit-title">Course Outcome {i + 1}</h5>
-                  
+
                   <input
                     className="input-field"
                     type="text"
@@ -432,12 +445,10 @@ function Faculty() {
                       handleChange("outcomes", i, null, e.target.value)
                     }
                   />
-                  
                 </div>
               ))}
             </div>
           )}
-
 
           <button className="save-button" onClick={handleSave}>
             Save
