@@ -30,6 +30,8 @@ function Course() {
   const [isFiltered, setIsFiltered] = useState(false);
   const [tableData, setTableData] = useState([]);
 
+  const [originalCourseNames, setOriginalCourseNames] = useState({});
+
   const navigate = useNavigate();
 
   const navigateSummary = () => {
@@ -39,6 +41,10 @@ function Course() {
   const navigateRegulations = () => {
     navigate("/Regulations");
   };
+
+  const navigateWordPage = () => {
+    navigate("/wordPage");
+  }
 
   // const fetchData = async () => {
   //   try {
@@ -242,6 +248,15 @@ function Course() {
         return existing.concat(empty.slice(existing.length));
       });
 
+      // Store original course names with their indices
+      const originalNames = {};
+      mergedCourses.forEach((course, index) => {
+        if (course.courseTitle) {
+          originalNames[index] = course.courseTitle;
+        }
+      });
+      setOriginalCourseNames(originalNames);
+    
       setCourses(mergedCourses);
       setExistingCourses(existingCoursesData);
       updateCommonInfo(semInfo);
@@ -401,36 +416,132 @@ function Course() {
   //   }
   // }, [courses, commonInfo, currentSem]);
 
-  const handleSubmit = useCallback(async () => {
-    try {
-      for (const course of courses) {
-        if (course.courseCode && course.serial_no) {
-          await axios.patch(`http://localhost:4000/api/course/credits/${course.courseCode}`, {
-            serial_no: course.serial_no,
-            course_name: course.courseTitle,
-            lecture: course.lecture,
-            tutorial: course.tutorial,
-            practical: course.practical,
-            credits: course.credits,
-            ca_marks: commonInfo.caMarks,
-            fe_marks: commonInfo.feMarks,
-            total_marks: commonInfo.totalMarks,
-            type: course.type,
-            faculty: course.faculty,
-            department: commonInfo.department,
+  // const handleSubmit = useCallback(async () => {
+  //   try {
+  //     for (const course of courses) {
+  //       if (course.courseTitle) {
+  //         await axios.patch(`http://localhost:4000/api/course/credits/${course.courseTitle}`, {
+  //           serial_no: course.serial_no,
+  //           course_code: course.courseCode,
+  //           lecture: course.lecture,
+  //           tutorial: course.tutorial,
+  //           practical: course.practical,
+  //           credits: course.credits,
+  //           ca_marks: commonInfo.caMarks,
+  //           fe_marks: commonInfo.feMarks,
+  //           total_marks: commonInfo.totalMarks,
+  //           type: course.type,
+  //           faculty: course.faculty,
+  //           department: commonInfo.department,
+  //           sem_no: currentSem,
+  //           category: course.courseType
+  //         });
+  //       }
+  //     }
+  //     alert("Data updated successfully!");
+  //     fetchData();
+  //   } catch (error) {
+  //     console.error("Error updating data:", error);
+  //     alert("Failed to update data.");
+  //   }
+  // }, [courses, commonInfo, currentSem]);
+
+  // const handleSubmit = useCallback(async () => {
+  //   try {
+  //     for (let i = 0; i < courses.length; i++) {
+  //       const course = courses[i];
+  //       const originalName = originalCourseNames[i];
+        
+  //       if (course.courseTitle) {
+  //         if (originalName && originalName !== course.courseTitle) {
+  //           // Course name has changed - need to delete old record and create new one
+  //           try {
+  //             // First delete the old record
+  //             await axios.delete(`http://localhost:4000/api/course/credits/${encodeURIComponent(originalName)}`);
+  //           } catch (deleteError) {
+  //             console.error("Error deleting old course record:", deleteError);
+  //           }
+  //         }
+          
+  //         // Create or update with new name
+  //         await axios.patch(`http://localhost:4000/api/course/credits/${encodeURIComponent(course.courseTitle)}`, {
+  //           serial_no: course.serial_no,
+  //           course_code: course.courseCode,
+  //           lecture: course.lecture,
+  //           tutorial: course.tutorial,
+  //           practical: course.practical,
+  //           credits: course.credits,
+  //           ca_marks: commonInfo.caMarks,
+  //           fe_marks: commonInfo.feMarks,
+  //           total_marks: commonInfo.totalMarks,
+  //           type: course.type,
+  //           faculty: course.faculty,
+  //           department: commonInfo.department,
+  //           sem_no: currentSem,
+  //           category: course.courseType
+  //         });
+  //       }
+  //     }
+  //     alert("Data updated successfully!");
+  //     fetchData(); // Refresh data to get updated records
+  //   } catch (error) {
+  //     console.error("Error updating data:", error);
+  //     alert("Failed to update data: " + error.message);
+  //   }
+  // }, [courses, commonInfo, currentSem, originalCourseNames]);
+
+
+  // handleSubmit function update for your Course.js component
+const handleSubmit = useCallback(async () => {
+  try {
+    for (let i = 0; i < courses.length; i++) {
+      const course = courses[i];
+      const originalName = originalCourseNames[i];
+      
+      if (course.courseTitle) {
+        if (originalName && originalName !== course.courseTitle) {
+          try {
+            // First delete the old record - the backend will handle related records
+            await axios.delete(`http://localhost:4000/api/course/credits/${encodeURIComponent(originalName)}`);
+          } catch (deleteError) {
+            console.error("Error deleting old course record:", deleteError);
+            // Continue with update attempt even if delete fails
+          }
+        }
+        
+        try {
+          // Create or update with new course data
+          await axios.patch(`http://localhost:4000/api/course/credits/${encodeURIComponent(course.courseTitle)}`, {
+            serial_no: course.serial_no || 0,
+            course_code: course.courseCode,
+            lecture: course.lecture || 0,
+            tutorial: course.tutorial || 0,
+            practical: course.practical || 0,
+            credits: course.credits || 0,
+            ca_marks: commonInfo.caMarks || 0,
+            fe_marks: commonInfo.feMarks || 0,
+            total_marks: commonInfo.totalMarks || 0,
+            type: course.type || '',
+            faculty: course.faculty || '',
+            department: commonInfo.department || '',
             sem_no: currentSem,
             category: course.courseType
           });
+        } catch (updateError) {
+          console.error(`Error updating course ${course.courseTitle}:`, updateError.response?.data || updateError.message);
+          // Alert about specific course update failure but continue with others
+          alert(`Failed to update course ${course.courseTitle}: ${updateError.response?.data?.message || updateError.message}`);
         }
       }
-      alert("Data updated successfully!");
-      fetchData();
-    } catch (error) {
-      console.error("Error updating data:", error);
-      alert("Failed to update data.");
     }
-  }, [courses, commonInfo, currentSem]);
-
+    
+    alert("Data updated successfully!");
+    fetchData(); // Refresh data to get updated records
+  } catch (error) {
+    console.error("Error in submission process:", error);
+    alert("Failed to update data: " + (error.response?.data?.message || error.message));
+  }
+}, [courses, commonInfo, currentSem, originalCourseNames]);
 
   // Navigation handlers
   const handleNext = useCallback(() => {
@@ -943,6 +1054,7 @@ function Course() {
         <button onClick={handleNext} disabled={currentSem >= 8}>Next Semester</button>
         <button onClick={handleBack} disabled={currentSem <= 1}>Back to Previous Semester</button>
         <button onClick={navigateSummary}>Generate Summary</button>
+        <button onClick={navigateWordPage}>Downloadable Word Format</button>
         <button onClick={navigateRegulations}>New Regulations</button>
       </div>
 
@@ -958,50 +1070,3 @@ function Course() {
 }
 
 export default Course;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
