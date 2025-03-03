@@ -15,7 +15,22 @@ function Faculty() {
     hours: Array(5).fill({ hour1: "", hour2: "" }),
     textbooks: [],
     references: [],
+    outcomes: Array(5).fill(""),
   });
+  const [expandedSections, setExpandedSections] = useState({
+    syllabus: false,
+    textbooks: false,
+    references: false,
+    courseOutcomes: false,
+  });
+
+  // Function to toggle individual sections
+  const toggleExpand = (section) => {
+    setExpandedSections((prev) => ({
+      ...prev,
+      [section]: !prev[section], // Toggle only the clicked section
+    }));
+  };
 
   useEffect(() => {
     if (facultyName) {
@@ -54,12 +69,12 @@ function Faculty() {
       return;
     }
 
-    const [courseCode] = selectedCourse.split(" - ");
+    const [, courseName] = selectedCourse.split(" - "); // ✅ Extract courseName
     try {
       const response = await axios.get(
         "http://localhost:4000/api/faculty/getCourseDetails",
         {
-          params: { courseCode },
+          params: { courseName }, // ✅ Send courseName instead of courseCode
         }
       );
 
@@ -82,6 +97,7 @@ function Faculty() {
       hours: Array(5).fill({ hour1: "", hour2: "" }),
       textbooks: [],
       references: [],
+      outcomes: Array(5).fill(""),
     });
   };
 
@@ -90,7 +106,11 @@ function Faculty() {
     setCourseDetails((prevDetails) => ({
       ...prevDetails,
       [field]: prevDetails[field].map((item, i) =>
-        i === index ? { ...item, [key]: value } : item
+        i === index
+          ? Array.isArray(prevDetails[field]) && typeof item === "object"
+            ? { ...item, [key]: value } // Case 1: If item is an object, update its property
+            : value // Case 2: If item is a primitive, replace it directly
+          : item
       ),
     }));
   };
@@ -105,7 +125,6 @@ function Faculty() {
 
     const [courseCode, courseName] = selectedCourse.split(" - ");
 
-    // Find the selected course by course code
     const selectedCourseDetails = courses.find(
       (course) => course.course_code === courseCode
     );
@@ -116,15 +135,12 @@ function Faculty() {
     }
 
     const { credits } = selectedCourseDetails;
-
-    // Calculate total hours by summing up the hours for each CO
     const totalHours = courseDetails.hours.reduce(
       (total, hour) =>
         total + (parseInt(hour.hour1) || 0) + (parseInt(hour.hour2) || 0),
       0
     );
 
-    // Validate total hours based on course credits
     const requiredHours = credits === 4 ? 60 : credits === 3 ? 45 : 0;
 
     if (totalHours !== requiredHours) {
@@ -138,12 +154,13 @@ function Faculty() {
       const response = await axios.post(
         "http://localhost:4000/api/faculty/updateCourseDetails",
         {
-          courseCode,
+          courseName, // ✅ Send courseName instead of courseCode
           facultyName,
           coDetails: courseDetails.co,
           hours: courseDetails.hours,
           textbooks: courseDetails.textbooks,
           references: courseDetails.references,
+          outcomes: courseDetails.outcomes,
         }
       );
 
@@ -234,150 +251,204 @@ function Faculty() {
       </div>
 
       {/* Course Details Box */}
+
       {selectedCourse && (
         <div className="course-details-box">
-          <h4 className="section-title">Course Syllabus</h4>
-          <div className="co-section">
-            {courseDetails.co.map((co, i) => (
-              <div key={i} className="co-entry">
-                <input
-                  className="input-field"
-                  type="text"
-                  placeholder={`Unit${i + 1} Name`}
-                  value={co.name}
-                  onChange={(e) =>
-                    handleChange("co", i, "name", e.target.value)
-                  }
-                />
-                <textarea
-                  className="input-field textarea-field"
-                  placeholder={`Unit${i + 1} Description`}
-                  value={co.desc}
-                  onChange={(e) =>
-                    handleChange("co", i, "desc", e.target.value)
-                  }
-                />
-                <input
-                  className="input-field"
-                  type="number"
-                  placeholder={`Lecture Hour for Unit${i + 1}`}
-                  value={courseDetails.hours[i].hour1}
-                  onChange={(e) =>
-                    handleChange("hours", i, "hour1", e.target.value)
-                  }
-                />
-                <input
-                  className="input-field"
-                  type="number"
-                  placeholder={`Pratical Hour for Unit${i + 1}`}
-                  value={courseDetails.hours[i].hour2}
-                  onChange={(e) =>
-                    handleChange("hours", i, "hour2", e.target.value)
-                  }
-                />
-              </div>
-            ))}
-          </div>
+          <h2 className="course-details-title">Course Details</h2>
+          <button
+            className="toggle-btn"
+            onClick={() => toggleExpand("syllabus")}
+          >
+            Course Syllabus
+          </button>
+          {expandedSections.syllabus && (
+            <div className="co-section content">
+              <h4 className="section-title">Course Syllabus</h4>
+              {courseDetails.co.map((co, i) => (
+                <div key={i} className="co-entry">
+                  <input
+                    className="input-field"
+                    type="text"
+                    placeholder={`Unit${i + 1} Name`}
+                    value={co.name}
+                    onChange={(e) =>
+                      handleChange("co", i, "name", e.target.value)
+                    }
+                  />
+                  <textarea
+                    className="input-field textarea-field"
+                    placeholder={`Unit${i + 1} Description`}
+                    value={co.desc}
+                    onChange={(e) =>
+                      handleChange("co", i, "desc", e.target.value)
+                    }
+                  />
+                  <input
+                    className="input-field"
+                    type="number"
+                    placeholder={`Lecture Hour for Unit${i + 1}`}
+                    value={courseDetails.hours[i].hour1}
+                    onChange={(e) =>
+                      handleChange("hours", i, "hour1", e.target.value)
+                    }
+                  />
+                  <input
+                    className="input-field"
+                    type="number"
+                    placeholder={`Pratical Hour for Unit${i + 1}`}
+                    value={courseDetails.hours[i].hour2}
+                    onChange={(e) =>
+                      handleChange("hours", i, "hour2", e.target.value)
+                    }
+                  />
+                </div>
+              ))}
+            </div>
+          )}
 
           {/* Textbooks Section */}
-          <h4 className="section-title">Textbooks</h4>
-          <div className="textbook-section">
-            {courseDetails.textbooks.map((textbook, i) => (
-              <div key={i} className="textbook-entry">
-                {[
-                  "title",
-                  "author",
-                  "edition",
-                  "publisher",
-                  "place",
-                  "year",
-                ].map((field) => (
-                  <input
-                    key={field}
-                    className="input-field"
-                    type="text"
-                    placeholder={`Textbook ${i + 1} ${field}`}
-                    value={textbook[field] || ""}
-                    onChange={(e) =>
-                      handleChange("textbooks", i, field, e.target.value)
-                    }
-                  />
-                ))}
-              </div>
-            ))}
-            <button
-              className="add-button"
-              onClick={() =>
-                setCourseDetails((prev) => ({
-                  ...prev,
-                  textbooks: [
-                    ...prev.textbooks,
-                    {
-                      title: "",
-                      author: "",
-                      edition: "",
-                      publisher: "",
-                      place: "",
-                      year: "",
-                    },
-                  ],
-                }))
-              }
-              disabled={courseDetails.textbooks.length >= 2} // Disable when 2 textbooks added
-            >
-              + Add Textbook
-            </button>
-          </div>
+          <button
+            className="toggle-btn"
+            onClick={() => toggleExpand("textbooks")}
+          >
+            Textbooks
+          </button>
+          {expandedSections.textbooks && (
+            <div className="textbook-section">
+              <h4 className="section-title">Textbooks</h4>
+              {courseDetails.textbooks.map((textbook, i) => (
+                <div key={i} className="textbook-entry">
+                  {[
+                    "title",
+                    "author",
+                    "edition",
+                    "publisher",
+                    "place",
+                    "year",
+                  ].map((field) => (
+                    <input
+                      key={field}
+                      className="input-field"
+                      type="text"
+                      placeholder={`Textbook ${i + 1} ${field}`}
+                      value={textbook[field] || ""}
+                      onChange={(e) =>
+                        handleChange("textbooks", i, field, e.target.value)
+                      }
+                    />
+                  ))}
+                </div>
+              ))}
+              <button
+                className="add-button"
+                onClick={() =>
+                  setCourseDetails((prev) => ({
+                    ...prev,
+                    textbooks: [
+                      ...prev.textbooks,
+                      {
+                        title: "",
+                        author: "",
+                        edition: "",
+                        publisher: "",
+                        place: "",
+                        year: "",
+                      },
+                    ],
+                  }))
+                }
+                disabled={courseDetails.textbooks.length >= 2} // Disable when 2 textbooks added
+              >
+                + Add Textbook
+              </button>
+            </div>
+          )}
 
           {/* References Section */}
-          <h4 className="section-title">References</h4>
-          <div className="reference-section">
-            {courseDetails.references.map((reference, i) => (
-              <div key={i} className="reference-entry">
-                {[
-                  "title",
-                  "author",
-                  "edition",
-                  "publisher",
-                  "place",
-                  "year",
-                ].map((field) => (
+          <button
+            className="toggle-btn"
+            onClick={() => toggleExpand("references")}
+          >
+            References
+          </button>
+          {expandedSections.references && (
+            <div className="reference-section">
+              <h4 className="section-title">References</h4>
+              {courseDetails.references.map((reference, i) => (
+                <div key={i} className="reference-entry">
+                  {[
+                    "title",
+                    "author",
+                    "edition",
+                    "publisher",
+                    "place",
+                    "year",
+                  ].map((field) => (
+                    <input
+                      key={field}
+                      className="input-field"
+                      type="text"
+                      placeholder={`Reference ${i + 1} ${field}`}
+                      value={reference[field] || ""}
+                      onChange={(e) =>
+                        handleChange("references", i, field, e.target.value)
+                      }
+                    />
+                  ))}
+                </div>
+              ))}
+              <button
+                className="add-button"
+                onClick={() =>
+                  setCourseDetails((prev) => ({
+                    ...prev,
+                    references: [
+                      ...prev.references,
+                      {
+                        title: "",
+                        author: "",
+                        edition: "",
+                        publisher: "",
+                        place: "",
+                        year: "",
+                      },
+                    ],
+                  }))
+                }
+                disabled={courseDetails.references.length >= 4} // Disable when 4 references added
+              >
+                + Add Reference
+              </button>
+            </div>
+          )}
+
+          {/* Course Outcome Section */}
+          <button
+            className="toggle-btn"
+            onClick={() => toggleExpand("courseOutcomes")}
+          >
+            Course Outcomes
+          </button>
+          {expandedSections.courseOutcomes && (
+            <div className="course-outcome-section">
+              <h4 className="section-title">Course Outcomes</h4>
+              {courseDetails.outcomes.map((outcome, i) => (
+                <div key={i} className="unit-outcome">
+                  <h5 className="unit-title">Course Outcome {i + 1}</h5>
+
                   <input
-                    key={field}
                     className="input-field"
                     type="text"
-                    placeholder={`Reference ${i + 1} ${field}`}
-                    value={reference[field] || ""}
+                    placeholder={`Outcome ${i + 1}`}
+                    value={outcome || ""}
                     onChange={(e) =>
-                      handleChange("references", i, field, e.target.value)
+                      handleChange("outcomes", i, null, e.target.value)
                     }
                   />
-                ))}
-              </div>
-            ))}
-            <button
-              className="add-button"
-              onClick={() =>
-                setCourseDetails((prev) => ({
-                  ...prev,
-                  references: [
-                    ...prev.references,
-                    {
-                      title: "",
-                      author: "",
-                      edition: "",
-                      publisher: "",
-                      place: "",
-                      year: "",
-                    },
-                  ],
-                }))
-              }
-              disabled={courseDetails.references.length >= 4} // Disable when 4 references added
-            >
-              + Add Reference
-            </button>
-          </div>
+                </div>
+              ))}
+            </div>
+          )}
 
           <button className="save-button" onClick={handleSave}>
             Save

@@ -34,13 +34,14 @@ const facultyLogin = async (req, res) => {
 
 const updateCourseDetails = async (req, res) => {
   try {
-    const { courseCode, coDetails, hours, textbooks, references } = req.body;
+    const { courseName, coDetails, hours, textbooks, references, outcomes } =
+      req.body;
 
     // Check if the course exists
     const { data: existingCourse, error: fetchError } = await supabase
       .from("course_details")
       .select("*")
-      .eq("course_code", courseCode)
+      .eq("course_name", courseName)
       .maybeSingle();
 
     if (fetchError) {
@@ -54,6 +55,7 @@ const updateCourseDetails = async (req, res) => {
     const { error: updateError } = await supabase
       .from("course_details")
       .upsert({
+        course_name: courseName, // Ensure course_name is included in the upsert
         co1_name: coDetails[0]?.name || null,
         co1_desc: coDetails[0]?.desc || null,
         co2_name: coDetails[1]?.name || null,
@@ -65,22 +67,21 @@ const updateCourseDetails = async (req, res) => {
         co5_name: coDetails[4]?.name || null,
         co5_desc: coDetails[4]?.desc || null,
       })
-      .eq("course_code", courseCode);
+      .eq("course_name", courseName);
 
     if (updateError) throw updateError;
 
-    // ✅ Update Timings (Hours) in `Timings` table
-    // Check if the course code exists in the "timings" table
+    // ✅ Update Timings (Hours) in `timings` table
     const { data: existingTimings, error: checkError } = await supabase
       .from("timings")
-      .select("course_code")
-      .eq("course_code", courseCode);
+      .select("course_name")
+      .eq("course_name", courseName);
 
     if (checkError) throw checkError;
 
-    // If the course code exists, update the timings
+    // If the course exists in timings, update it; otherwise, insert new record
     if (existingTimings.length > 0) {
-      const { error: updateError } = await supabase
+      const { error: updateTimingsError } = await supabase
         .from("timings")
         .update({
           hour1_1: hours[0]?.hour1 || null,
@@ -93,37 +94,49 @@ const updateCourseDetails = async (req, res) => {
           hour2_4: hours[3]?.hour2 || null,
           hour1_5: hours[4]?.hour1 || null,
           hour2_5: hours[4]?.hour2 || null,
+          outcome1: outcomes[0] || null,
+          outcome2: outcomes[1] || null,
+          outcome3: outcomes[2] || null,
+          outcome4: outcomes[3] || null,
+          outcome5: outcomes[4] || null,
         })
-        .eq("course_code", courseCode);
+        .eq("course_name", courseName);
 
-      if (updateError) throw updateError;
+      if (updateTimingsError) throw updateTimingsError;
     } else {
-      // If the course code doesn't exist, insert a new record
-      const { error: insertError } = await supabase.from("timings").insert({
-        course_code: courseCode,
-        hour1_1: hours[0]?.hour1 || null,
-        hour2_1: hours[0]?.hour2 || null,
-        hour1_2: hours[1]?.hour1 || null,
-        hour2_2: hours[1]?.hour2 || null,
-        hour1_3: hours[2]?.hour1 || null,
-        hour2_3: hours[2]?.hour2 || null,
-        hour1_4: hours[3]?.hour1 || null,
-        hour2_4: hours[3]?.hour2 || null,
-        hour1_5: hours[4]?.hour1 || null,
-        hour2_5: hours[4]?.hour2 || null,
-      });
+      // Insert a new record
+      const { error: insertTimingsError } = await supabase
+        .from("timings")
+        .insert({
+          course_name: courseName,
+          hour1_1: hours[0]?.hour1 || null,
+          hour2_1: hours[0]?.hour2 || null,
+          hour1_2: hours[1]?.hour1 || null,
+          hour2_2: hours[1]?.hour2 || null,
+          hour1_3: hours[2]?.hour1 || null,
+          hour2_3: hours[2]?.hour2 || null,
+          hour1_4: hours[3]?.hour1 || null,
+          hour2_4: hours[3]?.hour2 || null,
+          hour1_5: hours[4]?.hour1 || null,
+          hour2_5: hours[4]?.hour2 || null,
+          outcome1: outcomes[0] || null,
+          outcome2: outcomes[1] || null,
+          outcome3: outcomes[2] || null,
+          outcome4: outcomes[3] || null,
+          outcome5: outcomes[4] || null,
+        });
 
-      if (insertError) throw insertError;
+      if (insertTimingsError) throw insertTimingsError;
     }
 
     // ✅ Delete old textbooks and references
-    await supabase.from("textbooks").delete().eq("course_code", courseCode);
-    await supabase.from("refs").delete().eq("course_code", courseCode);
+    await supabase.from("textbooks").delete().eq("course_name", courseName);
+    await supabase.from("refs").delete().eq("course_name", courseName);
 
-    // ✅ Check if textbooks is an array of objects
+    // ✅ Insert updated textbooks
     if (Array.isArray(textbooks) && textbooks.length > 0) {
       const textbookData = textbooks.map((t) => ({
-        course_code: courseCode,
+        course_name: courseName,
         title: t.title || "Unknown Title",
         author: t.author || "Unknown Author",
         edition: t.edition || "N/A",
@@ -140,10 +153,10 @@ const updateCourseDetails = async (req, res) => {
       }
     }
 
-    // ✅ Check if references is an array of objects
+    // ✅ Insert updated references
     if (Array.isArray(references) && references.length > 0) {
       const referenceData = references.map((r) => ({
-        course_code: courseCode,
+        course_name: courseName,
         title: r.title || "Unknown Title",
         author: r.author || "Unknown Author",
         edition: r.edition || "N/A",
@@ -196,13 +209,13 @@ const getCourse = async (req, res) => {
   }
 };
 
-// Get course details by course code
+// Get course details by course name
 const getCourseDetails = async (req, res) => {
   try {
-    const courseCode = req.query.courseCode;
+    const courseName = req.query.courseName; // Change courseCode to courseName
 
-    if (!courseCode) {
-      return res.status(400).send({ message: "Course code is required" });
+    if (!courseName) {
+      return res.status(400).send({ message: "Course name is required" });
     }
 
     // Fetch course details
@@ -211,7 +224,7 @@ const getCourseDetails = async (req, res) => {
       .select(
         "co1_name, co1_desc, co2_name, co2_desc, co3_name, co3_desc, co4_name, co4_desc, co5_name, co5_desc"
       )
-      .eq("course_code", courseCode)
+      .eq("course_name", courseName) // Use course_name instead of course_code
       .maybeSingle();
 
     if (courseDetailsError) throw courseDetailsError;
@@ -226,7 +239,7 @@ const getCourseDetails = async (req, res) => {
     const { data: textbooks, error: textbooksError } = await supabase
       .from("textbooks")
       .select("*")
-      .eq("course_code", courseCode);
+      .eq("course_name", courseName); // Use course_name
 
     if (textbooksError) throw textbooksError;
 
@@ -234,7 +247,7 @@ const getCourseDetails = async (req, res) => {
     const { data: references, error: referencesError } = await supabase
       .from("refs")
       .select("*")
-      .eq("course_code", courseCode);
+      .eq("course_name", courseName); // Use course_name
 
     if (referencesError) throw referencesError;
 
@@ -242,9 +255,9 @@ const getCourseDetails = async (req, res) => {
     const { data: timings, error: timingsError } = await supabase
       .from("timings")
       .select(
-        "hour1_1, hour2_1, hour1_2, hour2_2, hour1_3, hour2_3, hour1_4, hour2_4, hour1_5, hour2_5"
+        "hour1_1, hour2_1, hour1_2, hour2_2, hour1_3, hour2_3, hour1_4, hour2_4, hour1_5, hour2_5, outcome1, outcome2, outcome3, outcome4, outcome5"
       )
-      .eq("course_code", courseCode)
+      .eq("course_name", courseName) // Use course_name
       .maybeSingle();
 
     if (timingsError) throw timingsError;
@@ -254,6 +267,7 @@ const getCourseDetails = async (req, res) => {
         .status(404)
         .send({ success: false, message: "Timings not found for the course." });
     }
+    console.log("Fetched Timings Data:", timings);
 
     // Combine course details, textbooks, references, and hours into one response
     const courseData = {
@@ -272,6 +286,13 @@ const getCourseDetails = async (req, res) => {
         { hour1: timings.hour1_3, hour2: timings.hour2_3 },
         { hour1: timings.hour1_4, hour2: timings.hour2_4 },
         { hour1: timings.hour1_5, hour2: timings.hour2_5 },
+      ],
+      outcomes: [
+        timings.outcome1,
+        timings.outcome2,
+        timings.outcome3,
+        timings.outcome4,
+        timings.outcome5,
       ],
     };
 
