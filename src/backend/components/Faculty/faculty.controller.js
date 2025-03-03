@@ -37,12 +37,11 @@ const updateCourseDetails = async (req, res) => {
     const { courseName, coDetails, hours, textbooks, references, outcomes } =
       req.body;
 
-    // Check if the course exists
+    // Check if the course exists in `course_details`
     const { data: existingCourse, error: fetchError } = await supabase
       .from("course_details")
-      .select("*")
-      .eq("course_name", courseName)
-      .maybeSingle();
+      .select("course_name")
+      .eq("course_name", courseName);
 
     if (fetchError) {
       console.error("❌ Error fetching course details:", fetchError);
@@ -51,25 +50,45 @@ const updateCourseDetails = async (req, res) => {
         .json({ success: false, error: fetchError.message });
     }
 
-    // ✅ Update Course Outcomes in `course_details`
-    const { error: updateError } = await supabase
-      .from("course_details")
-      .upsert({
-        course_name: courseName, // Ensure course_name is included in the upsert
-        co1_name: coDetails[0]?.name || null,
-        co1_desc: coDetails[0]?.desc || null,
-        co2_name: coDetails[1]?.name || null,
-        co2_desc: coDetails[1]?.desc || null,
-        co3_name: coDetails[2]?.name || null,
-        co3_desc: coDetails[2]?.desc || null,
-        co4_name: coDetails[3]?.name || null,
-        co4_desc: coDetails[3]?.desc || null,
-        co5_name: coDetails[4]?.name || null,
-        co5_desc: coDetails[4]?.desc || null,
-      })
-      .eq("course_name", courseName);
+    if (existingCourse.length > 0) {
+      // ✅ Update existing course outcomes in `course_details`
+      const { error: updateError } = await supabase
+        .from("course_details")
+        .update({
+          co1_name: coDetails[0]?.name || null,
+          co1_desc: coDetails[0]?.desc || null,
+          co2_name: coDetails[1]?.name || null,
+          co2_desc: coDetails[1]?.desc || null,
+          co3_name: coDetails[2]?.name || null,
+          co3_desc: coDetails[2]?.desc || null,
+          co4_name: coDetails[3]?.name || null,
+          co4_desc: coDetails[3]?.desc || null,
+          co5_name: coDetails[4]?.name || null,
+          co5_desc: coDetails[4]?.desc || null,
+        })
+        .eq("course_name", courseName);
 
-    if (updateError) throw updateError;
+      if (updateError) throw updateError;
+    } else {
+      // ✅ Insert new course outcomes in `course_details`
+      const { error: insertError } = await supabase
+        .from("course_details")
+        .insert({
+          course_name: courseName,
+          co1_name: coDetails[0]?.name || null,
+          co1_desc: coDetails[0]?.desc || null,
+          co2_name: coDetails[1]?.name || null,
+          co2_desc: coDetails[1]?.desc || null,
+          co3_name: coDetails[2]?.name || null,
+          co3_desc: coDetails[2]?.desc || null,
+          co4_name: coDetails[3]?.name || null,
+          co4_desc: coDetails[3]?.desc || null,
+          co5_name: coDetails[4]?.name || null,
+          co5_desc: coDetails[4]?.desc || null,
+        });
+
+      if (insertError) throw insertError;
+    }
 
     // ✅ Update Timings (Hours) in `timings` table
     const { data: existingTimings, error: checkError } = await supabase
@@ -267,7 +286,6 @@ const getCourseDetails = async (req, res) => {
         .status(404)
         .send({ success: false, message: "Timings not found for the course." });
     }
-    console.log("Fetched Timings Data:", timings);
 
     // Combine course details, textbooks, references, and hours into one response
     const courseData = {
