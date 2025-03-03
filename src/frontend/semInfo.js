@@ -186,6 +186,10 @@ function SemInfo() {
     setSemData(updatedData);
   };
 
+  const navigateRegulations = () => {
+    navigate("/Regulations");
+  };
+
   const handleTotalCreditsChange = (e) => {
     setTotalCredits(e.target.value);
   };
@@ -328,6 +332,7 @@ function SemInfo() {
       <button onClick={handleSubmit} className="submit-button">
         Submit
       </button>
+      <button onClick={navigateRegulations} className="submit-button">New Regulations</button>
     </div>
   );
 }

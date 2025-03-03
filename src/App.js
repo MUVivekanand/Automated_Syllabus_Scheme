@@ -9,12 +9,14 @@ import Summary from "./frontend/Summary.js";
 import FacultyLogin from "./frontend/FacultyLogin.js";
 import CourseDetailsPage from "./frontend/CourseDetailsPage.js";
 import Regulations from "./frontend/Regulations.js";
+import CourseWord from "./frontend/CourseWord.js"
 
 function App() {
   return (
     <div>
       <Routes>
         <Route path="/" element={<Home />} /> {/* Home route */}
+        {/* <Route path="/faculty-login" element={<FacultyLogin />} /> */}
         <Route path="/faculty-login" element={<FacultyLogin />} />
         <Route path="/semInfo" element={<SemInfo />} />
         {/* <Route path="/syllabus" element={<Syllabus />} />  */}
@@ -23,6 +25,7 @@ function App() {
         <Route path="/course-details" element={<CourseDetailsPage />} />
         <Route path="/Summary" element={<Summary />} />
         <Route path="/Regulations" element={<Regulations />} />
+        <Route path = "/wordPage" element = {<CourseWord />}/>
       </Routes>
     </div>
   );
