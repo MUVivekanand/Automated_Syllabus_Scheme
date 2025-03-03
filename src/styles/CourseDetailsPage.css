@@ -231,3 +231,20 @@ button.toggle-btn:active {
   font-weight: bold;
   margin-bottom: 5px;
 }
+
+.course-topic {
+  display: flex;
+  justify-content: space-between; /* Ensures spacing between text and hours */
+  align-items: center; /* Aligns text and hours properly */
+  width: 100%; /* Takes full width */
+  padding: 5px 10px; /* Adds spacing */
+}
+
+.topic {
+  flex: 1; /* Allows text to take available space */
+}
+
+.hours {
+  white-space: nowrap; /* Prevents line breaks */
+  font-weight: bold; /* Makes hours bold for better visibility */
+}
