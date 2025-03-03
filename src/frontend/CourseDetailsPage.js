@@ -30,10 +30,11 @@ function CourseDetailsPage() {
         {courseDetails.co.map((co, i) => (
           <div key={i} className="course-topic">
             <p className="topic">
-              <b>{co.name}:</b> {co.desc}{" "}
-              {/* Display the hours as (hour1 + hour2) */}
-              {`(${courseDetails.hours[i].hour1} + ${courseDetails.hours[i].hour2})`}
+              <b>{co.name}:</b> {co.desc}
             </p>
+            <span className="hours">
+              ({courseDetails.hours[i].hour1} + {courseDetails.hours[i].hour2})
+            </span>
           </div>
         ))}
       </div>
