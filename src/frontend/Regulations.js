@@ -108,15 +108,17 @@ const Regulations = () => {
     }
   };
 
-  const handleSubmit = async (courseCode) => {
-    const updatedCourse = courses.find((course) => course.course_code === courseCode);
+  const handleSubmit = async (courseName) => {
+    const updatedCourse = courses.find((course) => course.course_name === courseName);
+    console.log("Course Name Frontend:", courseName);
+
     if (!updatedCourse) {
       alert("Course not found!");
       return;
     }
   
     try {
-      await axios.put(`http://localhost:4000/api/regulations/updatecourse/${courseCode}`, updatedCourse);
+      await axios.put(`http://localhost:4000/api/regulations/updatecourse/${courseName}`, updatedCourse);
       alert("Course updated successfully!");
     } catch (error) {
       console.error("Error updating course:", error);
@@ -158,15 +160,15 @@ const Regulations = () => {
   };
   
 
-  const handleDelete = async (courseCode) => {
-    const confirmDelete = window.confirm(`Are you sure you want to delete course ${courseCode}?`);
+  const handleDelete = async (courseName) => {
+    const confirmDelete = window.confirm(`Are you sure you want to delete course ${courseName}?`);
     if (!confirmDelete) return;
 
     try {
-      const response = await axios.delete(`http://localhost:4000/api/regulations/delete-course/${courseCode}`);
+      const response = await axios.delete(`http://localhost:4000/api/regulations/delete-course/${courseName}`);
 
       if (response.status === 200) {
-        setCourses((prevCourses) => prevCourses.filter((course) => course.course_code !== courseCode));
+        setCourses((prevCourses) => prevCourses.filter((course) => course.course_name !== courseName));
         alert(response.data.message);
       }
     } catch (error) {
@@ -284,8 +286,8 @@ const Regulations = () => {
                           />
                         </td>
                         <td>
-                          <button onClick={() => handleSubmit(course.course_code)}>Update</button>
-                          <button onClick={() => handleDelete(course.course_code)}>Delete</button>
+                          <button onClick={() => handleSubmit(course.course_name)}>Update</button>
+                          <button onClick={() => handleDelete(course.course_name)}>Delete</button>
                         </td>
                       </tr>
                     ))}

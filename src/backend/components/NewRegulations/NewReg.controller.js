@@ -17,17 +17,21 @@ const getAllCourses = async (req, res) => {
 };
 
 const updateCourse = async (req, res) => {
-  const { course_code } = req.params;
+  const { course_name } = req.params;
   const updatedCourse = req.body;
 
   try {
-    const { error } = await supabase
+    
+    const { data, error } = await supabase
       .from("credits")
       .update(updatedCourse)
-      .eq("course_code", course_code);
+      .ilike("course_name", `%${course_name}%`) // Case-insensitive search
+      .select();
 
     if (error) throw error;
-
+    if (data.length === 0) {
+      return res.status(404).json({ message: "Course not found" });
+    }
     res.json({ message: "Course updated successfully" });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -69,13 +73,13 @@ const addCourse = async (req, res) => {
 };
 
 const deleteCourse = async (req, res) => {
-  const { course_code } = req.params;
+  const { course_name } = req.params;
 
   try {
     const { data, error } = await supabase
       .from("credits")
       .delete()
-      .eq("course_code", course_code);
+      .eq("course_name", course_name);
 
     if (error) throw error;
 
@@ -84,6 +88,5 @@ const deleteCourse = async (req, res) => {
     res.status(500).json({ message: "Error deleting course", error });
   }
 };
-
 
 module.exports = { getAllCourses, updateCourse, deleteMoveCourse, addCourse, deleteCourse };
