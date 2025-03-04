@@ -9,7 +9,8 @@ const {
 
 const {
   getAllSemestersData,
-  exportToWord
+  exportToWord,
+  courseDetailsInfo,
 } = require("./course-word.controller");
 
 const router = express.Router();
@@ -24,5 +25,6 @@ router.delete("/credits/:course_name", deleteCourse);
 // New routes for CourseWord functionality
 router.get("/getAllSemestersData", getAllSemestersData);
 router.get("/exportToWord", exportToWord);
+router.get("/courseDetailsInfo", courseDetailsInfo);
 
 module.exports = router;
