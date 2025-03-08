@@ -486,19 +486,53 @@ const courseDetailsInfo = async (req, res) => {
         console.error(`Error fetching timing data for ${course.course_name}:`, timingError);
       }
 
+      // courseDetailsMap[course.course_name] = {
+      //   co: course.course_details || [],
+      //   hours: timingData
+      //     ? {
+      //         lecture: [timingData.hour1_1, timingData.hour1_2, timingData.hour1_3, timingData.hour1_4, timingData.hour1_5],
+      //         tutorial: [timingData.hour2_1, timingData.hour2_2, timingData.hour2_3, timingData.hour2_4, timingData.hour2_5],
+      //         total: timingData.total_hours
+      //       }
+      //     : { lecture: [], tutorial: [], total: 0 },
+      //   textbooks: course.textbooks || [],
+      //   references: course.references || []
+      // };
+
       courseDetailsMap[course.course_name] = {
         co: course.course_details || [],
         hours: timingData
           ? {
-              lecture: [timingData.hour1_1, timingData.hour1_2, timingData.hour1_3, timingData.hour1_4, timingData.hour1_5],
-              tutorial: [timingData.hour2_1, timingData.hour2_2, timingData.hour2_3, timingData.hour2_4, timingData.hour2_5],
+              lecture: [
+                timingData.hour1_1, 
+                timingData.hour1_2, 
+                timingData.hour1_3, 
+                timingData.hour1_4, 
+                timingData.hour1_5
+              ],
+              tutorial: [
+                timingData.hour2_1, 
+                timingData.hour2_2, 
+                timingData.hour2_3, 
+                timingData.hour2_4, 
+                timingData.hour2_5
+              ],
+              outcomes: [
+                timingData.outcome1,
+                timingData.outcome2,
+                timingData.outcome3,
+                timingData.outcome4,
+                timingData.outcome5
+              ],
               total: timingData.total_hours
             }
-          : { lecture: [], tutorial: [], total: 0 },
+          : null,
         textbooks: course.textbooks || [],
         references: course.references || []
       };
     }
+
+    // console.log(courseDetailsMap)
 
     res.json(courseDetailsMap);
   } catch (err) {
