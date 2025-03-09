@@ -257,6 +257,32 @@ function Faculty() {
       {selectedCourse && (
         <div className="course-details-box">
           <h2 className="course-details-title">Course Details</h2>
+
+          {/* Course Outcome Section */}
+          <button className="toggle-btn" onClick={() => toggleExpand("courseOutcomes")}>Course Outcomes</button>
+          {expandedSections.courseOutcomes && (
+            <div className="course-outcome-section">
+              <h4 className="section-title">Course Outcomes</h4>
+              {(courseDetails.outcomes).map((outcome, i) => (
+                <div key={i} className="unit-outcome">
+                  <h5 className="unit-title">Course Outcome {i + 1}</h5>
+                  
+                  <input
+                    className="input-field"
+                    type="text"
+                    placeholder={`Outcome ${i + 1}`}
+                    value={outcome || ""}
+                    onChange={(e) =>
+                      handleChange("outcomes", i, null, e.target.value)
+                    }
+                  />
+                  
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Course Syllabus Section */}
           <button className="toggle-btn" onClick={() => toggleExpand("syllabus")}>Course Syllabus</button>
           {expandedSections.syllabus && (
             <div className="co-section content">
@@ -415,29 +441,7 @@ function Faculty() {
             </div>
           )}
 
-          {/* Course Outcome Section */}
-          <button className="toggle-btn" onClick={() => toggleExpand("courseOutcomes")}>Course Outcomes</button>
-          {expandedSections.courseOutcomes && (
-            <div className="course-outcome-section">
-              <h4 className="section-title">Course Outcomes</h4>
-              {(courseDetails.outcomes).map((outcome, i) => (
-                <div key={i} className="unit-outcome">
-                  <h5 className="unit-title">Course Outcome {i + 1}</h5>
-                  
-                  <input
-                    className="input-field"
-                    type="text"
-                    placeholder={`Outcome ${i + 1}`}
-                    value={outcome || ""}
-                    onChange={(e) =>
-                      handleChange("outcomes", i, null, e.target.value)
-                    }
-                  />
-                  
-                </div>
-              ))}
-            </div>
-          )}
+          
 
 
           <button className="save-button" onClick={handleSave}>
