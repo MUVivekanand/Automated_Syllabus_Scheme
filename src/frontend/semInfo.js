@@ -180,8 +180,8 @@ function SemInfo() {
   };
 
   const navigateRegulations = () => {
-    navigate("/Regulations");
-  };
+    navigate(`/Regulations?degree=${degree}&department=${department}`);
+  };  
 
   const handleTotalCreditsChange = (e) => {
     setTotalCredits(e.target.value);

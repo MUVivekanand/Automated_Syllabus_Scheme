@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from "react";
-import axios from "axios";
-import "../styles/Course.css";
+import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
+import axios from 'axios';
+import "../styles/Regulations.css";
 
 const Regulations = () => {
   const [courses, setCourses] = useState([]);
@@ -9,14 +10,30 @@ const Regulations = () => {
   const [fromCourseName, setFromCourseName] = useState("");
   const [toSemester, setToSemester] = useState("");
   const [newRows, setNewRows] = useState({});
+  const [refresh, setRefresh] = useState(false);
+  
+  // Common information
+  const [commonInfo, setCommonInfo] = useState({
+    ca_marks: "",
+    fe_marks: "",
+    total_marks: ""
+  });
+
+  const location = useLocation();
+  const searchParams = new URLSearchParams(location.search);
+  const degree = searchParams.get('degree');
+  const department = searchParams.get('department');
 
   useEffect(() => {
     fetchCourses();
-  }, []);
+  }, [refresh]);
 
   const fetchCourses = async () => {
     try {
-      const response = await axios.get("http://localhost:4000/api/regulations/allcourses");
+      const response = await axios.get("http://localhost:4000/api/regulations/allcourses", {
+        params: { degree, department }
+      });
+  
       setCourses(response.data);
     } catch (error) {
       console.error("Error fetching courses:", error);
@@ -33,15 +50,21 @@ const Regulations = () => {
     setRegulationYear(year);
   };
 
+  const handleCommonInfoChange = (field, value) => {
+    setCommonInfo(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
 
-    const handleChange = (courseCode, field, value) => {
-      setCourses(prevCourses => 
-        prevCourses.map(course => 
-          course.course_code === courseCode
-            ? { ...course, [field]: field === "serial_no" ? parseInt(value) || 0 : value }
-            : course
-        )
-      );
+  const handleChange = (courseCode, field, value) => {
+    setCourses(prevCourses => 
+      prevCourses.map(course => 
+        course.course_code === courseCode
+          ? { ...course, [field]: field === "serial_no" ? parseInt(value) || 0 : value }
+          : course
+      )
+    );
   };
 
   const handleNewRowChange = (semesterNumber, rowIndex, field, value) => {
@@ -55,41 +78,53 @@ const Regulations = () => {
     }));
   };
 
-    const handleAddRow = (semesterNumber) => {
-      const semesterCourses = courses.filter(course => course.sem_no === semesterNumber);
-      const existingNewRows = newRows[semesterNumber] || [];
-      
-      // Calculate default serial number based on existing courses and new rows
-      const maxExistingSerialNo = Math.max(
-        ...semesterCourses.map(course => course.serial_no || 0),
-        ...existingNewRows.map(row => row.serial_no || 0),
-        0
-      );
-      const nextSerialNo = maxExistingSerialNo + 1;
+  const handleAddRow = (semesterNumber) => {
+    const semesterCourses = courses.filter(course => course.sem_no === semesterNumber);
+    const existingNewRows = newRows[semesterNumber] || [];
     
-      setNewRows(prev => ({
-        ...prev,
-        [semesterNumber]: [
-          ...(prev[semesterNumber] || []),
-          {
-            course_code: regulationYear.length === 2 ? `${regulationYear}` : '',
-            course_name: '',
-            lecture: 0,
-            tutorial: 0,
-            practical: 0,
-            credits: 0,
-            type: '',
-            faculty: '',
-            category: '',
-            sem_no: semesterNumber,
-            serial_no: nextSerialNo  // This will be a default value that can be edited
-          }
-        ]
-      }));
-    };
+    // Calculate default serial number based on existing courses and new rows
+    const maxExistingSerialNo = Math.max(
+      ...semesterCourses.map(course => course.serial_no || 0),
+      ...existingNewRows.map(row => row.serial_no || 0),
+      0
+    );
+    const nextSerialNo = maxExistingSerialNo + 1;
+  
+    setNewRows(prev => ({
+      ...prev,
+      [semesterNumber]: [
+        ...(prev[semesterNumber] || []),
+        {
+          course_code: regulationYear.length === 2 ? `${regulationYear}` : '',
+          course_name: '',
+          lecture: 0,
+          tutorial: 0,
+          practical: 0,
+          credits: 0,
+          type: '',
+          faculty: '',
+          category: '',
+          sem_no: semesterNumber,
+          serial_no: nextSerialNo,
+          degree: degree,
+          department: department,
+          ca_marks: commonInfo.ca_marks,
+          fe_marks: commonInfo.fe_marks,
+          total_marks: commonInfo.total_marks
+        }
+      ]
+    }));
+  };
 
   const handleSaveNewCourse = async (semesterNumber, rowIndex) => {
-    const newCourse = newRows[semesterNumber][rowIndex];
+    const newCourse = {
+      ...newRows[semesterNumber][rowIndex],
+      degree: degree,
+      department: department,
+      ca_marks: commonInfo.ca_marks,
+      fe_marks: commonInfo.fe_marks,
+      total_marks: commonInfo.total_marks
+    };
     
     try {
       const response = await axios.post("http://localhost:4000/api/regulations/addcourse", newCourse);
@@ -102,9 +137,10 @@ const Regulations = () => {
       }));
       
       alert("Course added successfully!");
+      setRefresh((prev) => !prev);
     } catch (error) {
       console.error("Error adding course:", error);
-      alert("Failed to add course");
+      alert("Failed to add course: " + (error.response?.data?.message || error.message));
     }
   };
 
@@ -120,6 +156,7 @@ const Regulations = () => {
     try {
       await axios.put(`http://localhost:4000/api/regulations/updatecourse/${courseName}`, updatedCourse);
       alert("Course updated successfully!");
+      setRefresh((prev) => !prev);
     } catch (error) {
       console.error("Error updating course:", error);
       alert("Failed to update course");
@@ -158,7 +195,6 @@ const Regulations = () => {
       alert("Failed to move course. Try again.");
     }
   };
-  
 
   const handleDelete = async (courseName) => {
     const confirmDelete = window.confirm(`Are you sure you want to delete course ${courseName}?`);
@@ -179,7 +215,47 @@ const Regulations = () => {
 
   return (
     <div>
-      <h2>Regulations</h2>
+      <h2>New Regulations</h2>
+
+      {/* Common Information Section */}
+      <div className="common-info-reg-section">
+          <h3>Common Information</h3>
+          <div className="common-info-reg-grid">
+            <div>
+              <label>Degree:</label>
+              <input type="text" value={degree || ""} readOnly />
+            </div>
+            <div>
+              <label>Department:</label>
+              <input type="text" value={department || ""} readOnly />
+            </div>
+            <div>
+              <label>CA Marks:</label>
+              <input 
+                type="number" 
+                value={commonInfo.ca_marks} 
+                onChange={(e) => handleCommonInfoChange("ca_marks", e.target.value)} 
+              />
+            </div>
+            <div>
+              <label>FE Marks:</label>
+              <input 
+                type="number" 
+                value={commonInfo.fe_marks} 
+                onChange={(e) => handleCommonInfoChange("fe_marks", e.target.value)} 
+              />
+            </div>
+            <div>
+              <label>Total Marks:</label>
+              <input 
+                type="number" 
+                value={commonInfo.total_marks} 
+                onChange={(e) => handleCommonInfoChange("total_marks", e.target.value)} 
+              />
+            </div>
+          </div>
+        </div>
+
       <label>Enter Regulation Year: </label>
       <input type="text" value={regulationYear} onChange={handleRegulationChange} />
 
@@ -419,5 +495,3 @@ const Regulations = () => {
 };
 
 export default Regulations;
-
-

@@ -2,10 +2,14 @@ const supabase = require("../../supabaseClient");
 
 const getAllCourses = async (req, res) => {
   try {
-    const { data, error } = await supabase
-      .from("credits")
-      .select("*")
-      .order("serial_no");
+    const { degree, department } = req.query; // Get values from request query params
+
+    let query = supabase.from("credits").select("*").order("serial_no");
+
+    if (degree) query = query.eq("degree", degree);
+    if (department) query = query.eq("department", department);
+
+    const { data, error } = await query;
 
     if (error) throw error;
 
@@ -59,6 +63,13 @@ const deleteMoveCourse = async (req, res) => {
 const addCourse = async (req, res) => {
   const newCourse = req.body;
 
+  if (!newCourse.degree || !newCourse.department || 
+      newCourse.ca_marks === undefined || newCourse.fe_marks === undefined || newCourse.total_marks === undefined) {
+    return res.status(400).json({ 
+      message: "Missing required fields. Please ensure degree, department, ca_marks, fe_marks, and total_marks are provided." 
+    });
+  }
+
   try {
     const { data, error } = await supabase
       .from("credits")
@@ -68,7 +79,7 @@ const addCourse = async (req, res) => {
 
     res.json({ message: "Course added successfully!", data });
   } catch (error) {
-    res.status(500).json({ message: "Error adding course", error });
+    res.status(500).json({ message: "Error adding course", error: error.message });
   }
 };
 
