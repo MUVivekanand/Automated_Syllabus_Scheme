@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect} from "react";
 import axios from "axios";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import "../styles/CourseWord.css";
 import { Document, Packer, Paragraph, Table, TableRow, TableCell, BorderStyle, WidthType, 
          AlignmentType, HeadingLevel, TextRun, convertInchesToTwip, PageOrientation, 
@@ -9,6 +9,7 @@ import { saveAs } from "file-saver";
 
 function CourseWord() {
   const [semestersData, setSemestersData] = useState([]);
+  const [coursesData, setCoursesData] = useState({}); // Added missing state
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [exportLoading, setExportLoading] = useState(false);
@@ -19,21 +20,59 @@ function CourseWord() {
   const semesters = Array.from({ length: 8 }, (_, i) => i + 1);
   
   const navigate = useNavigate();
+  
+  // Get URL parameters
+  const location = useLocation();
+  const searchParams = new URLSearchParams(location.search);
+  const degree = searchParams.get('degree');
+  const department = searchParams.get('department');
 
   useEffect(() => {
-    fetchAllSemestersData();
-    fetchAllData();
-  }, []);
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        
+        if (degree && department) {
+          // Pass the degree and department to the fetch function
+          await fetchAllSemestersData(degree, department);
+          
+          // If you need course details as well
+          const response = await axios.get("http://localhost:4000/api/course/courseDetailsInfo", {
+            params: { degree, department }
+          });
+          setCoursesData(response.data);
+        } else {
+          // Handle the case where params are missing
+          setError("Department and degree parameters are missing");
+        }
+        
+        setLoading(false);
+      } catch (error) {
+        console.error("Error fetching data:", error);
+        setError("Failed to fetch data. Please try again later.");
+        setLoading(false);
+      }
+    };
+    
+    fetchData();
+  }, [degree, department]);
+  
 
-  const fetchAllSemestersData = async () => {
+  const fetchAllSemestersData = async (degree, department) => {
     try {
-      setLoading(true);
       const semestersData = [];
       
       // Fetch data for all 8 semesters
       for (let semNo = 1; semNo <= 8; semNo++) {
-        const semInfoResponse = await axios.get(`http://localhost:4000/api/course/seminfo/${semNo}`);
-        const coursesResponse = await axios.get(`http://localhost:4000/api/course/courses/${semNo}`);
+        const semInfoResponse = await axios.get(
+          `http://localhost:4000/api/course/seminfo/${semNo}`, 
+          { params: { degree, department } }
+        );
+        
+        const coursesResponse = await axios.get(
+          `http://localhost:4000/api/course/courses/${semNo}`, 
+          { params: { degree, department } }
+        );
         
         semestersData.push({
           semNo,
@@ -43,11 +82,10 @@ function CourseWord() {
       }
       
       setSemestersData(semestersData);
-      setLoading(false);
+      return semestersData;
     } catch (error) {
       console.error("Error fetching all semesters data:", error);
-      setError("Failed to fetch semesters data. Please try again later.");
-      setLoading(false);
+      throw error;
     }
   };
 
@@ -60,6 +98,7 @@ function CourseWord() {
       throw error;
     }
   };
+
 
   // const fetchAllData = async () => {
   //   try {

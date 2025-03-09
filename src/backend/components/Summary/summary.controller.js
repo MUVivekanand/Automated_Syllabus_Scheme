@@ -1,21 +1,36 @@
 const supabase = require("../../supabaseClient");
 
-// Fetch all credits summary
+// Fetch credits summary with filtering
 const getCreditsSummary = async (req, res) => {
   try {
-    const { data, error } = await supabase.from("credits").select(`
-        course_code,
-        course_name,
-        lecture,
-        tutorial,
-        practical,
-        credits,
-        ca_marks,
-        fe_marks,
-        total_marks,
-        type,
-        sem_no
+    const { degree, department } = req.query;
+    
+    // Build query with filters
+    let query = supabase.from("credits").select(`
+      course_code,
+      course_name,
+      lecture,
+      tutorial,
+      practical,
+      credits,
+      ca_marks,
+      fe_marks,
+      total_marks,
+      type,
+      sem_no
     `);
+    
+    // Apply degree filter if provided
+    if (degree) {
+      query = query.eq("degree", degree);
+    }
+    
+    // Apply department filter if provided and degree is not M.E
+    if (department && degree !== 'M.E') {
+      query = query.eq("department", department);
+    }
+    
+    const { data, error } = await query;
 
     if (error) {
       console.error("Error fetching data:", error);
@@ -29,13 +44,28 @@ const getCreditsSummary = async (req, res) => {
   }
 };
 
-// Fetch total credits
+// Fetch total credits with filtering by degree
 const getTotalCredits = async (req, res) => {
   try {
-    const { data, error } = await supabase
-      .from("seminfo")
-      .select("total_credits")
-      .limit(1);
+    const { degree, department } = req.query;
+    
+    // Determine which table to query based on degree
+    const tableToQuery = degree === 'M.E' ? 'seminfome' : 'seminfo';
+    
+    // Build query
+    let query = supabase
+      .from(tableToQuery)
+      .select("total_credits");
+    
+    // Apply department filter for B.E degrees
+    if (degree === 'B.E' && department) {
+      query = query.eq("department", department);
+    }
+    
+    // Limit to one result
+    query = query.limit(1);
+    
+    const { data, error } = await query;
 
     if (error) throw error;
 

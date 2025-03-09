@@ -1,36 +1,43 @@
 const supabase = require("../../supabaseClient");
 
-const updateSemInfo = async(req,res) => {
-    const { semData } = req.body;
+const updateSemInfo = async (req, res) => {
+  const { semData } = req.body;
 
   try {
+    // Process each row in the semData
     for (const row of semData) {
-      const updates = {};
+      if (!row.degree || !row.department) {
+        continue; // Skip rows without degree or department
+      }
 
-      if (row.theory_courses !== null && row.theory_courses !== "")
-        updates.theory_courses = row.theory_courses;
-      if (row.practical_courses !== null && row.practical_courses !== "")
-        updates.practical_courses = row.practical_courses;
-      if (row.mandatory_courses !== null && row.mandatory_courses !== "")
-        updates.mandatory_courses = row.mandatory_courses; // New update
-      if (row.total_credits !== null && row.total_credits !== "")
-        updates.total_credits = row.total_credits;
+      // Choose table based on degree
+      const tableName = row.degree === "M.E" ? "seminfome" : "seminfo";
 
-      if (Object.keys(updates).length > 0) {
-        const { data, error } = await supabase
-          .from("seminfo")
-          .update(updates)
-          .eq("sem_no", row.sem_no)
-          .select();
+      // Prepare data for upsert
+      const semInfoRow = {
+        sem_no: row.sem_no,
+        theory_courses: row.theory_courses,
+        practical_courses: row.practical_courses,
+        mandatory_courses: row.mandatory_courses,
+        total_credits: row.total_credits,
+        degree: row.degree,
+        department: row.department
+      };
 
-        if (error) {
-          console.error("Supabase update error:", error);
-          return res.status(500).json({
-            success: false,
-            message: "Failed to update semester information.",
-            error: error.message,
-          });
-        }
+      // Upsert into the appropriate table (update if exists, insert if not)
+      const { error } = await supabase
+        .from(tableName)
+        .upsert(semInfoRow, {
+          onConflict: 'sem_no'
+        });
+
+      if (error) {
+        console.error(`Supabase ${tableName} upsert error:`, error);
+        return res.status(500).json({
+          success: false,
+          message: `Failed to update semester information in ${tableName}.`,
+          error: error.message,
+        });
       }
     }
 
@@ -46,10 +53,10 @@ const updateSemInfo = async(req,res) => {
       error: error.message,
     });
   }
-}
+};
 
-const updateCredits = async(req,res) =>{
-    const { creditsData } = req.body;
+const updateCredits = async (req, res) => {
+  const { creditsData } = req.body;
 
   if (!creditsData || creditsData.length === 0) {
     return res.status(200).json({
@@ -59,59 +66,125 @@ const updateCredits = async(req,res) =>{
   }
 
   try {
-    // First, delete existing credits for the semesters being updated
-    const semesterNumbers = [...new Set(creditsData.map((item) => item.sem_no))];
+    // Get unique combinations of sem_no, degree, and department
+    const semCombinations = [...new Set(creditsData.map(item => 
+      `${item.sem_no}-${item.degree || ''}-${item.department || ''}`
+    ))].map(combo => {
+      const [sem_no, degree, department] = combo.split('-');
+      return { sem_no: parseInt(sem_no), degree, department };
+    });
 
-    const { error: deleteError } = await supabase
-      .from("credits")
-      .delete()
-      .in("sem_no", semesterNumbers);
-
-    if (deleteError) {
-      console.error("Supabase delete error:", deleteError);
-      return res.status(500).json({
-        success: false,
-        message: "Failed to prepare credits information.",
-        error: deleteError.message,
-      });
-    }
-
-    // Modify creditsData to ensure unique serial_no across all entries
-    let globalSerialNo = 1;
-    const processedCreditsData = creditsData.flatMap((semester) => {
+    // Process data for each semester with degree and department info
+    let processedCreditsData = [];
+    
+    for (const { sem_no, degree, department } of semCombinations) {
+      const semesterItems = creditsData.filter(item => 
+        item.sem_no === sem_no && 
+        item.degree === degree && 
+        item.department === department
+      );
+      
+      if (semesterItems.length === 0) continue;
+      
+      // Get the first item to access course counts
+      const firstItem = semesterItems[0];
+      
+      // Create a unique identifier for this combination
+      const comboId = `${sem_no}-${degree}-${department}`;
+      
+      // Create theory and practical courses
       const theoryRows = Array.from(
-        { length: parseInt(semester.theory_courses) || 0 },
-        () => ({
-          sem_no: semester.sem_no,
+        { length: parseInt(firstItem.theory_courses) || 0 },
+        (_, i) => ({
+          course_name: `T-${comboId}-${i + 1}`, // Unique course_name
+          sem_no: sem_no,
           category: "theory",
-          serial_no: globalSerialNo++,
+          serial_no: i + 1,
+          degree: degree,
+          department: department
         })
       );
 
       const practicalRows = Array.from(
-        { length: parseInt(semester.practical_courses) || 0 },
-        () => ({
-          sem_no: semester.sem_no,
+        { length: parseInt(firstItem.practical_courses) || 0 },
+        (_, i) => ({
+          course_name: `P-${comboId}-${i + 1}`, // Unique course_name
+          sem_no: sem_no,
           category: "practical",
-          serial_no: globalSerialNo++,
+          serial_no: theoryRows.length + i + 1,
+          degree: degree,
+          department: department
         })
       );
+      
+      // Add to processed data
+      processedCreditsData = [...processedCreditsData, ...theoryRows, ...practicalRows];
+    }
 
-      return [...theoryRows, ...practicalRows];
-    });
+    // Choose the appropriate table based on degree and clear existing records
+    const beCredits = processedCreditsData.filter(item => item.degree === "B.E");
+    const meCredits = processedCreditsData.filter(item => item.degree === "M.E");
 
-    // Insert processed credits data
-    const { error: insertError } = await supabase
-      .from("credits")
-      .insert(processedCreditsData);
+    // Handle B.E credits
+    if (beCredits.length > 0) {
+      // Get unique department combinations for B.E
+      const beDepartments = [...new Set(beCredits.map(item => item.department))];
+      
+      for (const department of beDepartments) {
+        // Delete existing records for this department and B.E degree
+        const { error: deleteError } = await supabase
+          .from("credits")
+          .delete()
+          .eq("degree", "B.E")
+          .eq("department", department);
+          
+        if (deleteError) {
+          console.error("Supabase delete error for B.E credits:", deleteError);
+          continue;
+        }
+        
+        // Insert new B.E records for this department
+        const deptCredits = beCredits.filter(item => item.department === department);
+        const { error: insertError } = await supabase
+          .from("credits")
+          .insert(deptCredits);
+          
+        if (insertError) {
+          console.error("Supabase insert error for B.E credits:", insertError);
+          continue;
+        }
+      }
+    }
 
-    if (insertError) {
-      console.error("Supabase credits insert error:", insertError);
-      return res.status(500).json({
-        success: false,
-        message: "Failed to insert credits information.",
-        error: insertError.message,
-      });
+    // Handle M.E credits - create a new creditsME table with the same structure
+    if (meCredits.length > 0) {
+      // Get unique department combinations for M.E
+      const meDepartments = [...new Set(meCredits.map(item => item.department))];
+      
+      for (const department of meDepartments) {
+        // Delete existing records for this department and M.E degree
+        const { error: deleteError } = await supabase
+          .from("creditsME")
+          .delete()
+          .eq("degree", "M.E")
+          .eq("department", department);
+          
+        if (deleteError) {
+          console.error("Supabase delete error for M.E credits:", deleteError);
+          continue;
+        }
+        
+        // Insert new M.E records for this department
+        const deptCredits = meCredits.filter(item => item.department === department);
+        const { error: insertError } = await supabase
+          .from("creditsME")
+          .insert(deptCredits);
+          
+        if (insertError) {
+          console.error("Supabase insert error for M.E credits:", insertError);
+          continue;
+        }
+      }
     }
 
     res.status(200).json({
@@ -126,6 +199,6 @@ const updateCredits = async(req,res) =>{
       error: error.message,
     });
   }
-}
+};
 
-module.exports = {updateSemInfo, updateCredits}
+module.exports = { updateSemInfo, updateCredits };

@@ -154,15 +154,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 import React, { useState } from "react";
 import "../styles/SemInfo.css";
 import axios from "axios";
@@ -174,11 +165,13 @@ function SemInfo() {
       sem_no: i + 1,
       theory_courses: "",
       practical_courses: "",
-      mandatory_courses: "", // Added new field
+      mandatory_courses: "",
     }))
   );
-  const [totalCredits, setTotalCredits] = useState(""); 
+  const [totalCredits, setTotalCredits] = useState("");
   const navigate = useNavigate();
+  const [degree, setDegree] = useState("");
+  const [department, setDepartment] = useState("");
 
   const handleInputChange = (index, field, value) => {
     const updatedData = [...semData];
@@ -196,11 +189,18 @@ function SemInfo() {
 
   const handleSubmit = async () => {
     try {
+      // Validate degree and department are selected
+      if (!degree || !department) {
+        alert("Please select both Degree and Department before submitting.");
+        return;
+      }
+
       // Filter out rows with empty fields
-      const filteredSemData = semData.filter(row => 
-        row.theory_courses.trim() !== "" || 
-        row.practical_courses.trim() !== "" || 
-        row.mandatory_courses.trim() !== ""
+      const filteredSemData = semData.filter(
+        (row) =>
+          row.theory_courses.trim() !== "" ||
+          row.practical_courses.trim() !== "" ||
+          row.mandatory_courses.trim() !== ""
       );
 
       if (filteredSemData.length === 0) {
@@ -209,40 +209,40 @@ function SemInfo() {
         return;
       }
 
-      const semInfoPayload = filteredSemData.map(row => ({
+      const semInfoPayload = filteredSemData.map((row) => ({
         sem_no: row.sem_no,
         theory_courses: row.theory_courses.trim() || null,
         practical_courses: row.practical_courses.trim() || null,
-        mandatory_courses: row.mandatory_courses.trim() || null, // New field
+        mandatory_courses: row.mandatory_courses.trim() || null,
         total_credits: totalCredits || null,
+        degree: degree,
+        department: department,
       }));
 
       // Calculate serial numbers and prepare credits payload
-      let serialNo = 1;
-      const creditsPayload = filteredSemData.flatMap(semester => {
-        const theoryRows = Array.from({ length: parseInt(semester.theory_courses) || 0 }, () => ({
-          sem_no: semester.sem_no,
-          category: "theory",
-          serial_no: serialNo++,
-        }));
-
-        const practicalRows = Array.from({ length: parseInt(semester.practical_courses) || 0 }, () => ({
-          sem_no: semester.sem_no,
-          category: "practical",
-          serial_no: serialNo++,
-        }));
-
-        return [...theoryRows, ...practicalRows];
-      });
+      const creditsPayload = filteredSemData.map((semester) => ({
+        sem_no: semester.sem_no,
+        theory_courses: semester.theory_courses.trim() || "0",
+        practical_courses: semester.practical_courses.trim() || "0",
+        mandatory_courses: semester.mandatory_courses.trim() || "0",
+        degree: degree,
+        department: department,
+      }));
 
       // API calls
-      const semInfoResponse = await axios.post("http://localhost:4000/api/seminfo/updateSemInfo", {
-        semData: semInfoPayload,
-      });
+      const semInfoResponse = await axios.post(
+        "http://localhost:4000/api/seminfo/updateSemInfo",
+        {
+          semData: semInfoPayload,
+        }
+      );
 
-      const creditsResponse = await axios.post("http://localhost:4000/api/seminfo/updateCredits", {
-        creditsData: creditsPayload,
-      });
+      const creditsResponse = await axios.post(
+        "http://localhost:4000/api/seminfo/updateCredits",
+        {
+          creditsData: creditsPayload,
+        }
+      );
 
       if (semInfoResponse.data.success && creditsResponse.data.success) {
         alert("Semester information updated successfully.");
@@ -253,70 +253,101 @@ function SemInfo() {
     } catch (error) {
       console.error("Error updating semester info:", error);
       alert("An error occurred while updating semester information.");
-    }  
+    }
   };
 
   return (
     <div className="container-seminfo">
       <h1 className="page-title">Semester Information</h1>
+      <div className="dropdown-container">
+        <div>
+          <label>Degree: </label>
+          <select value={degree} onChange={(e) => setDegree(e.target.value)}>
+            <option value="">Select Degree</option>
+            <option value="B.E">B.E</option>
+            <option value="M.E">M.E</option>
+          </select>
+        </div>
+
+        <div>
+          <label>Department: </label>
+          <select
+            value={department}
+            onChange={(e) => setDepartment(e.target.value)}
+          >
+            <option value="">Select Department</option>
+            <option value="CSE">CSE</option>
+            <option value="CSE AI-ML">CSE AI-ML</option>
+            <option value="IT">IT</option>
+          </select>
+        </div>
+      </div>
+
       <h3 className="subtitle">Add Total Courses for Each Semester</h3>
 
       <div className="table-container-sem">
-  <table className="data-table-sem">
-    <thead>
-      <tr>
-        <th>Semester No</th>
-        <th>Theory Courses</th>
-        <th>Practical Courses</th>
-        <th>Mandatory Courses</th>
-      </tr>
-    </thead>
-    <tbody>
-      {semData.map((row, index) => (
-        <tr key={index}>
-          <td>{row.sem_no}</td>
-          <td>
-            <input
-              type="number"
-              name="theoryCourses"
-              className="input-sem"
-              placeholder="Enter theory courses"
-              value={row.theory_courses}
-              onChange={(e) =>
-                handleInputChange(index, "theory_courses", e.target.value)
-              }
-            />
-          </td>
-          <td>
-            <input
-              type="number"
-              name="practicalCourses"
-              className="input-sem"
-              placeholder="Enter practical courses"
-              value={row.practical_courses}
-              onChange={(e) =>
-                handleInputChange(index, "practical_courses", e.target.value)
-              }
-            />
-          </td>
-          <td>
-            <input
-              type="number"
-              name="mandatoryCourses"
-              className="input-sem"
-              placeholder="Enter mandatory courses"
-              value={row.mandatory_courses}
-              onChange={(e) =>
-                handleInputChange(index, "mandatory_courses", e.target.value)
-              }
-            />
-          </td>
-        </tr>
-      ))}
-    </tbody>
-  </table>
-</div>
-
+        <table className="data-table-sem">
+          <thead>
+            <tr>
+              <th>Semester No</th>
+              <th>Theory Courses</th>
+              <th>Practical Courses</th>
+              <th>Mandatory Courses</th>
+            </tr>
+          </thead>
+          <tbody>
+            {semData.map((row, index) => (
+              <tr key={index}>
+                <td>{row.sem_no}</td>
+                <td>
+                  <input
+                    type="number"
+                    name="theoryCourses"
+                    className="input-sem"
+                    placeholder="Enter theory courses"
+                    value={row.theory_courses}
+                    onChange={(e) =>
+                      handleInputChange(index, "theory_courses", e.target.value)
+                    }
+                  />
+                </td>
+                <td>
+                  <input
+                    type="number"
+                    name="practicalCourses"
+                    className="input-sem"
+                    placeholder="Enter practical courses"
+                    value={row.practical_courses}
+                    onChange={(e) =>
+                      handleInputChange(
+                        index,
+                        "practical_courses",
+                        e.target.value
+                      )
+                    }
+                  />
+                </td>
+                <td>
+                  <input
+                    type="number"
+                    name="mandatoryCourses"
+                    className="input-sem"
+                    placeholder="Enter mandatory courses"
+                    value={row.mandatory_courses}
+                    onChange={(e) =>
+                      handleInputChange(
+                        index,
+                        "mandatory_courses",
+                        e.target.value
+                      )
+                    }
+                  />
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
 
       <div className="total-credits-container">
         <label htmlFor="totalCredits">Total Credits:</label>
@@ -332,7 +363,9 @@ function SemInfo() {
       <button onClick={handleSubmit} className="submit-button">
         Submit
       </button>
-      <button onClick={navigateRegulations} className="submit-button">New Regulations</button>
+      <button onClick={navigateRegulations} className="submit-button">
+        New Regulations
+      </button>
     </div>
   );
 }

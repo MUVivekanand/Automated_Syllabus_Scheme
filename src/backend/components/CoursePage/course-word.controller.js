@@ -454,6 +454,13 @@ function createCourseRow(course, serialNo) {
 
 const courseDetailsInfo = async (req, res) => {
   try {
+    const { department, degree } = req.query;
+    
+    if (!department || !degree) {
+      return res.status(400).json({ error: "Department and degree parameters are required" });
+    }
+    
+    // Query credits table with filters
     const { data, error } = await supabase
       .from("credits")
       .select(`
@@ -464,41 +471,31 @@ const courseDetailsInfo = async (req, res) => {
         textbooks:textbooks(*),
         references:refs(*)
       `)
+      .eq("department", department)
+      .eq("degree", degree)
       .order("sem_no", { ascending: true })
       .order("serial_no", { ascending: true });
-
+    
     if (error) {
-      console.error("Error fetching data:", error);
+      console.error("Error fetching filtered courses:", error);
       return res.status(500).json({ error: "Internal Server Error" });
     }
-
+    
+    // Process data similar to your courseDetailsInfo function
     const courseDetailsMap = {};
-
+    
     for (const course of data) {
-      // Fetch corresponding timing details
+      // Fetch timing data
       const { data: timingData, error: timingError } = await supabase
         .from("timings")
         .select("*")
         .eq("course_name", course.course_name)
-        .single(); // Assuming only one row per course_name
-
+        .single();
+      
       if (timingError && timingError.code !== "PGRST116") {
         console.error(`Error fetching timing data for ${course.course_name}:`, timingError);
       }
-
-      // courseDetailsMap[course.course_name] = {
-      //   co: course.course_details || [],
-      //   hours: timingData
-      //     ? {
-      //         lecture: [timingData.hour1_1, timingData.hour1_2, timingData.hour1_3, timingData.hour1_4, timingData.hour1_5],
-      //         tutorial: [timingData.hour2_1, timingData.hour2_2, timingData.hour2_3, timingData.hour2_4, timingData.hour2_5],
-      //         total: timingData.total_hours
-      //       }
-      //     : { lecture: [], tutorial: [], total: 0 },
-      //   textbooks: course.textbooks || [],
-      //   references: course.references || []
-      // };
-
+      
       courseDetailsMap[course.course_name] = {
         co: course.course_details || [],
         hours: timingData
@@ -531,9 +528,7 @@ const courseDetailsInfo = async (req, res) => {
         references: course.references || []
       };
     }
-
-    // console.log(courseDetailsMap)
-
+    
     res.json(courseDetailsMap);
   } catch (err) {
     console.error("Unexpected error:", err);
