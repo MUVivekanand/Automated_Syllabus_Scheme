@@ -27,35 +27,116 @@ function CourseWord() {
   const degree = searchParams.get('degree');
   const department = searchParams.get('department');
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
+  // useEffect(() => {
+  //   const fetchData = async () => {
+  //     try {
+  //       setLoading(true);
         
-        if (degree && department) {
-          // Pass the degree and department to the fetch function
-          await fetchAllSemestersData(degree, department);
+  //       if (degree && department) {
+  //         // Pass the degree and department to the fetch function
+  //         await fetchAllSemestersData(degree, department);
           
-          // If you need course details as well
-          const response = await axios.get("http://localhost:4000/api/course/courseDetailsInfo", {
-            params: { degree, department }
-          });
-          setCoursesData(response.data);
-        } else {
-          // Handle the case where params are missing
-          setError("Department and degree parameters are missing");
-        }
+  //         // If you need course details as well
+  //         const response = await axios.get("http://localhost:4000/api/course/courseDetailsInfo", {
+  //           params: { degree, department }
+  //         });
+  //         setCoursesData(response.data);
+  //       } else {
+  //         // Handle the case where params are missing
+  //         setError("Department and degree parameters are missing");
+  //       }
         
-        setLoading(false);
-      } catch (error) {
-        console.error("Error fetching data:", error);
-        setError("Failed to fetch data. Please try again later.");
-        setLoading(false);
-      }
-    };
+  //       setLoading(false);
+  //     } catch (error) {
+  //       console.error("Error fetching data:", error);
+  //       setError("Failed to fetch data. Please try again later.");
+  //       setLoading(false);
+  //     }
+  //   };
     
-    fetchData();
-  }, [degree, department]);
+  //   fetchData();
+  // }, [degree, department]);
+
+  // In your useEffect hook, replace the fetchData function with:
+useEffect(() => {
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      
+      if (degree && department) {
+        // Fetch semester data
+        const semData = await fetchAllSemestersData(degree, department);
+        
+        // Fetch course details
+        const response = await axios.get("http://localhost:4000/api/course/courseDetailsInfo", {
+          params: { degree, department }
+        });
+        const courseDetailsData = response.data;
+        
+        // Attach course details to semester data
+        const enhancedSemestersData = semData.map(semester => {
+          const semesterCourses = semester.courses.map(course => {
+            // Find course details for this course
+            const details = courseDetailsData[course.course_name] || null;
+            return { ...course, courseDetails: details };
+          });
+          return { ...semester, courses: semesterCourses };
+        });
+        
+        setSemestersData(enhancedSemestersData);
+        console.log(enhancedSemestersData)
+        
+        // Fetch credit summary data
+        const [creditsSummaryResponse, totalCreditsResponse] = await Promise.all([
+          axios.get("http://localhost:4000/api/summary/creditsSummary", {
+            params: { degree, department }
+          }),
+          axios.get("http://localhost:4000/api/summary/getTotalCredits", {
+            params: { degree, department }
+          })
+        ]);
+        
+        const backendSummaryData = creditsSummaryResponse.data;
+        const storedTotalCredits = totalCreditsResponse.data.total_credits || 0;
+        
+        // Process summary data
+        const processedSummaryData = courseTypes.map((type) => {
+          const typeData = { type, credits: {} };
+        
+          semesters.forEach((sem) => {
+            const semesterCredits = backendSummaryData
+              .filter((course) => course.type === type && course.sem_no === sem)
+              .reduce((total, course) => total + (Number(course.credits) || 0), 0);
+        
+            typeData.credits[sem] = semesterCredits;
+          });
+        
+          return typeData;
+        });
+        
+        setSummaryData(processedSummaryData);
+        setTotalCreditsInfo({
+          expected: Number(storedTotalCredits),
+          calculated: processedSummaryData.reduce(
+            (sum, row) => sum + calculateRowTotal(row.credits), 
+            0
+          )
+        });
+      } else {
+        // Handle the case where params are missing
+        setError("Department and degree parameters are missing");
+      }
+      
+      setLoading(false);
+    } catch (error) {
+      console.error("Error fetching data:", error);
+      setError("Failed to fetch data. Please try again later.");
+      setLoading(false);
+    }
+  };
+  
+  fetchData();
+}, [degree, department]);
   
 
   const fetchAllSemestersData = async (degree, department) => {
@@ -98,103 +179,6 @@ function CourseWord() {
       throw error;
     }
   };
-
-
-  // const fetchAllData = async () => {
-  //   try {
-  //     setLoading(true);
-  //     const semestersData = [];
-      
-  //     // Fetch data for all 8 semesters
-  //     for (let semNo = 1; semNo <= 8; semNo++) {
-  //       const semInfoResponse = await axios.get(`http://localhost:4000/api/course/seminfo/${semNo}`);
-  //       const coursesResponse = await axios.get(`http://localhost:4000/api/course/courses/${semNo}`);
-        
-  //       semestersData.push({
-  //         semNo,
-  //         semInfo: semInfoResponse.data,
-  //         courses: coursesResponse.data
-  //       });
-  //     }
-      
-  //     // Fetch credit summary data
-  //     const [creditsSummaryResponse, totalCreditsResponse] = await Promise.all([
-  //       axios.get("http://localhost:4000/api/summary/creditsSummary"),
-  //       axios.get("http://localhost:4000/api/summary/getTotalCredits")
-  //     ]);
-  
-  //     const backendSummaryData = creditsSummaryResponse.data;
-  //     const storedTotalCredits = totalCreditsResponse.data.total_credits;
-  
-  //     // Process summary data
-  //     const processedSummaryData = courseTypes.map((type) => {
-  //       const typeData = { type, credits: {} };
-  
-  //       semesters.forEach((sem) => {
-  //         const semesterCredits = backendSummaryData
-  //           .filter((course) => course.type === type && course.sem_no === sem)
-  //           .reduce((total, course) => total + (Number(course.credits) || 0), 0);
-  
-  //         typeData.credits[sem] = semesterCredits;
-  //       });
-  
-  //       return typeData;
-  //     });
-      
-  //     setSemestersData(semestersData);
-  //     setSummaryData(processedSummaryData);
-  //     setTotalCreditsInfo({
-  //       expected: Number(storedTotalCredits),
-  //       calculated: processedSummaryData.reduce(
-  //         (sum, row) => sum + calculateRowTotal(row.credits), 
-  //         0
-  //       )
-  //     });
-  //     setLoading(false);
-  //   } catch (error) {
-  //     console.error("Error fetching data:", error);
-  //     setError("Failed to fetch data. Please try again later.");
-  //     setLoading(false);
-  //   }
-  // };
-
-  // const transformCourseDetails = (courseDetailsData) => {
-  //   const transformedData = {};
-  
-  //   Object.keys(courseDetailsData).forEach(courseName => {
-  //     const course = courseDetailsData[courseName];
-  //     const transformedCourse = { ...course };
-  
-  //     // Transform CO data if it exists
-  //     if (course.co && course.co.length > 0) {
-  //       const coData = course.co[0];
-  //       const transformedCO = [];
-        
-  //       // Find all CO numbers by looking at co1_name, co2_name, etc.
-  //       const coNumbers = new Set(
-  //         Object.keys(coData)
-  //           .filter(key => key.match(/co\d+_name/))
-  //           .map(key => key.match(/co(\d+)_name/)[1])
-  //       );
-  
-  //       // Create structured CO objects
-  //       Array.from(coNumbers).forEach(num => {
-  //         transformedCO.push({
-  //           name: `CO${num}: ${coData[`co${num}_name`]}`,
-  //           desc: coData[`co${num}_desc`] || ""
-  //         });
-  //       });
-  
-  //       transformedCourse.co = transformedCO;
-  //     } else {
-  //       transformedCourse.co = [];
-  //     }
-  
-  //     transformedData[courseName] = transformedCourse;
-  //   });
-  
-  //   return transformedData;
-  // };
 
   const transformCourseDetails = (courseDetailsData) => {
     const transformedData = {};
@@ -294,18 +278,6 @@ function CourseWord() {
       
       setSemestersData(semestersData);
 
-
-
-
-      // setSemestersData(semestersData.map(semester => {
-      //   const semesterCourses = semester.courses.map(course => {
-      //     // Find course details for this course
-      //     const details = courseDetailsData[course.course_name] || null;
-      //     return { ...course, courseDetails: details };
-      //   });
-      //   return { ...semester, courses: semesterCourses };
-      // }));
-
       setSemestersData(semestersData.map(semester => {
         const semesterCourses = semester.courses.map(course => {
           // Find course details for this course
@@ -345,55 +317,6 @@ function CourseWord() {
     return summaryData.reduce((sum, row) => sum + (row.credits[semesterNum] || 0), 0);
   };
 
-  // Function to create Word document from frontend data
-  
-
-  // Helper function to create a table cell with formatting options
-  // const createTableCell = (text, options = {}) => {
-  //   const cellOptions = {
-  //     children: [
-  //       new Paragraph({
-  //         children: [
-  //           new TextRun({
-  //             text: text || "",
-  //             bold: options.bold || false,
-  //             size: 18,
-  //             font: "Arial",
-  //           }),
-  //         ],
-  //         alignment: options.alignment || AlignmentType.CENTER,
-  //       }),
-  //     ],
-  //     rowSpan: options.rowSpan,
-  //     colSpan: options.colSpan,
-  //     margins: {
-  //       top: 70,
-  //       bottom: 70,
-  //       left: 70,
-  //       right: 70,
-  //     },
-  //     verticalAlign: options.verticalAlign || "center",
-  //   };
-
-  //   // Add width if specified
-  //   if (options.width) {
-  //     cellOptions.width = {
-  //       size: options.width,
-  //       type: WidthType.DXA, // or WidthType.PERCENTAGE for relative width
-  //     };
-  //   }
-    
-  //   // Add shading if specified
-  //   if (options.shading) {
-  //     cellOptions.shading = {
-  //       type: ShadingType.CLEAR,
-  //       color: "F2F2F2",
-  //       fill: "F2F2F2",
-  //     };
-  //   }
-    
-  //   return new TableCell(cellOptions);
-  // };
 
 // const exportToPDF = async () => {
 //   try {
@@ -418,8 +341,6 @@ function CourseWord() {
     
 //     // Title and header for first page
 //     doc.setFontSize(10);
-//     // doc.text('67th ACM', 20, 10);
-//     // doc.text('30.07.2022', doc.internal.pageSize.width - 20, 10, { align: 'right' });
     
 //     doc.setFontSize(11);
 //     doc.text('Courses of Study and Scheme of Assessment', 20, 20);
@@ -428,7 +349,6 @@ function CourseWord() {
 //     // Add 2023 REGULATIONS text and credits info
 //     doc.setFontSize(9);
 //     doc.text('[2023 REGULATIONS]', doc.internal.pageSize.width - 20, 20, { align: 'right' });
-//     // doc.text('(Minimum No. of credits to be earned: 164)', doc.internal.pageSize.width - 20, 25, { align: 'right' });
     
 //     // Function to create semester table
 //     const createSemesterTable = (semNo, startY, courses) => {
@@ -654,7 +574,7 @@ function CourseWord() {
 //       }
 //     });
     
-//     // Course Details section - one course per page
+//     // Course Details section - one course per page with proper margins
 //     for (const semester of semestersData) {
 //       const coursesWithDetails = semester.courses.filter(course => course.courseDetails);
       
@@ -672,25 +592,50 @@ function CourseWord() {
 //             yPosition = 20;
 //           }
           
+//           // Add more top margin for each course card
+//           yPosition += 5;
+          
 //           // Course header
 //           doc.setFontSize(12);
 //           doc.setFont('helvetica', 'bold');
-//           doc.text(`${course.course_code} - ${course.course_name}`, pageMargin + 4, yPosition);
+//           doc.text(`${course.course_code} - ${course.course_name}`, pageMargin, yPosition);
           
 //           // Credits info
-//           doc.setFontSize(10);
 //           doc.setFont('helvetica', 'normal');
-//           doc.text(`L:${course.lecture} T:${course.tutorial} P:${course.practical} C:${course.credits}`, doc.internal.pageSize.width - 40, yPosition);
+//           doc.text(`${course.lecture} ${course.tutorial} ${course.practical} ${course.credits}`, doc.internal.pageSize.width - 40, yPosition);
           
 //           yPosition += 10;
           
 //           // Course Outcomes
 //           if (course.courseDetails.co && course.courseDetails.co.length > 0) {
-//             for (const co of course.courseDetails.co) {
-//               // Split long course outcomes into multiple lines
-//               const coLines = doc.splitTextToSize(co.name + " " + co.desc, doc.internal.pageSize.width - (pageMargin * 2) - 10);
+//             for (let i = 0; i < course.courseDetails.co.length; i++) {
+//               const co = course.courseDetails.co[i];
               
-//               doc.text(coLines, pageMargin + 4, yPosition);
+//               // Main CO text without hours
+//               let coText = co.name + " " + co.desc;
+              
+//               // Get hours info if available
+//               let hoursText = "";
+//               if (course.courseDetails.hours && course.courseDetails.hours[i]) {
+//                 hoursText = `(${course.courseDetails.hours[i].hour1}+${course.courseDetails.hours[i].hour2})`;
+//               }
+              
+//               // Split long course outcomes into multiple lines
+//               const coLines = doc.splitTextToSize(coText, doc.internal.pageSize.width - (pageMargin * 2) - 30);
+              
+//               // Calculate the width of the hours text
+//               doc.setFont('helvetica', 'normal');
+//               const hoursWidth = doc.getTextWidth(hoursText);
+              
+//               // Position for the hours text (right-aligned)
+//               const hoursX = doc.internal.pageSize.width - pageMargin - hoursWidth;
+              
+//               // Draw the CO text and hours text
+//               doc.text(coLines, pageMargin, yPosition);
+//               if (hoursText) {
+//                 doc.text(hoursText, hoursX, yPosition);
+//               }
+              
 //               yPosition += 6 * coLines.length;
               
 //               // Add more space if needed
@@ -701,26 +646,36 @@ function CourseWord() {
 //             }
 //           }
           
-//           // Total Hours
+//           // Add more space after course outcomes
+//           yPosition += 5;
+          
+//           // Total Hours - Right aligned
 //           doc.setFont('helvetica', 'bold');
-//           doc.text("Total =", pageMargin + 4, yPosition);
+//           doc.text("Total =", pageMargin, yPosition);
+          
+//           // Create the total hours text
+//           const totalHoursText = `L: 45 ${course.credits === 4 ? "+ T: 15 = 60" : ""}`;
+//           const totalHoursWidth = doc.getTextWidth(totalHoursText);
+//           const totalHoursX = doc.internal.pageSize.width - pageMargin - totalHoursWidth;
+          
+//           // Draw the right-aligned total hours text
 //           doc.setFont('helvetica', 'normal');
-//           doc.text(`L: 45 ${course.credits === 4 ? "+ T: 15 = 60" : ""}`, pageMargin + 20, yPosition);
+//           doc.text(totalHoursText, totalHoursX, yPosition);
           
 //           yPosition += 10;
           
 //           // Textbooks
 //           doc.setFont('helvetica', 'bold');
-//           doc.text("TEXT BOOKS", pageMargin + 4, yPosition);
+//           doc.text("TEXT BOOKS", pageMargin, yPosition);
 //           yPosition += 8;
 //           doc.setFont('helvetica', 'normal');
           
 //           if (course.courseDetails.textbooks && course.courseDetails.textbooks.length > 0) {
 //             course.courseDetails.textbooks.forEach((book, index) => {
 //               const bookText = `${index + 1}. ${book.author}, ${book.title}, ${book.publisher}, ${book.place}, ${book.year}.`;
-//               const bookLines = doc.splitTextToSize(bookText, doc.internal.pageSize.width - (pageMargin * 2) - 10);
+//               const bookLines = doc.splitTextToSize(bookText, doc.internal.pageSize.width - (pageMargin * 2));
               
-//               doc.text(bookLines, pageMargin + 4, yPosition);
+//               doc.text(bookLines, pageMargin, yPosition);
 //               yPosition += 6 * bookLines.length;
               
 //               // Add more space or new page if needed
@@ -730,7 +685,7 @@ function CourseWord() {
 //               }
 //             });
 //           } else {
-//             doc.text("No textbooks available.", pageMargin + 4, yPosition);
+//             doc.text("No textbooks available.", pageMargin, yPosition);
 //             yPosition += 8;
 //           }
           
@@ -738,16 +693,16 @@ function CourseWord() {
           
 //           // References
 //           doc.setFont('helvetica', 'bold');
-//           doc.text("REFERENCES", pageMargin + 4, yPosition);
+//           doc.text("REFERENCES", pageMargin, yPosition);
 //           yPosition += 8;
 //           doc.setFont('helvetica', 'normal');
           
 //           if (course.courseDetails.references && course.courseDetails.references.length > 0) {
 //             course.courseDetails.references.forEach((ref, index) => {
 //               const refText = `${index + 1}. ${ref.author}, ${ref.title}, ${ref.publisher}, ${ref.place}, ${ref.year}.`;
-//               const refLines = doc.splitTextToSize(refText, doc.internal.pageSize.width - (pageMargin * 2) - 10);
+//               const refLines = doc.splitTextToSize(refText, doc.internal.pageSize.width - (pageMargin * 2));
               
-//               doc.text(refLines, pageMargin + 4, yPosition);
+//               doc.text(refLines, pageMargin, yPosition);
 //               yPosition += 6 * refLines.length;
               
 //               // Add more space or new page if needed
@@ -757,15 +712,16 @@ function CourseWord() {
 //               }
 //             });
 //           } else {
-//             doc.text("No references available.", pageMargin + 4, yPosition);
+//             doc.text("No references available.", pageMargin, yPosition);
 //             yPosition += 8;
 //           }
           
+//           // Add more bottom margin between courses
 //           yPosition += 15;
           
 //           // Add a separator line between courses
 //           if (yPosition < doc.internal.pageSize.height - 30) {
-//             doc.line(pageMargin + 4, yPosition - 5, doc.internal.pageSize.width - pageMargin - 4, yPosition - 5);
+//             doc.line(pageMargin, yPosition - 5, doc.internal.pageSize.width - pageMargin, yPosition - 5);
 //           }
           
 //           // Check if we need a new page for the next course
@@ -786,7 +742,7 @@ function CourseWord() {
 //     setError('Failed to export data to PDF. Please try again later.');
 //   }
 // };
-
+  
 const exportToPDF = async () => {
   try {
     setExportLoading(true);
@@ -1075,42 +1031,47 @@ const exportToPDF = async () => {
           
           yPosition += 10;
           
-          // Course Outcomes
+          // Course Outcomes - Corrected version
           if (course.courseDetails.co && course.courseDetails.co.length > 0) {
-            for (let i = 0; i < course.courseDetails.co.length; i++) {
-              const co = course.courseDetails.co[i];
-              
-              // Main CO text without hours
-              let coText = co.name + " " + co.desc;
-              
-              // Get hours info if available
-              let hoursText = "";
-              if (course.courseDetails.hours && course.courseDetails.hours[i]) {
-                hoursText = `(${course.courseDetails.hours[i].hour1}+${course.courseDetails.hours[i].hour2})`;
-              }
-              
-              // Split long course outcomes into multiple lines
-              const coLines = doc.splitTextToSize(coText, doc.internal.pageSize.width - (pageMargin * 2) - 30);
-              
-              // Calculate the width of the hours text
-              doc.setFont('helvetica', 'normal');
-              const hoursWidth = doc.getTextWidth(hoursText);
-              
-              // Position for the hours text (right-aligned)
-              const hoursX = doc.internal.pageSize.width - pageMargin - hoursWidth;
-              
-              // Draw the CO text and hours text
-              doc.text(coLines, pageMargin, yPosition);
-              if (hoursText) {
-                doc.text(hoursText, hoursX, yPosition);
-              }
-              
-              yPosition += 6 * coLines.length;
-              
-              // Add more space if needed
-              if (yPosition > doc.internal.pageSize.height - 40) {
-                doc.addPage();
-                yPosition = 20;
+            // Using the first item which contains co1_name, co1_desc format
+            const coData = course.courseDetails.co[0];
+            
+            for (let i = 1; i <= 5; i++) {
+              if (coData[`co${i}_name`]) {
+                // Main CO text
+                const coText = `CO${i}: ${coData[`co${i}_name`]} ${coData[`co${i}_desc`]}`;
+                
+                // Get hours info if available
+                let hoursText = "";
+                if (course.courseDetails.hours && 
+                    course.courseDetails.hours.lecture && 
+                    course.courseDetails.hours.tutorial) {
+                  hoursText = `(${course.courseDetails.hours.lecture[i-1] || 0} + ${course.courseDetails.hours.tutorial[i-1] || 0})`;
+                }
+                
+                // Split long course outcomes into multiple lines
+                const coLines = doc.splitTextToSize(coText, doc.internal.pageSize.width - (pageMargin * 2) - 30);
+                
+                // Calculate the width of the hours text
+                doc.setFont('helvetica', 'normal');
+                const hoursWidth = doc.getTextWidth(hoursText);
+                
+                // Position for the hours text (right-aligned)
+                const hoursX = doc.internal.pageSize.width - pageMargin - hoursWidth;
+                
+                // Draw the CO text and hours text
+                doc.text(coLines, pageMargin, yPosition);
+                if (hoursText) {
+                  doc.text(hoursText, hoursX, yPosition);
+                }
+                
+                yPosition += 6 * coLines.length;
+                
+                // Add more space if needed
+                if (yPosition > doc.internal.pageSize.height - 40) {
+                  doc.addPage();
+                  yPosition = 20;
+                }
               }
             }
           }
@@ -1211,7 +1172,6 @@ const exportToPDF = async () => {
     setError('Failed to export data to PDF. Please try again later.');
   }
 };
-  
 
   const navigateBack = () => {
     navigate('/syllabus');
@@ -1446,7 +1406,11 @@ const exportToPDF = async () => {
       {/* NEW CODE: Course Details Section */}
       <div className="course-details-sections">
         <h3>COURSE DETAILS</h3>
+
+        
         {semester.courses.map((course) => (
+          
+
           course.courseDetails && (
             <div key={`details-${course.course_code}`} className="course-detail-card">
               <div className="course-header">
@@ -1501,7 +1465,7 @@ const exportToPDF = async () => {
 
 
       {/* Course Outcomes */}
-{course.courseDetails.co && course.courseDetails.co.length > 0 && (
+{/* {course.courseDetails.co && course.courseDetails.co.length > 0 && (
   <div className="section">
     {course.courseDetails.co.map((co, i) => (
       <div key={i} className="course-topic">
@@ -1515,6 +1479,33 @@ const exportToPDF = async () => {
         )}
       </div>
     ))}
+  </div>
+)} */}
+
+{/* Course Outcomes */}
+{course.courseDetails.co && course.courseDetails.co.length > 0 && (
+  <div className="section">
+    {/* Find all CO keys and create entries for each */}
+    {[1, 2, 3, 4, 5].map(num => {
+      const coData = course.courseDetails.co[0];
+      if (coData[`co${num}_name`]) {
+        return (
+          <div key={num} className="course-topic">
+            <p className="topic">
+              <b>CO{num}: {coData[`co${num}_name`]}</b> {coData[`co${num}_desc`]}
+            </p>
+            {course.courseDetails.hours && 
+             course.courseDetails.hours.lecture && 
+             course.courseDetails.hours.tutorial && (
+              <span className="hours">
+                ({course.courseDetails.hours.lecture[num-1] || 0} + {course.courseDetails.hours.tutorial[num-1] || 0})
+              </span>
+            )}
+          </div>
+        );
+      }
+      return null;
+    })}
   </div>
 )}
 

@@ -412,46 +412,6 @@ function createCourseRow(course, serialNo) {
   });
 }
 
-// const courseDetailsInfo = async (req, res) => {
-//   try {
-//     const { data, error } = await supabase
-//       .from("credits")
-//       .select(`
-//         sem_no,
-//         serial_no,
-//         course_name,
-//         course_details:course_details(*),
-//         textbooks:textbooks(*),
-//         references:refs(*)
-//       `)
-//       .order("sem_no", { ascending: true })
-//       .order("serial_no", { ascending: true });
-
-//     if (error) {
-//       console.error("Error fetching data:", error);
-//       return res.status(500).json({ error: "Internal Server Error" });
-//     }
-
-//     // Transform data into a dictionary with course_name as key
-//     const courseDetailsMap = {};
-    
-//     data.forEach(course => {
-//       // Create a structured object for each course
-//       courseDetailsMap[course.course_name] = {
-//         co: course.course_details || [],
-//         hours: [], // You'll need to extract or define this
-//         textbooks: course.textbooks || [],
-//         references: course.references || []
-//       };
-//     });
-
-//     res.json(courseDetailsMap);
-//   } catch (err) {
-//     console.error("Unexpected error:", err);
-//     res.status(500).json({ error: "Internal Server Error" });
-//   }
-// };
-
 const courseDetailsInfo = async (req, res) => {
   try {
     const { department, degree } = req.query;
@@ -528,6 +488,10 @@ const courseDetailsInfo = async (req, res) => {
         references: course.references || []
       };
     }
+  //   Object.entries(courseDetailsMap).forEach(([courseName, details]) => {
+  //     console.log(`Course Name: ${courseName}`, JSON.stringify(details, null, 2));
+  // });
+  
     
     res.json(courseDetailsMap);
   } catch (err) {
