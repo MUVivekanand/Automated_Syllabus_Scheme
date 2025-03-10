@@ -44,33 +44,7 @@ function Course() {
   const navigateWordPage = () => {
     navigate(`/wordPage?degree=${encodeURIComponent(degree)}&department=${encodeURIComponent(department)}`);
   }
-
-  const [semesterOptions] = useState([
-    { value: 1, label: 'Semester 1' },
-    { value: 2, label: 'Semester 2' },
-    { value: 3, label: 'Semester 3' },
-    { value: 4, label: 'Semester 4' },
-    { value: 5, label: 'Semester 5' },
-    { value: 6, label: 'Semester 6' },
-    { value: 7, label: 'Semester 7' },
-    { value: 8, label: 'Semester 8' }
-  ]);
-  
-  // Add this handler function with your other handler functions
-  const handleSemesterChange = useCallback((e) => {
-    const semNumber = parseInt(e.target.value);
-    setCurrentSem(semNumber);
-    setCommonInfo(prev => ({
-      ...prev,
-      caMarks: "",
-      feMarks: "",
-      totalMarks: "",
-      department: "",
-      degree: "",
-      semNo: semNumber
-    }));
-  }, []);
-      
+     
 
   const fetchData = async () => {
     try {
@@ -348,6 +322,94 @@ const handleSubmit = useCallback(async () => {
     }
   }, [currentSem]);
 
+  const [semesterOptions, setSemesterOptions] = useState([
+    { value: 1, label: 'Semester 1' },
+    { value: 2, label: 'Semester 2' },
+    { value: 3, label: 'Semester 3' },
+    { value: 4, label: 'Semester 4' },
+    { value: 5, label: 'Semester 5' },
+    { value: 6, label: 'Semester 6' },
+    { value: 7, label: 'Semester 7' },
+    { value: 8, label: 'Semester 8' }
+  ]);
+
+
+  // Effect to update semester options based on degree
+  useEffect(() => {
+    if (degree === "M.E") {
+      // If M.E is selected, only show semesters 1-4
+      setSemesterOptions([
+        { value: 1, label: 'Semester 1' },
+        { value: 2, label: 'Semester 2' },
+        { value: 3, label: 'Semester 3' },
+        { value: 4, label: 'Semester 4' }
+      ]);
+      
+      // If current semester is beyond 4, reset to semester 1
+      if (currentSem > 4) {
+        setCurrentSem(1);
+        setCommonInfo(prev => ({
+          ...prev,
+          semNo: 1
+        }));
+      }
+      
+      // Auto-select CSE for M.E
+      setDepartment("CSE");
+    } else {
+      // For B.E, show all 8 semesters
+      setSemesterOptions([
+        { value: 1, label: 'Semester 1' },
+        { value: 2, label: 'Semester 2' },
+        { value: 3, label: 'Semester 3' },
+        { value: 4, label: 'Semester 4' },
+        { value: 5, label: 'Semester 5' },
+        { value: 6, label: 'Semester 6' },
+        { value: 7, label: 'Semester 7' },
+        { value: 8, label: 'Semester 8' }
+      ]);
+      
+      // Reset department when switching to B.E
+      if (degree === "B.E") {
+        setDepartment("");
+      }
+    }
+  }, [degree]);
+
+  // Update this handler for degree change
+  const handleDegreeChange = (e) => {
+    const selectedDegree = e.target.value;
+    setDegree(selectedDegree);
+    setCommonInfo(prev => ({
+      ...prev,
+      degree: selectedDegree
+    }));
+  };
+  
+  // Update department handler
+  const handleDepartmentChange = (e) => {
+    const selectedDepartment = e.target.value;
+    setDepartment(selectedDepartment);
+    setCommonInfo(prev => ({
+      ...prev,
+      department: selectedDepartment
+    }));
+  };
+
+  const handleSemesterChange = useCallback((e) => {
+    const semNumber = parseInt(e.target.value);
+    setCurrentSem(semNumber);
+    setCommonInfo(prev => ({
+      ...prev,
+      caMarks: "",
+      feMarks: "",
+      totalMarks: "",
+      semNo: semNumber
+      // Preserving department and degree by not overwriting them
+    }));
+  }, []);
+
+
   const handleBack = useCallback(() => {
     if (currentSem > 1) {
       setCurrentSem(prev => prev - 1);
@@ -375,26 +437,34 @@ const handleSubmit = useCallback(async () => {
       <div className="dropdown-container">
         <div>
           <label>Degree: </label>
-          <select value={degree} onChange={(e) => setDegree(e.target.value)}>
+          <select value={degree} onChange={handleDegreeChange}>
             <option value="">Select Degree</option>
-            <option value="B.E">B.E</option>
-            <option value="M.E">M.E</option>
-          </select>
-        </div>
+                <option value="B.E">B.E</option>
+                <option value="M.E">M.E</option>
+              </select>
+            </div>
 
-        <div>
-          <label>Department: </label>
-          <select
-            value={department}
-            onChange={(e) => setDepartment(e.target.value)}
-          >
-            <option value="">Select Department</option>
-            <option value="CSE">CSE</option>
-            <option value="CSE AI-ML">CSE AI-ML</option>
-            <option value="IT">IT</option>
-          </select>
-        </div>
-      </div>
+            <div>
+              <label>Department: </label>
+              <select
+                value={department}
+                onChange={handleDepartmentChange}
+                disabled={degree === "M.E"} // Disable if M.E is selected
+              >
+                <option value="">Select Department</option>
+                {degree === "M.E" ? (
+                  <option value="CSE">CSE</option>
+                ) : (
+                  <>
+                    <option value="CSE">CSE</option>
+                    <option value="CSE AI-ML">CSE AI-ML</option>
+                    <option value="IT">IT</option>
+                  </>
+                )}
+              </select>
+            </div>
+          </div>
+                
 
 
       {/* Common Information Section */}
@@ -816,22 +886,22 @@ const handleSubmit = useCallback(async () => {
         </div>
       )}
 
-    <div className="semester-navigation">
-      <div className="semester-selector">
-        <label htmlFor="semester-select">Select Semester: </label>
-        <select 
-          id="semester-select" 
-          value={currentSem}
-          onChange={handleSemesterChange}
-          className="semester-dropdown"
-        >
-          {semesterOptions.map(option => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
-      </div>
+      <div className="semester-navigation">
+        <div className="semester-selector">
+          <label htmlFor="semester-select">Select Semester: </label>
+          <select 
+            id="semester-select" 
+            value={currentSem}
+            onChange={handleSemesterChange}
+            className="semester-dropdown"
+          >
+            {semesterOptions.map(option => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </div>
       
       <div className="action-buttons">
         <button onClick={handleSubmit}>Submit</button>
