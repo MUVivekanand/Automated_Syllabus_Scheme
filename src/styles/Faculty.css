@@ -190,3 +190,25 @@
   border: 1px solid #ccc;
   border-radius: 5px;
 }
+
+.generate-button {
+  padding: 14px 28px; 
+  font-size: 18px; 
+  flex: auto;
+  color: white;
+  background-color: #0aaaea; 
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  width: 100%; 
+  max-width: 300px; 
+  display: block; 
+  text-align: center; 
+  margin: 20px auto; 
+}
+
+.generate-button:hover {
+  background-color: #0853b6; /* Darker green on hover */
+}
+

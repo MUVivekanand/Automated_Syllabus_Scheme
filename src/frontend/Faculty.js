@@ -2,6 +2,8 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import "../styles/Faculty.css";
+import * as XLSX from "xlsx";
+import { saveAs } from "file-saver";
 
 function Faculty() {
   const [facultyName, setFacultyName] = useState(
@@ -113,6 +115,66 @@ function Faculty() {
           : item
       ),
     }));
+  };
+
+  const generateExcel = () => {
+    // Define the table headers (First row)
+    const headers = [
+      "",
+      "POa",
+      "POb",
+      "POc",
+      "POd",
+      "POe",
+      "POf",
+      "POg",
+      "POh",
+      "POi",
+      "POj",
+      "POk",
+      "PSO1",
+      "PSO2",
+    ];
+
+    // Define the row labels (First column)
+    const rowLabels = ["CO1", "CO2", "CO3", "CO4", "CO5"];
+
+    // Create the data structure with row labels and empty values
+    const data = [
+      headers, // First row (Headers)
+      ...rowLabels.map((label) => [
+        label,
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+      ]), // Rows with empty values
+    ];
+
+    // Create a worksheet
+    const ws = XLSX.utils.aoa_to_sheet(data);
+
+    // Create a workbook and add the worksheet
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "PO Mapping");
+
+    // Write the file
+    const excelBuffer = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+    const dataBlob = new Blob([excelBuffer], {
+      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    });
+
+    // Save the file
+    saveAs(dataBlob, "PO_Mapping.xlsx");
   };
 
   const navigate = useNavigate();
@@ -452,6 +514,9 @@ function Faculty() {
 
           <button className="save-button" onClick={handleSave}>
             Save
+          </button>
+          <button className="generate-button" onClick={generateExcel}>
+            Generate File
           </button>
         </div>
       )}
