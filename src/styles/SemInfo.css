@@ -148,4 +148,48 @@
   outline: none;
 }
 
-  
+/* DropdownStyles.css */
+.dropdown-container {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  max-width: 300px;
+  margin: 20px auto;
+  font-family: 'Poppins', sans-serif;
+}
+
+.dropdown-container label {
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+}
+
+.dropdown-container select {
+  width: 100%;
+  padding: 10px;
+  font-size: 14px;
+  border: 2px solid #3498db;
+  border-radius: 8px;
+  background-color: white;
+  color: #333;
+  outline: none;
+  transition: all 0.3s ease-in-out;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.dropdown-container select:hover {
+  border-color: #2980b9;
+}
+
+.dropdown-container select:focus {
+  border-color: #2ecc71;
+  box-shadow: 0 0 10px rgba(46, 204, 113, 0.5);
+}
+
+/* For better appearance on mobile */
+@media (max-width: 600px) {
+  .dropdown-container {
+    max-width: 100%;
+    padding: 0 10px;
+  }
+}

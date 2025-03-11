@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
+import { useLocation } from "react-router-dom";
 import "../styles/Summary.css";
 
 function Summary() {
@@ -9,20 +10,38 @@ function Summary() {
   const [totalCreditsMismatch, setTotalCreditsMismatch] = useState(false);
   const [expectedTotalCredits, setExpectedTotalCredits] = useState(null);
   const [calculatedTotalCredits, setCalculatedTotalCredits] = useState(null);
+  const [degree, setDegree] = useState("");
+  const [department, setDepartment] = useState("");
 
+  const location = useLocation();
   const courseTypes = ["HS", "BS", "ES", "PC", "PE", "OE", "EEC", "MC"];
   const semesters = Array.from({ length: 8 }, (_, i) => i + 1);
 
   useEffect(() => {
-    fetchData();
-  }, []);
+    // Extract degree and department from URL parameters
+    const params = new URLSearchParams(location.search);
+    const degreeParam = params.get("degree") || "";
+    const departmentParam = params.get("department") || "";
+    
+    setDegree(degreeParam);
+    setDepartment(departmentParam);
+    
+    // Only fetch data if we have degree and department
+    if (degreeParam) {
+      fetchData(degreeParam, departmentParam);
+    }
+  }, [location]);
 
-  const fetchData = async () => {
+  const fetchData = async (degree, department) => {
     try {
-      // Fetch both credits summary and total credits
+      // Fetch both credits summary and total credits with filtering
       const [creditsSummaryResponse, totalCreditsResponse] = await Promise.all([
-        axios.get("http://localhost:4000/api/summary/creditsSummary"),
-        axios.get("http://localhost:4000/api/summary/getTotalCredits")
+        axios.get("http://localhost:4000/api/summary/creditsSummary", {
+          params: { degree, department }
+        }),
+        axios.get("http://localhost:4000/api/summary/getTotalCredits", {
+          params: { degree, department }
+        })
       ]);
 
       const backendData = creditsSummaryResponse.data;
@@ -103,7 +122,9 @@ ${Number(storedTotalCredits) === totalCalculatedCredits
           Calculated: {calculatedTotalCredits}
         </div>
       )}
-      <h1 className="summary-title">Summary of Credit Distribution</h1>
+      <h1 className="summary-title">
+        Summary of Credit Distribution - {degree} {department}
+      </h1>
       <div className="table-container">
         <table className="summary-table">
           <thead>

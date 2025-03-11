@@ -1,24 +1,49 @@
 const supabase = require("../../supabaseClient");
 
 const getSemesterInfo = async (req, res) => {
-  const { semNo } = req.params;
   try {
-    const { data, error } = await supabase
-      .from("seminfo")
+    const { semNo } = req.params;
+    const { degree, department } = req.query;
+
+    // Determine the correct table
+    const tableToQuery = degree === "M.E" ? "seminfome" : "seminfo";
+
+    // Base query
+    let query = supabase
+      .from(tableToQuery)
       .select("*")
-      .eq("sem_no", semNo)
-      .single();
+      .eq("sem_no", Number(semNo));
+
+    // Apply filters for both M.E and B.E
+    if (degree) {
+      query = query.eq("degree", degree);
+    }
+
+    if (department) {
+      query = query.eq("department", department);
+    }
+
+    const { data, error } = await query;
 
     if (error) throw error;
-    res.json({
-      ...data,
-      mandatory_courses: data.mandatory_courses || 0,
-    });
+
+    // If no data is found, return default response
+    if (!data || data.length === 0) {
+      return res.json({
+        theory_courses: 0,
+        practical_courses: 0,
+        mandatory_courses: 0,
+        sem_no: Number(semNo),
+      });
+    }
+
+    res.json(data[0]); // Return the first matched record
   } catch (error) {
     console.error("Error fetching semester info:", error);
-    res.status(500).json({ error: "Internal Server Error" });
+    res.status(500).json({ message: "Failed to fetch semester info" });
   }
 };
+
 
 // Helper function to handle course details relationships
 const updateOrDeleteCourseDetails = async (oldCourseCode, newCourseCode = null) => {
@@ -67,6 +92,7 @@ const updateCourse = async (req, res) => {
       type,
       faculty,
       department,
+      degree,
       sem_no,
       category
     } = req.body;
@@ -107,6 +133,7 @@ const updateCourse = async (req, res) => {
         type,
         faculty,
         department,
+        degree,
         sem_no,
         category
       }, {
@@ -135,6 +162,7 @@ const updateCourse = async (req, res) => {
             type,
             faculty,
             department,
+            degree,
             sem_no,
             category
           });
@@ -186,10 +214,18 @@ const deleteCourse = async (req, res) => {
 const getCourses = async (req, res) => {
   try {
     const { semNo } = req.params;
+    const { degree } = req.query;
+    const { department } = req.query;
+    
+    // Determine which degree type we're working with
+    const isDegreeMe = degree === 'M.E';
+    
     const { data, error } = await supabase
       .from("credits")
       .select("*")
       .eq("sem_no", Number(semNo))
+      .eq("degree", degree)
+      .eq("department",department) // Filter by degree, department
       .order("serial_no");
 
     if (error) throw error;

@@ -412,48 +412,15 @@ function createCourseRow(course, serialNo) {
   });
 }
 
-// const courseDetailsInfo = async (req, res) => {
-//   try {
-//     const { data, error } = await supabase
-//       .from("credits")
-//       .select(`
-//         sem_no,
-//         serial_no,
-//         course_name,
-//         course_details:course_details(*),
-//         textbooks:textbooks(*),
-//         references:refs(*)
-//       `)
-//       .order("sem_no", { ascending: true })
-//       .order("serial_no", { ascending: true });
-
-//     if (error) {
-//       console.error("Error fetching data:", error);
-//       return res.status(500).json({ error: "Internal Server Error" });
-//     }
-
-//     // Transform data into a dictionary with course_name as key
-//     const courseDetailsMap = {};
-    
-//     data.forEach(course => {
-//       // Create a structured object for each course
-//       courseDetailsMap[course.course_name] = {
-//         co: course.course_details || [],
-//         hours: [], // You'll need to extract or define this
-//         textbooks: course.textbooks || [],
-//         references: course.references || []
-//       };
-//     });
-
-//     res.json(courseDetailsMap);
-//   } catch (err) {
-//     console.error("Unexpected error:", err);
-//     res.status(500).json({ error: "Internal Server Error" });
-//   }
-// };
-
 const courseDetailsInfo = async (req, res) => {
   try {
+    const { department, degree } = req.query;
+    
+    if (!department || !degree) {
+      return res.status(400).json({ error: "Department and degree parameters are required" });
+    }
+    
+    // Query credits table with filters
     const { data, error } = await supabase
       .from("credits")
       .select(`
@@ -464,42 +431,68 @@ const courseDetailsInfo = async (req, res) => {
         textbooks:textbooks(*),
         references:refs(*)
       `)
+      .eq("department", department)
+      .eq("degree", degree)
       .order("sem_no", { ascending: true })
       .order("serial_no", { ascending: true });
-
+    
     if (error) {
-      console.error("Error fetching data:", error);
+      console.error("Error fetching filtered courses:", error);
       return res.status(500).json({ error: "Internal Server Error" });
     }
-
+    
+    // Process data similar to your courseDetailsInfo function
     const courseDetailsMap = {};
-
+    
     for (const course of data) {
-      // Fetch corresponding timing details
+      // Fetch timing data
       const { data: timingData, error: timingError } = await supabase
         .from("timings")
         .select("*")
         .eq("course_name", course.course_name)
-        .single(); // Assuming only one row per course_name
-
+        .single();
+      
       if (timingError && timingError.code !== "PGRST116") {
         console.error(`Error fetching timing data for ${course.course_name}:`, timingError);
       }
-
+      
       courseDetailsMap[course.course_name] = {
         co: course.course_details || [],
         hours: timingData
           ? {
-              lecture: [timingData.hour1_1, timingData.hour1_2, timingData.hour1_3, timingData.hour1_4, timingData.hour1_5],
-              tutorial: [timingData.hour2_1, timingData.hour2_2, timingData.hour2_3, timingData.hour2_4, timingData.hour2_5],
+              lecture: [
+                timingData.hour1_1, 
+                timingData.hour1_2, 
+                timingData.hour1_3, 
+                timingData.hour1_4, 
+                timingData.hour1_5
+              ],
+              tutorial: [
+                timingData.hour2_1, 
+                timingData.hour2_2, 
+                timingData.hour2_3, 
+                timingData.hour2_4, 
+                timingData.hour2_5
+              ],
+              outcomes: [
+                timingData.outcome1,
+                timingData.outcome2,
+                timingData.outcome3,
+                timingData.outcome4,
+                timingData.outcome5
+              ],
               total: timingData.total_hours
             }
-          : { lecture: [], tutorial: [], total: 0 },
+          : null,
         textbooks: course.textbooks || [],
         references: course.references || []
       };
     }
-
+  //   Object.entries(courseDetailsMap).forEach(([courseName, details]) => {
+  //     console.log(`Course Name: ${courseName}`, JSON.stringify(details, null, 2));
+  // });
+  
+    
     res.json(courseDetailsMap);
   } catch (err) {
     console.error("Unexpected error:", err);
