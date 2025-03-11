@@ -352,7 +352,7 @@ function Faculty() {
                       key={field}
                       className="input-field"
                       type="text"
-                      placeholder={`Textbook ${i + 1} ${field}`}
+                      placeholder={`Textbook ${i + 1} ${field === "author" ? "authors" : field}`}
                       value={textbook[field] || ""}
                       onChange={(e) =>
                         handleChange("textbooks", i, field, e.target.value)
@@ -408,7 +408,7 @@ function Faculty() {
                       key={field}
                       className="input-field"
                       type="text"
-                      placeholder={`Reference ${i + 1} ${field}`}
+                      placeholder={`Reference ${i + 1} ${field === "author" ? "authors" : field}`}
                       value={reference[field] || ""}
                       onChange={(e) =>
                         handleChange("references", i, field, e.target.value)
