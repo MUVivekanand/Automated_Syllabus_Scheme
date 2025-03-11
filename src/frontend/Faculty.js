@@ -2,6 +2,8 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import "../styles/Faculty.css";
+import * as XLSX from "xlsx";
+import { saveAs } from "file-saver";
 
 function Faculty() {
   const [facultyName, setFacultyName] = useState(
@@ -113,6 +115,66 @@ function Faculty() {
           : item
       ),
     }));
+  };
+
+  const generateExcel = () => {
+    // Define the table headers (First row)
+    const headers = [
+      "",
+      "POa",
+      "POb",
+      "POc",
+      "POd",
+      "POe",
+      "POf",
+      "POg",
+      "POh",
+      "POi",
+      "POj",
+      "POk",
+      "PSO1",
+      "PSO2",
+    ];
+
+    // Define the row labels (First column)
+    const rowLabels = ["CO1", "CO2", "CO3", "CO4", "CO5"];
+
+    // Create the data structure with row labels and empty values
+    const data = [
+      headers, // First row (Headers)
+      ...rowLabels.map((label) => [
+        label,
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+      ]), // Rows with empty values
+    ];
+
+    // Create a worksheet
+    const ws = XLSX.utils.aoa_to_sheet(data);
+
+    // Create a workbook and add the worksheet
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "PO Mapping");
+
+    // Write the file
+    const excelBuffer = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+    const dataBlob = new Blob([excelBuffer], {
+      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    });
+
+    // Save the file
+    saveAs(dataBlob, "PO_Mapping.xlsx");
   };
 
   const navigate = useNavigate();
@@ -250,17 +312,40 @@ function Faculty() {
         </button>
       </div>
 
+      
+
       {/* Course Details Box */}
 
       {selectedCourse && (
         <div className="course-details-box">
           <h2 className="course-details-title">Course Details</h2>
-          <button
-            className="toggle-btn"
-            onClick={() => toggleExpand("syllabus")}
-          >
-            Course Syllabus
-          </button>
+
+          {/* Course Outcome Section */}
+          <button className="toggle-btn" onClick={() => toggleExpand("courseOutcomes")}>Course Outcomes</button>
+          {expandedSections.courseOutcomes && (
+            <div className="course-outcome-section">
+              <h4 className="section-title">Course Outcomes</h4>
+              {(courseDetails.outcomes).map((outcome, i) => (
+                <div key={i} className="unit-outcome">
+                  <h5 className="unit-title">Course Outcome {i + 1}</h5>
+                  
+                  <input
+                    className="input-field"
+                    type="text"
+                    placeholder={`Outcome ${i + 1}`}
+                    value={outcome || ""}
+                    onChange={(e) =>
+                      handleChange("outcomes", i, null, e.target.value)
+                    }
+                  />
+                  
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Course Syllabus Section */}
+          <button className="toggle-btn" onClick={() => toggleExpand("syllabus")}>Course Syllabus</button>
           {expandedSections.syllabus && (
             <div className="co-section content">
               <h4 className="section-title">Course Syllabus</h4>
@@ -321,7 +406,6 @@ function Faculty() {
                   {[
                     "title",
                     "author",
-                    "edition",
                     "publisher",
                     "place",
                     "year",
@@ -330,7 +414,7 @@ function Faculty() {
                       key={field}
                       className="input-field"
                       type="text"
-                      placeholder={`Textbook ${i + 1} ${field}`}
+                      placeholder={`Textbook ${i + 1} ${field === "author" ? "authors" : field}`}
                       value={textbook[field] || ""}
                       onChange={(e) =>
                         handleChange("textbooks", i, field, e.target.value)
@@ -349,7 +433,6 @@ function Faculty() {
                       {
                         title: "",
                         author: "",
-                        edition: "",
                         publisher: "",
                         place: "",
                         year: "",
@@ -379,7 +462,6 @@ function Faculty() {
                   {[
                     "title",
                     "author",
-                    "edition",
                     "publisher",
                     "place",
                     "year",
@@ -388,7 +470,7 @@ function Faculty() {
                       key={field}
                       className="input-field"
                       type="text"
-                      placeholder={`Reference ${i + 1} ${field}`}
+                      placeholder={`Reference ${i + 1} ${field === "author" ? "authors" : field}`}
                       value={reference[field] || ""}
                       onChange={(e) =>
                         handleChange("references", i, field, e.target.value)
@@ -407,7 +489,6 @@ function Faculty() {
                       {
                         title: "",
                         author: "",
-                        edition: "",
                         publisher: "",
                         place: "",
                         year: "",
@@ -422,36 +503,14 @@ function Faculty() {
             </div>
           )}
 
-          {/* Course Outcome Section */}
-          <button
-            className="toggle-btn"
-            onClick={() => toggleExpand("courseOutcomes")}
-          >
-            Course Outcomes
-          </button>
-          {expandedSections.courseOutcomes && (
-            <div className="course-outcome-section">
-              <h4 className="section-title">Course Outcomes</h4>
-              {courseDetails.outcomes.map((outcome, i) => (
-                <div key={i} className="unit-outcome">
-                  <h5 className="unit-title">Course Outcome {i + 1}</h5>
+          
 
-                  <input
-                    className="input-field"
-                    type="text"
-                    placeholder={`Outcome ${i + 1}`}
-                    value={outcome || ""}
-                    onChange={(e) =>
-                      handleChange("outcomes", i, null, e.target.value)
-                    }
-                  />
-                </div>
-              ))}
-            </div>
-          )}
 
           <button className="save-button" onClick={handleSave}>
             Save
+          </button>
+          <button className="generate-button" onClick={generateExcel}>
+            Generate File
           </button>
         </div>
       )}
