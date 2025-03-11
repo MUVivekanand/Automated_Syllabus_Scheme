@@ -318,431 +318,7 @@ useEffect(() => {
   };
 
 
-// const exportToPDF = async () => {
-//   try {
-//     setExportLoading(true);
-    
-//     // Import libraries dynamically to reduce initial load time
-//     const { jsPDF } = await import("jspdf");
-//     const { default: autoTable } = await import("jspdf-autotable");
-    
-//     const doc = new jsPDF({
-//       orientation: 'portrait',
-//       unit: 'mm',
-//       format: 'a4'
-//     });
-    
-//     // Define consistent margins
-//     const pageMargin = 10;
-//     const effectiveWidth = doc.internal.pageSize.width - (pageMargin * 2);
-    
-//     // Set default font
-//     doc.setFont('helvetica');
-    
-//     // Title and header for first page
-//     doc.setFontSize(10);
-    
-//     doc.setFontSize(11);
-//     doc.text('Courses of Study and Scheme of Assessment', 20, 20);
-//     doc.text('BE COMPUTER SCIENCE AND ENGINEERING', 20, 25);
-    
-//     // Add 2023 REGULATIONS text and credits info
-//     doc.setFontSize(9);
-//     doc.text('[2023 REGULATIONS]', doc.internal.pageSize.width - 20, 20, { align: 'right' });
-    
-//     // Function to create semester table
-//     const createSemesterTable = (semNo, startY, courses) => {
-//       // Filter courses by category
-//       const theoryCourses = courses.filter(course => course.category?.toLowerCase() === "theory");
-//       const practicalCourses = courses.filter(course => course.category?.toLowerCase() === "practical");
-//       const mandatoryCourses = courses.filter(course => course.category?.toLowerCase() === "mandatory");
-      
-//       // Calculate totals
-//       const totals = calculateSemesterTotals(courses);
-      
-//       // Prepare table data
-//       const tableBody = [];
-      
-//       // Add SEMESTER header
-//       tableBody.push([{ content: `SEMESTER ${semNo}`, colSpan: 11, styles: { halign: 'left', fontStyle: 'bold' } }]);
-      
-//       // Add THEORY header and courses
-//       tableBody.push([{ content: 'THEORY', colSpan: 11, styles: { halign: 'left', fontStyle: 'bold' } }]);
-//       theoryCourses.forEach((course, idx) => {
-//         tableBody.push([
-//           idx + 1,
-//           course.course_code,
-//           course.course_name,
-//           course.lecture,
-//           course.tutorial,
-//           course.practical,
-//           course.credits,
-//           course.ca_marks,
-//           course.fe_marks,
-//           course.total_marks,
-//           course.type
-//         ]);
-//       });
-      
-//       // Add PRACTICALS header and courses
-//       tableBody.push([{ content: 'PRACTICALS', colSpan: 11, styles: { halign: 'left', fontStyle: 'bold' } }]);
-//       practicalCourses.forEach((course, idx) => {
-//         tableBody.push([
-//           theoryCourses.length + idx + 1,
-//           course.course_code,
-//           course.course_name,
-//           course.lecture,
-//           course.tutorial,
-//           course.practical,
-//           course.credits,
-//           course.ca_marks,
-//           course.fe_marks,
-//           course.total_marks,
-//           course.type
-//         ]);
-//       });
-      
-//       // Add MANDATORY COURSES header and courses if any exist
-//       if (mandatoryCourses.length > 0) {
-//         tableBody.push([{ content: 'MANDATORY COURSES', colSpan: 11, styles: { halign: 'left', fontStyle: 'bold' } }]);
-//         mandatoryCourses.forEach((course, idx) => {
-//           tableBody.push([
-//             theoryCourses.length + practicalCourses.length + idx + 1,
-//             course.course_code,
-//             course.course_name,
-//             course.lecture || "-",
-//             course.tutorial || "-",
-//             course.practical || "-",
-//             course.credits || "Grade",
-//             course.ca_marks || "-",
-//             course.fe_marks || "-",
-//             course.total_marks || "",
-//             course.type
-//           ]);
-//         });
-//       }
-      
-//       // Add semester total row
-//       const totalHours = semNo === 1 ? "26" : "29"; // Based on image example
-//       tableBody.push([{
-//         content: `Total ${totalHours} hrs`, 
-//         colSpan: 3,
-//         styles: { fontStyle: 'bold' }
-//       }, '', '', 
-//         totals.totalLecture, 
-//         totals.totalTutorial, 
-//         totals.totalPractical, 
-//         totals.totalCredits, 
-//         totals.totalCAMarks, 
-//         totals.totalFEMarks, 
-//         totals.totalMarks, 
-//         '']);
-      
-//       // Create the table
-//       autoTable(doc, {
-//         startY: startY,
-//         head: [[
-//           { content: 'S.No', styles: { halign: 'center' } },
-//           { content: 'Course Code', styles: { halign: 'center' } },
-//           { content: 'Course Title', styles: { halign: 'center' } },
-//           { content: 'Hours / Week', colSpan: 3, styles: { halign: 'center' } },
-//           { content: 'Credits', styles: { halign: 'center' } },
-//           { content: 'Maximum Marks', colSpan: 3, styles: { halign: 'center' } },
-//           { content: 'CAT', styles: { halign: 'center' } }
-//         ], [
-//           '', '', '', 
-//           'Lecture', 'Tutorial', 'Practical', 
-//           '', 
-//           'CA', 'FE', 'Total',
-//           ''
-//         ]],
-//         body: tableBody,
-//         theme: 'grid',
-//         styles: { 
-//           fontSize: 8,
-//           cellPadding: 1,
-//           lineColor: [0, 0, 0],
-//           lineWidth: 0.1
-//         },
-//         columnStyles: {
-//           0: { cellWidth: 8 },      // S.No
-//           1: { cellWidth: 16 },     // Course Code
-//           2: { cellWidth: 40 },     // Course Title
-//           3: { cellWidth: 12 },     // Lecture
-//           4: { cellWidth: 12 },     // Tutorial
-//           5: { cellWidth: 14 },     // Practical
-//           6: { cellWidth: 12 },     // Credits
-//           7: { cellWidth: 9 },      // CA
-//           8: { cellWidth: 9 },      // FE
-//           9: { cellWidth: 10 },     // Total
-//           10: { cellWidth: 10 }     // CAT
-//         },
-//         headStyles: {
-//           fillColor: [255, 255, 255],
-//           textColor: [0, 0, 0],
-//           fontStyle: 'bold',
-//           lineWidth: 0.1
-//         },
-//         margin: { left: pageMargin, right: pageMargin }
-//       });
-      
-//       return doc.lastAutoTable.finalY + 10;
-//     };
-    
-//     // Create semester tables for semester I and II on first page
-//     let finalY = createSemesterTable(1, 35, semestersData[0].courses);
-//     finalY = createSemesterTable(2, finalY, semestersData[1].courses);
-    
-//     // Add the category legend
-//     doc.setFontSize(8);
-//     const legendText = "CAT - Category; BS - Basic Science; HS - Humanities and Social Sciences; ES - Engineering Sciences; PC - Professional Core; PE - Professional Elective; OE - Open Elective; EEC - Employability Enhancement Course; MC - Mandatory Course";
-    
-//     const legendLines = doc.splitTextToSize(legendText, doc.internal.pageSize.width - (pageMargin * 2));
-//     doc.text(legendLines, pageMargin, finalY);
-    
-//     // Add page number
-//     doc.setFontSize(9);
-//     doc.text('103', doc.internal.pageSize.width / 2, doc.internal.pageSize.height - 10, { align: 'center' });
-    
-//     // Add content for remaining semesters (starting from semester 3)
-//     // Display two tables per page for remaining semesters
-//     for (let i = 2; i < semestersData.length; i += 2) {
-//       doc.addPage();
-//       let currentY = 20;
-      
-//       // Add first semester table on this page
-//       currentY = createSemesterTable(i + 1, currentY, semestersData[i].courses);
-      
-//       // Check if there's another semester to add
-//       if (i + 1 < semestersData.length) {
-//         // Add second semester table on the same page
-//         currentY = createSemesterTable(i + 2, currentY, semestersData[i + 1].courses);
-//       }
-      
-//       // Add legend text at the bottom if space allows
-//       if (currentY < doc.internal.pageSize.height - 20) {
-//         doc.setFontSize(8);
-//         const legendLines = doc.splitTextToSize(legendText, doc.internal.pageSize.width - (pageMargin * 2));
-//         doc.text(legendLines, pageMargin, currentY);
-//       }
-      
-//       // Add page number
-//       const pageNum = 103 + Math.floor((i - 1) / 2);
-//       doc.setFontSize(9);
-//       doc.text(pageNum.toString(), doc.internal.pageSize.width / 2, doc.internal.pageSize.height - 10, { align: 'center' });
-//     }
-    
-//     // Summary section on a new page
-//     doc.addPage();
-//     doc.setFontSize(14);
-//     doc.text('Summary of Credit Distribution', doc.internal.pageSize.width / 2, 20, { align: 'center' });
-    
-//     const summaryTableData = summaryData.map((row, index) => [
-//       index + 1,
-//       row.type,
-//       ...semesters.map(sem => row.credits[sem] || 0),
-//       calculateRowTotal(row.credits)
-//     ]);
-    
-//     autoTable(doc, {
-//       startY: 30,
-//       margin: { left: pageMargin, right: pageMargin },
-//       head: [
-//         ['S. No', 'Course Category', ...semesters.map(sem => `Sem ${sem}`), 'Total Credits']
-//       ],
-//       body: [
-//         ...summaryTableData,
-//         [
-//           '',
-//           'TOTAL',
-//           ...semesters.map(sem => calculateColumnTotal(sem)),
-//           totalCreditsInfo.calculated
-//         ]
-//       ],
-//       theme: 'grid',
-//       styles: { 
-//         fontSize: 9,
-//         cellPadding: 2 
-//       },
-//       headStyles: {
-//         fillColor: [220, 220, 220],
-//         textColor: [0, 0, 0],
-//         fontStyle: 'bold'
-//       },
-//       footStyles: {
-//         fontStyle: 'bold'
-//       }
-//     });
-    
-//     // Course Details section - one course per page with proper margins
-//     for (const semester of semestersData) {
-//       const coursesWithDetails = semester.courses.filter(course => course.courseDetails);
-      
-//       if (coursesWithDetails.length > 0) {
-//         doc.addPage();
-//         doc.setFontSize(14);
-//         doc.text(`SEMESTER ${semester.semNo} - COURSE DETAILS`, doc.internal.pageSize.width / 2, 20, { align: 'center' });
-        
-//         let yPosition = 30;
-        
-//         for (const course of coursesWithDetails) {
-//           // Check if we need a new page
-//           if (yPosition > doc.internal.pageSize.height - 40) {
-//             doc.addPage();
-//             yPosition = 20;
-//           }
-          
-//           // Add more top margin for each course card
-//           yPosition += 5;
-          
-//           // Course header
-//           doc.setFontSize(12);
-//           doc.setFont('helvetica', 'bold');
-//           doc.text(`${course.course_code} - ${course.course_name}`, pageMargin, yPosition);
-          
-//           // Credits info
-//           doc.setFont('helvetica', 'normal');
-//           doc.text(`${course.lecture} ${course.tutorial} ${course.practical} ${course.credits}`, doc.internal.pageSize.width - 40, yPosition);
-          
-//           yPosition += 10;
-          
-//           // Course Outcomes
-//           if (course.courseDetails.co && course.courseDetails.co.length > 0) {
-//             for (let i = 0; i < course.courseDetails.co.length; i++) {
-//               const co = course.courseDetails.co[i];
-              
-//               // Main CO text without hours
-//               let coText = co.name + " " + co.desc;
-              
-//               // Get hours info if available
-//               let hoursText = "";
-//               if (course.courseDetails.hours && course.courseDetails.hours[i]) {
-//                 hoursText = `(${course.courseDetails.hours[i].hour1}+${course.courseDetails.hours[i].hour2})`;
-//               }
-              
-//               // Split long course outcomes into multiple lines
-//               const coLines = doc.splitTextToSize(coText, doc.internal.pageSize.width - (pageMargin * 2) - 30);
-              
-//               // Calculate the width of the hours text
-//               doc.setFont('helvetica', 'normal');
-//               const hoursWidth = doc.getTextWidth(hoursText);
-              
-//               // Position for the hours text (right-aligned)
-//               const hoursX = doc.internal.pageSize.width - pageMargin - hoursWidth;
-              
-//               // Draw the CO text and hours text
-//               doc.text(coLines, pageMargin, yPosition);
-//               if (hoursText) {
-//                 doc.text(hoursText, hoursX, yPosition);
-//               }
-              
-//               yPosition += 6 * coLines.length;
-              
-//               // Add more space if needed
-//               if (yPosition > doc.internal.pageSize.height - 40) {
-//                 doc.addPage();
-//                 yPosition = 20;
-//               }
-//             }
-//           }
-          
-//           // Add more space after course outcomes
-//           yPosition += 5;
-          
-//           // Total Hours - Right aligned
-//           doc.setFont('helvetica', 'bold');
-//           doc.text("Total =", pageMargin, yPosition);
-          
-//           // Create the total hours text
-//           const totalHoursText = `L: 45 ${course.credits === 4 ? "+ T: 15 = 60" : ""}`;
-//           const totalHoursWidth = doc.getTextWidth(totalHoursText);
-//           const totalHoursX = doc.internal.pageSize.width - pageMargin - totalHoursWidth;
-          
-//           // Draw the right-aligned total hours text
-//           doc.setFont('helvetica', 'normal');
-//           doc.text(totalHoursText, totalHoursX, yPosition);
-          
-//           yPosition += 10;
-          
-//           // Textbooks
-//           doc.setFont('helvetica', 'bold');
-//           doc.text("TEXT BOOKS", pageMargin, yPosition);
-//           yPosition += 8;
-//           doc.setFont('helvetica', 'normal');
-          
-//           if (course.courseDetails.textbooks && course.courseDetails.textbooks.length > 0) {
-//             course.courseDetails.textbooks.forEach((book, index) => {
-//               const bookText = `${index + 1}. ${book.author}, ${book.title}, ${book.publisher}, ${book.place}, ${book.year}.`;
-//               const bookLines = doc.splitTextToSize(bookText, doc.internal.pageSize.width - (pageMargin * 2));
-              
-//               doc.text(bookLines, pageMargin, yPosition);
-//               yPosition += 6 * bookLines.length;
-              
-//               // Add more space or new page if needed
-//               if (yPosition > doc.internal.pageSize.height - 40) {
-//                 doc.addPage();
-//                 yPosition = 20;
-//               }
-//             });
-//           } else {
-//             doc.text("No textbooks available.", pageMargin, yPosition);
-//             yPosition += 8;
-//           }
-          
-//           yPosition += 8;
-          
-//           // References
-//           doc.setFont('helvetica', 'bold');
-//           doc.text("REFERENCES", pageMargin, yPosition);
-//           yPosition += 8;
-//           doc.setFont('helvetica', 'normal');
-          
-//           if (course.courseDetails.references && course.courseDetails.references.length > 0) {
-//             course.courseDetails.references.forEach((ref, index) => {
-//               const refText = `${index + 1}. ${ref.author}, ${ref.title}, ${ref.publisher}, ${ref.place}, ${ref.year}.`;
-//               const refLines = doc.splitTextToSize(refText, doc.internal.pageSize.width - (pageMargin * 2));
-              
-//               doc.text(refLines, pageMargin, yPosition);
-//               yPosition += 6 * refLines.length;
-              
-//               // Add more space or new page if needed
-//               if (yPosition > doc.internal.pageSize.height - 40 && index < course.courseDetails.references.length - 1) {
-//                 doc.addPage();
-//                 yPosition = 20;
-//               }
-//             });
-//           } else {
-//             doc.text("No references available.", pageMargin, yPosition);
-//             yPosition += 8;
-//           }
-          
-//           // Add more bottom margin between courses
-//           yPosition += 15;
-          
-//           // Add a separator line between courses
-//           if (yPosition < doc.internal.pageSize.height - 30) {
-//             doc.line(pageMargin, yPosition - 5, doc.internal.pageSize.width - pageMargin, yPosition - 5);
-//           }
-          
-//           // Check if we need a new page for the next course
-//           if (yPosition > doc.internal.pageSize.height - 40) {
-//             doc.addPage();
-//             yPosition = 20;
-//           }
-//         }
-//       }
-//     }
-    
-//     // Save the document
-//     doc.save('Course_Structure.pdf');
-//     setExportLoading(false);
-//   } catch (error) {
-//     console.error('Error exporting to PDF:', error);
-//     setExportLoading(false);
-//     setError('Failed to export data to PDF. Please try again later.');
-//   }
-// };
-  
+
 const exportToPDF = async () => {
   try {
     setExportLoading(true);
@@ -763,6 +339,8 @@ const exportToPDF = async () => {
     
     // Set default font
     doc.setFont('helvetica');
+    
+    // FIRST RENDER ALL 8 SEMESTER TABLES (4 PAGES WITH 2 TABLES EACH)
     
     // Title and header for first page
     doc.setFontSize(10);
@@ -890,7 +468,7 @@ const exportToPDF = async () => {
           lineWidth: 0.1
         },
         columnStyles: {
-          0: { cellWidth: 8 },      // S.No
+          0: { cellWidth: 10 },      // S.No
           1: { cellWidth: 16 },     // Course Code
           2: { cellWidth: 40 },     // Course Title
           3: { cellWidth: 12 },     // Lecture
@@ -957,7 +535,8 @@ const exportToPDF = async () => {
       doc.text(pageNum.toString(), doc.internal.pageSize.width / 2, doc.internal.pageSize.height - 10, { align: 'center' });
     }
     
-    // Summary section on a new page
+    // NEXT ADD SUMMARY TABLE ON A NEW PAGE
+    
     doc.addPage();
     doc.setFontSize(14);
     doc.text('Summary of Credit Distribution', doc.internal.pageSize.width / 2, 20, { align: 'center' });
@@ -999,6 +578,8 @@ const exportToPDF = async () => {
       }
     });
     
+    // FINALLY ADD COURSE DETAILS SECTION WITH REDUCED FONT SIZE FOR COURSE OUTCOMES
+    
     // Course Details section - one course per page with proper margins
     for (const semester of semestersData) {
       const coursesWithDetails = semester.courses.filter(course => course.courseDetails);
@@ -1031,15 +612,18 @@ const exportToPDF = async () => {
           
           yPosition += 10;
           
-          // Course Outcomes - Corrected version
+          // Course Outcomes - UPDATED WITH SMALLER FONT SIZE
           if (course.courseDetails.co && course.courseDetails.co.length > 0) {
+            // Set smaller font size for course outcomes
+            doc.setFontSize(8);  // Reduced from the default size
+            
             // Using the first item which contains co1_name, co1_desc format
             const coData = course.courseDetails.co[0];
             
             for (let i = 1; i <= 5; i++) {
               if (coData[`co${i}_name`]) {
                 // Main CO text
-                const coText = `CO${i}: ${coData[`co${i}_name`]} ${coData[`co${i}_desc`]}`;
+                const coText = `${coData[`co${i}_name`]} : ${coData[`co${i}_desc`]}`;
                 
                 // Get hours info if available
                 let hoursText = "";
@@ -1079,16 +663,24 @@ const exportToPDF = async () => {
           // Add more space after course outcomes
           yPosition += 5;
           
-          // Total Hours - Right aligned
+          // Reset font size for subsequent sections
+          doc.setFontSize(9);
+          
+          // Total Hours - Right aligned (UPDATED FOR RIGHT ALIGNMENT)
           doc.setFont('helvetica', 'bold');
-          doc.text("Total =", pageMargin, yPosition);
           
           // Create the total hours text
           const totalHoursText = `L: 45 ${course.credits === 4 ? "+ T: 15 = 60" : ""}`;
           const totalHoursWidth = doc.getTextWidth(totalHoursText);
           const totalHoursX = doc.internal.pageSize.width - pageMargin - totalHoursWidth;
           
-          // Draw the right-aligned total hours text
+          // Calculate the width of "Total =" text and position it to the left of hours
+          const totalText = "Total =";
+          const totalTextWidth = doc.getTextWidth(totalText);
+          const totalTextX = totalHoursX - totalTextWidth - 5; // 5 is spacing between texts
+          
+          // Draw the right-aligned texts
+          doc.text(totalText, totalTextX, yPosition);
           doc.setFont('helvetica', 'normal');
           doc.text(totalHoursText, totalHoursX, yPosition);
           
