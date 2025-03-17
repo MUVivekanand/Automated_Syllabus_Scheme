@@ -42,11 +42,17 @@ function Course() {
   };
 
   const navigateProfessional = () => {
-    navigate(`/Professional?degree=${encodeURIComponent(degree)}&department=${encodeURIComponent(department)}`);
+    if(degree == 'M.E'){
+      navigate(`/ProfessionalMe?degree=${encodeURIComponent(degree)}&department=${encodeURIComponent(department)}`);
+    }
   };
 
   const navigateWordPage = () => {
     navigate(`/wordPage?degree=${encodeURIComponent(degree)}&department=${encodeURIComponent(department)}`);
+  }
+
+  const navigateMe = () => {
+    navigate("/courseME?degree='M.E'&department='CSE'");
   }
      
   const fetchData = async () => {
@@ -387,6 +393,9 @@ const handleSubmit = useCallback(async () => {
       ...prev,
       degree: selectedDegree
     }));
+    if(selectedDegree == 'M.E'){
+      navigateMe();
+    }
   };
   
   // Update department handler

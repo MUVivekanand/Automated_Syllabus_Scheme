@@ -3,7 +3,7 @@ import axios from "axios";
 import { useLocation } from "react-router-dom";
 import "../styles/Professional.css"; // Import the CSS file
 
-function Professional() {
+function ProfessionalMe() {
   const location = useLocation();
   const searchParams = new URLSearchParams(location.search);
 
@@ -390,4 +390,4 @@ function Professional() {
   );
 }
 
-export default Professional;
+export default ProfessionalMe;
