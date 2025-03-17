@@ -118,9 +118,18 @@ function Faculty() {
   };
 
   const generateExcel = () => {
-    // Define the table headers (First row)
+    if (!selectedCourse) {
+      alert("Please select a course first.");
+      return;
+    }
+
+    const [courseCode, courseName] = selectedCourse.split(" - "); // Extract Course Code & Name
+
+    // Headers Row
     const headers = [
-      "",
+      "Course Code",
+      "Course Name",
+      "COs/POs",
       "POa",
       "POb",
       "POc",
@@ -136,45 +145,51 @@ function Faculty() {
       "PSO2",
     ];
 
-    // Define the row labels (First column)
-    const rowLabels = ["CO1", "CO2", "CO3", "CO4", "CO5"];
+    // Generate rows for each CO
+    const dataRows = courseDetails.outcomes.map((outcome, index) => {
+      return [
+        index === 0 ? courseCode : "", // Course Code in first CO row only
+        index === 0 ? courseName : "", // Course Name in first CO row only
+        `CO${index + 1}: ${outcome || "N/A"}`, // CO description
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "", // Empty PO values
+      ];
+    });
 
-    // Create the data structure with row labels and empty values
-    const data = [
-      headers, // First row (Headers)
-      ...rowLabels.map((label) => [
-        label,
-        "",
-        "",
-        "",
-        "",
-        "",
-        "",
-        "",
-        "",
-        "",
-        "",
-        "",
-        "",
-        "",
-      ]), // Rows with empty values
+    // Create the worksheet
+    const ws = XLSX.utils.aoa_to_sheet([headers, ...dataRows]);
+
+    // Set column widths (Increase width for Course Name and COs/POs)
+    ws["!cols"] = [
+      { wch: 15 }, // Course Code
+      { wch: 40 }, // Course Name (Increased width)
+      { wch: 60 }, // COs/POs (Increased width for long descriptions)
+      ...Array(13).fill({ wch: 10 }), // Default width for PO mappings
     ];
 
-    // Create a worksheet
-    const ws = XLSX.utils.aoa_to_sheet(data);
-
-    // Create a workbook and add the worksheet
+    // Create a workbook and append the worksheet
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "PO Mapping");
 
-    // Write the file
+    // Convert to Blob and trigger download
     const excelBuffer = XLSX.write(wb, { bookType: "xlsx", type: "array" });
     const dataBlob = new Blob([excelBuffer], {
       type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     });
 
-    // Save the file
-    saveAs(dataBlob, "PO_Mapping.xlsx");
+    saveAs(dataBlob, `PO_Mapping_${courseCode}.xlsx`);
   };
 
   const navigate = useNavigate();
@@ -312,8 +327,6 @@ function Faculty() {
         </button>
       </div>
 
-      
-
       {/* Course Details Box */}
 
       {selectedCourse && (
@@ -321,14 +334,19 @@ function Faculty() {
           <h2 className="course-details-title">Course Details</h2>
 
           {/* Course Outcome Section */}
-          <button className="toggle-btn" onClick={() => toggleExpand("courseOutcomes")}>Course Outcomes</button>
+          <button
+            className="toggle-btn"
+            onClick={() => toggleExpand("courseOutcomes")}
+          >
+            Course Outcomes
+          </button>
           {expandedSections.courseOutcomes && (
             <div className="course-outcome-section">
               <h4 className="section-title">Course Outcomes</h4>
-              {(courseDetails.outcomes).map((outcome, i) => (
+              {courseDetails.outcomes.map((outcome, i) => (
                 <div key={i} className="unit-outcome">
                   <h5 className="unit-title">Course Outcome {i + 1}</h5>
-                  
+
                   <input
                     className="input-field"
                     type="text"
@@ -338,14 +356,18 @@ function Faculty() {
                       handleChange("outcomes", i, null, e.target.value)
                     }
                   />
-                  
                 </div>
               ))}
             </div>
           )}
 
           {/* Course Syllabus Section */}
-          <button className="toggle-btn" onClick={() => toggleExpand("syllabus")}>Course Syllabus</button>
+          <button
+            className="toggle-btn"
+            onClick={() => toggleExpand("syllabus")}
+          >
+            Course Syllabus
+          </button>
           {expandedSections.syllabus && (
             <div className="co-section content">
               <h4 className="section-title">Course Syllabus</h4>
@@ -403,24 +425,20 @@ function Faculty() {
               <h4 className="section-title">Textbooks</h4>
               {courseDetails.textbooks.map((textbook, i) => (
                 <div key={i} className="textbook-entry">
-                  {[
-                    "title",
-                    "author",
-                    "publisher",
-                    "place",
-                    "year",
-                  ].map((field) => (
-                    <input
-                      key={field}
-                      className="input-field"
-                      type="text"
-                      placeholder={`Textbook ${i + 1} ${field}`}
-                      value={textbook[field] || ""}
-                      onChange={(e) =>
-                        handleChange("textbooks", i, field, e.target.value)
-                      }
-                    />
-                  ))}
+                  {["title", "author", "publisher", "place", "year"].map(
+                    (field) => (
+                      <input
+                        key={field}
+                        className="input-field"
+                        type="text"
+                        placeholder={`Textbook ${i + 1} ${field}`}
+                        value={textbook[field] || ""}
+                        onChange={(e) =>
+                          handleChange("textbooks", i, field, e.target.value)
+                        }
+                      />
+                    )
+                  )}
                 </div>
               ))}
               <button
@@ -459,24 +477,20 @@ function Faculty() {
               <h4 className="section-title">References</h4>
               {courseDetails.references.map((reference, i) => (
                 <div key={i} className="reference-entry">
-                  {[
-                    "title",
-                    "author",
-                    "publisher",
-                    "place",
-                    "year",
-                  ].map((field) => (
-                    <input
-                      key={field}
-                      className="input-field"
-                      type="text"
-                      placeholder={`Reference ${i + 1} ${field}`}
-                      value={reference[field] || ""}
-                      onChange={(e) =>
-                        handleChange("references", i, field, e.target.value)
-                      }
-                    />
-                  ))}
+                  {["title", "author", "publisher", "place", "year"].map(
+                    (field) => (
+                      <input
+                        key={field}
+                        className="input-field"
+                        type="text"
+                        placeholder={`Reference ${i + 1} ${field}`}
+                        value={reference[field] || ""}
+                        onChange={(e) =>
+                          handleChange("references", i, field, e.target.value)
+                        }
+                      />
+                    )
+                  )}
                 </div>
               ))}
               <button
@@ -502,9 +516,6 @@ function Faculty() {
               </button>
             </div>
           )}
-
-          
-
 
           <button className="save-button" onClick={handleSave}>
             Save
