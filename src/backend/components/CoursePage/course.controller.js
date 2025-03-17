@@ -136,8 +136,6 @@ const updateCourse = async (req, res) => {
         degree,
         sem_no,
         category
-      }, {
-        onConflict: 'course_name'
       });
 
     if (upsertError) {
