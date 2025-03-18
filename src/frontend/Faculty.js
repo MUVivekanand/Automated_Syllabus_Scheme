@@ -119,7 +119,14 @@ function Faculty() {
   };
 
   const generateExcel = () => {
-    // Define the table headers (First row)
+    if (!selectedCourse) {
+      alert("Please select a course first.");
+      return;
+    }
+  
+    const [courseCode, courseName] = selectedCourse.split(" - "); // Extract Course Code & Name
+  
+    // Headers Row
     const headers = [
       "Course Code",
       "Course Name",
@@ -138,15 +145,13 @@ function Faculty() {
       "PSO1",
       "PSO2",
     ];
-
-    // Define the row labels (First column)
-    const rowLabels = ["CO1", "CO2", "CO3", "CO4", "CO5"];
-
-    // Create the data structure with row labels and empty values
-    const data = [
-      headers, // First row (Headers)
-      ...rowLabels.map((label) => [
-        label,
+  
+    // Generate rows for each CO with '\n' for wrapping
+    const dataRows = courseDetails.outcomes.map((outcome, index) => {
+      return [
+        index === 0 ? courseCode : "", // Course Code in first CO row only
+        index === 0 ? courseName : "", // Course Name in first CO row only
+        `CO${index + 1}:\n${outcome || "N/A"}`,// CO description with '\n' to force wrap
         "",
         "",
         "",
@@ -160,24 +165,39 @@ function Faculty() {
         "",
         "",
         "",
-      ]), // Rows with empty values
+        "", // Empty PO values
+      ];
+    });
+  
+    // Create the worksheet
+    const ws = XLSX.utils.aoa_to_sheet([headers, ...dataRows]);
+  
+    // Set column widths (Increased for Course Name and COs/POs)
+    ws["!cols"] = [
+      { wch: 15 }, // Course Code
+      { wch: 40 }, // Course Name (Increased width)
+      { wch: 60 }, // COs/POs (Increased width to accommodate wrapping)
+      ...Array(13).fill({ wch: 10 }), // Default width for PO mappings
     ];
-
-    // Create a worksheet
-    const ws = XLSX.utils.aoa_to_sheet(data);
-
-    // Create a workbook and add the worksheet
+  
+    // Set cell styles manually (Enable wrap text in Excel)
+    Object.keys(ws).forEach((cell) => {
+      if (cell.startsWith("C")) { // COs/POs Column (Column C)
+        ws[cell].s = { alignment: { wrapText: true } }; // Wrap text
+      }
+    });
+  
+    // Create a workbook and append the worksheet
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "PO Mapping");
-
-    // Write the file
+  
+    // Convert to Blob and trigger download
     const excelBuffer = XLSX.write(wb, { bookType: "xlsx", type: "array" });
     const dataBlob = new Blob([excelBuffer], {
       type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     });
-
-    // Save the file
-    saveAs(dataBlob, "PO_Mapping.xlsx");
+  
+    saveAs(dataBlob, `PO_Mapping_${courseCode}.xlsx`);
   };
 
   const navigate = useNavigate();

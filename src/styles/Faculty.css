@@ -209,6 +209,10 @@
   margin: 20px auto; 
 }
 
+.generate-button:hover {
+  background-color: #0853b6; /* Darker green on hover */
+}
+
 .table-section {
   overflow-x: auto; /* Allows horizontal scrolling if needed */
 }
@@ -251,7 +255,5 @@ tbody tr:nth-child(even) {
   border-radius: 10px;
 }
 
-.generate-button:hover {
-  background-color: #0853b6; /* Darker green on hover */
-}
+
 
