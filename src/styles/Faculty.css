@@ -90,14 +90,15 @@
 
 /* Course Details Box */
 .course-details-box {
-  width: 100%;
   max-width: 800px;
+  margin: auto;
   padding: 20px;
-  background: white;
+  background: #fff;
   border-radius: 8px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  margin-top: 20px;
+  overflow: hidden;
 }
+
 
 /* CO (Course Outcomes) Section */
 .co-section {
@@ -211,4 +212,48 @@
 .generate-button:hover {
   background-color: #0853b6; /* Darker green on hover */
 }
+
+.table-section {
+  overflow-x: auto; /* Allows horizontal scrolling if needed */
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #f9f9f9;
+  text-align: left;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+th, td {
+  border: 1px solid #ddd;
+  padding: 10px;
+  font-size: 14px;
+  text-align: center;
+}
+
+th {
+  background: #007BFF;
+  color: #fff;
+}
+
+td {
+  background: #fff;
+}
+
+tbody tr:nth-child(even) {
+  background: #f2f2f2;
+}
+
+.table-section::-webkit-scrollbar {
+  height: 8px;
+}
+
+.table-section::-webkit-scrollbar-thumb {
+  background: #007BFF;
+  border-radius: 10px;
+}
+
+
 

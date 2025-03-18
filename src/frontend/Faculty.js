@@ -24,6 +24,7 @@ function Faculty() {
     textbooks: false,
     references: false,
     courseOutcomes: false,
+    table: false
   });
 
   // Function to toggle individual sections
@@ -122,9 +123,9 @@ function Faculty() {
       alert("Please select a course first.");
       return;
     }
-
+  
     const [courseCode, courseName] = selectedCourse.split(" - "); // Extract Course Code & Name
-
+  
     // Headers Row
     const headers = [
       "Course Code",
@@ -144,13 +145,13 @@ function Faculty() {
       "PSO1",
       "PSO2",
     ];
-
-    // Generate rows for each CO
+  
+    // Generate rows for each CO with '\n' for wrapping
     const dataRows = courseDetails.outcomes.map((outcome, index) => {
       return [
         index === 0 ? courseCode : "", // Course Code in first CO row only
         index === 0 ? courseName : "", // Course Name in first CO row only
-        `CO${index + 1}: ${outcome || "N/A"}`, // CO description
+        `CO${index + 1}:\n${outcome || "N/A"}`,// CO description with '\n' to force wrap
         "",
         "",
         "",
@@ -167,28 +168,35 @@ function Faculty() {
         "", // Empty PO values
       ];
     });
-
+  
     // Create the worksheet
     const ws = XLSX.utils.aoa_to_sheet([headers, ...dataRows]);
-
-    // Set column widths (Increase width for Course Name and COs/POs)
+  
+    // Set column widths (Increased for Course Name and COs/POs)
     ws["!cols"] = [
       { wch: 15 }, // Course Code
       { wch: 40 }, // Course Name (Increased width)
-      { wch: 60 }, // COs/POs (Increased width for long descriptions)
+      { wch: 60 }, // COs/POs (Increased width to accommodate wrapping)
       ...Array(13).fill({ wch: 10 }), // Default width for PO mappings
     ];
-
+  
+    // Set cell styles manually (Enable wrap text in Excel)
+    Object.keys(ws).forEach((cell) => {
+      if (cell.startsWith("C")) { // COs/POs Column (Column C)
+        ws[cell].s = { alignment: { wrapText: true } }; // Wrap text
+      }
+    });
+  
     // Create a workbook and append the worksheet
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "PO Mapping");
-
+  
     // Convert to Blob and trigger download
     const excelBuffer = XLSX.write(wb, { bookType: "xlsx", type: "array" });
     const dataBlob = new Blob([excelBuffer], {
       type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     });
-
+  
     saveAs(dataBlob, `PO_Mapping_${courseCode}.xlsx`);
   };
 
@@ -265,6 +273,7 @@ function Faculty() {
       );
     }
   };
+  
 
   return (
     <div className="faculty-container">
@@ -283,6 +292,7 @@ function Faculty() {
                 <th>Lecture</th>
                 <th>Tutorial</th>
                 <th>Practical</th>
+                <th>Degree</th>
                 <th>Credits</th>
               </tr>
             </thead>
@@ -294,6 +304,7 @@ function Faculty() {
                   <td>{course.lecture}</td>
                   <td>{course.tutorial}</td>
                   <td>{course.practical}</td>
+                  <td>{course.degree}</td>
                   <td>{course.credits}</td>
                 </tr>
               ))}
@@ -414,56 +425,56 @@ function Faculty() {
           )}
 
           {/* Textbooks Section */}
-          <button
-            className="toggle-btn"
-            onClick={() => toggleExpand("textbooks")}
-          >
-            Textbooks
-          </button>
-          {expandedSections.textbooks && (
-            <div className="textbook-section">
-              <h4 className="section-title">Textbooks</h4>
-              {courseDetails.textbooks.map((textbook, i) => (
-                <div key={i} className="textbook-entry">
-                  {["title", "author", "publisher", "place", "year"].map(
-                    (field) => (
-                      <input
-                        key={field}
-                        className="input-field"
-                        type="text"
-                        placeholder={`Textbook ${i + 1} ${field}`}
-                        value={textbook[field] || ""}
-                        onChange={(e) =>
-                          handleChange("textbooks", i, field, e.target.value)
-                        }
-                      />
-                    )
-                  )}
-                </div>
-              ))}
-              <button
-                className="add-button"
-                onClick={() =>
-                  setCourseDetails((prev) => ({
-                    ...prev,
-                    textbooks: [
-                      ...prev.textbooks,
-                      {
-                        title: "",
-                        author: "",
-                        publisher: "",
-                        place: "",
-                        year: "",
-                      },
-                    ],
-                  }))
-                }
-                disabled={courseDetails.textbooks.length >= 2} // Disable when 2 textbooks added
-              >
-                + Add Textbook
-              </button>
-            </div>
-          )}
+            <button
+              className="toggle-btn"
+              onClick={() => toggleExpand("textbooks")}
+            >
+              Textbooks
+            </button>
+            {expandedSections.textbooks && (
+              <div className="textbook-section">
+                <h4 className="section-title">Textbooks</h4>
+                {courseDetails.textbooks.map((textbook, i) => (
+                  <div key={i} className="textbook-entry">
+                    {["title", "author", "publisher", "place", "year"].map(
+                      (field) => (
+                        <input
+                          key={field}
+                          className="input-field"
+                          type="text"
+                          placeholder={`Textbook ${i + 1} ${field}`}
+                          value={textbook[field] || ""}
+                          onChange={(e) =>
+                            handleChange("textbooks", i, field, e.target.value)
+                          }
+                        />
+                      )
+                    )}
+                  </div>
+                ))}
+                <button
+                  className="add-button"
+                  onClick={() =>
+                    setCourseDetails((prev) => ({
+                      ...prev,
+                      textbooks: [
+                        ...prev.textbooks,
+                        {
+                          title: "",
+                          author: "",
+                          publisher: "",
+                          place: "",
+                          year: "",
+                        },
+                      ],
+                    }))
+                  }
+                  disabled={courseDetails.textbooks.length >= 2} // Disable when 2 textbooks added
+                >
+                  + Add Textbook
+                </button>
+              </div>
+            )}
 
           {/* References Section */}
           <button
@@ -519,7 +530,137 @@ function Faculty() {
 
           <button className="save-button" onClick={handleSave}>
             Save
+          </button><br/><br/>
+
+          {/* Table Section */}
+          <button
+            className="generate-button"
+            onClick={() => toggleExpand("table")}
+          >
+            {expandedSections.table ? "Hide Table" : "View Table"}
           </button>
+          {expandedSections.table && (
+            <div className="table-section">
+              <h4 className="section-title">Table</h4>
+              <div>
+                <table border="/">
+                  <thead>
+                    <tr>
+                      <th>Course Code</th>
+                      <th>Course Name</th>
+                      <th>COs/POs</th>
+                      <th>POa</th>
+                      <th>POb</th>
+                      <th>POc</th>
+                      <th>POd</th>
+                      <th>POe</th>
+                      <th>POf</th>
+                      <th>POg</th>
+                      <th>POh</th>
+                      <th>POi</th>
+                      <th>POj</th>
+                      <th>POk</th>
+                      <th>PSO1</th>
+                      <th>PSO2</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>23Z101</td>
+                      <td>Calculas and its Applications</td>
+                      <td>CO1</td>
+                      <td></td>
+                      <td></td>
+                      <td></td>
+                      <td></td>
+                      <td></td>
+                      <td></td>
+                      <td></td>
+                      <td></td>
+                      <td></td>
+                      <td></td>
+                      <td></td>
+                      <td></td>
+                      <td></td>
+                    </tr>
+                    <tr>
+                      <td></td>
+                      <td></td>
+                      <td>CO2</td>
+                      <td></td>
+                      <td></td>
+                      <td></td>
+                      <td></td>
+                      <td></td>
+                      <td></td>
+                      <td></td>
+                      <td></td>
+                      <td></td>
+                      <td></td>
+                      <td></td>
+                      <td></td>
+                      <td></td>
+                    </tr>
+                    <tr>
+                      <td></td>
+                      <td></td>
+                      <td>CO3</td>
+                      <td></td>
+                      <td></td>
+                      <td></td>
+                      <td></td>
+                      <td></td>
+                      <td></td>
+                      <td></td>
+                      <td></td>
+                      <td></td>
+                      <td></td>
+                      <td></td>
+                      <td></td>
+                      <td></td>
+                    </tr>
+                    <tr>
+                      <td></td>
+                      <td></td>
+                      <td>CO4</td>
+                      <td></td>
+                      <td></td>
+                      <td></td>
+                      <td></td>
+                      <td></td>
+                      <td></td>
+                      <td></td>
+                      <td></td>
+                      <td></td>
+                      <td></td>
+                      <td></td>
+                      <td></td>
+                      <td></td>
+                    </tr>
+                    <tr>
+                      <td></td>
+                      <td></td>
+                      <td>CO5</td>
+                      <td></td>
+                      <td></td>
+                      <td></td>
+                      <td></td>
+                      <td></td>
+                      <td></td>
+                      <td></td>
+                      <td></td>
+                      <td></td>
+                      <td></td>
+                      <td></td>
+                      <td></td>
+                      <td></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
           <button className="generate-button" onClick={generateExcel}>
             Generate File
           </button>
