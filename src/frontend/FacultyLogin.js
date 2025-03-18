@@ -20,7 +20,7 @@ function FacultyLogin() {
           password: password.trim(), // Include password in the request
         }
       );
-
+      console.log(response);
       if (response.data.success) {
         localStorage.setItem("facultyName", response.data.facultyName); // Store name for later use
         navigate("/Faculty");

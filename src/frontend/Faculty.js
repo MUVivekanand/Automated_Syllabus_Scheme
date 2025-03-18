@@ -273,6 +273,7 @@ function Faculty() {
       );
     }
   };
+  
 
   return (
     <div className="faculty-container">
@@ -291,6 +292,7 @@ function Faculty() {
                 <th>Lecture</th>
                 <th>Tutorial</th>
                 <th>Practical</th>
+                <th>Degree</th>
                 <th>Credits</th>
               </tr>
             </thead>
@@ -302,6 +304,7 @@ function Faculty() {
                   <td>{course.lecture}</td>
                   <td>{course.tutorial}</td>
                   <td>{course.practical}</td>
+                  <td>{course.degree}</td>
                   <td>{course.credits}</td>
                 </tr>
               ))}
@@ -422,56 +425,56 @@ function Faculty() {
           )}
 
           {/* Textbooks Section */}
-          <button
-            className="toggle-btn"
-            onClick={() => toggleExpand("textbooks")}
-          >
-            Textbooks
-          </button>
-          {expandedSections.textbooks && (
-            <div className="textbook-section">
-              <h4 className="section-title">Textbooks</h4>
-              {courseDetails.textbooks.map((textbook, i) => (
-                <div key={i} className="textbook-entry">
-                  {["title", "author", "publisher", "place", "year"].map(
-                    (field) => (
-                      <input
-                        key={field}
-                        className="input-field"
-                        type="text"
-                        placeholder={`Textbook ${i + 1} ${field}`}
-                        value={textbook[field] || ""}
-                        onChange={(e) =>
-                          handleChange("textbooks", i, field, e.target.value)
-                        }
-                      />
-                    )
-                  )}
-                </div>
-              ))}
-              <button
-                className="add-button"
-                onClick={() =>
-                  setCourseDetails((prev) => ({
-                    ...prev,
-                    textbooks: [
-                      ...prev.textbooks,
-                      {
-                        title: "",
-                        author: "",
-                        publisher: "",
-                        place: "",
-                        year: "",
-                      },
-                    ],
-                  }))
-                }
-                disabled={courseDetails.textbooks.length >= 2} // Disable when 2 textbooks added
-              >
-                + Add Textbook
-              </button>
-            </div>
-          )}
+            <button
+              className="toggle-btn"
+              onClick={() => toggleExpand("textbooks")}
+            >
+              Textbooks
+            </button>
+            {expandedSections.textbooks && (
+              <div className="textbook-section">
+                <h4 className="section-title">Textbooks</h4>
+                {courseDetails.textbooks.map((textbook, i) => (
+                  <div key={i} className="textbook-entry">
+                    {["title", "author", "publisher", "place", "year"].map(
+                      (field) => (
+                        <input
+                          key={field}
+                          className="input-field"
+                          type="text"
+                          placeholder={`Textbook ${i + 1} ${field}`}
+                          value={textbook[field] || ""}
+                          onChange={(e) =>
+                            handleChange("textbooks", i, field, e.target.value)
+                          }
+                        />
+                      )
+                    )}
+                  </div>
+                ))}
+                <button
+                  className="add-button"
+                  onClick={() =>
+                    setCourseDetails((prev) => ({
+                      ...prev,
+                      textbooks: [
+                        ...prev.textbooks,
+                        {
+                          title: "",
+                          author: "",
+                          publisher: "",
+                          place: "",
+                          year: "",
+                        },
+                      ],
+                    }))
+                  }
+                  disabled={courseDetails.textbooks.length >= 2} // Disable when 2 textbooks added
+                >
+                  + Add Textbook
+                </button>
+              </div>
+            )}
 
           {/* References Section */}
           <button
@@ -565,7 +568,7 @@ function Faculty() {
                     <tr>
                       <td>23Z101</td>
                       <td>Calculas and its Applications</td>
-                      <td>CO1:N/A</td>
+                      <td>CO1</td>
                       <td></td>
                       <td></td>
                       <td></td>
@@ -583,7 +586,7 @@ function Faculty() {
                     <tr>
                       <td></td>
                       <td></td>
-                      <td>CO2:N/A</td>
+                      <td>CO2</td>
                       <td></td>
                       <td></td>
                       <td></td>
@@ -601,7 +604,7 @@ function Faculty() {
                     <tr>
                       <td></td>
                       <td></td>
-                      <td>CO3:N/A</td>
+                      <td>CO3</td>
                       <td></td>
                       <td></td>
                       <td></td>
@@ -619,7 +622,7 @@ function Faculty() {
                     <tr>
                       <td></td>
                       <td></td>
-                      <td>CO4:N/A</td>
+                      <td>CO4</td>
                       <td></td>
                       <td></td>
                       <td></td>
@@ -637,7 +640,7 @@ function Faculty() {
                     <tr>
                       <td></td>
                       <td></td>
-                      <td>CO5:N/A</td>
+                      <td>CO5</td>
                       <td></td>
                       <td></td>
                       <td></td>
