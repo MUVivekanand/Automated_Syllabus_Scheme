@@ -399,3 +399,8 @@ button.toggle-btn:active {
   margin-top: 100px;
   margin-bottom: 100px;
 }
+
+.courses-table th, .data-table th, .existing-courses-table th {
+  color: #000 !important; /* Black text */
+  background-color: #f0f0f0 !important; /* Light gray background */
+}
