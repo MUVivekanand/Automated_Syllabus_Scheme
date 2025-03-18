@@ -41,11 +41,20 @@ function Course() {
     navigate(`/Summary?degree=${encodeURIComponent(degree)}&department=${encodeURIComponent(department)}`);
   };
 
+  const navigateProfessional = () => {
+    if(degree == 'M.E'){
+      navigate(`/ProfessionalMe?degree=${encodeURIComponent(degree)}&department=${encodeURIComponent(department)}`);
+    }
+  };
+
   const navigateWordPage = () => {
     navigate(`/wordPage?degree=${encodeURIComponent(degree)}&department=${encodeURIComponent(department)}`);
   }
-     
 
+  const navigateMe = () => {
+    navigate("/courseME?degree='M.E'&department='CSE'");
+  }
+     
   const fetchData = async () => {
     try {
       setCourses([]);
@@ -384,6 +393,9 @@ const handleSubmit = useCallback(async () => {
       ...prev,
       degree: selectedDegree
     }));
+    if(selectedDegree == 'M.E'){
+      navigateMe();
+    }
   };
   
   // Update department handler
@@ -458,7 +470,6 @@ const handleSubmit = useCallback(async () => {
                   <>
                     <option value="CSE">CSE</option>
                     <option value="CSE AI-ML">CSE AI-ML</option>
-                    <option value="IT">IT</option>
                   </>
                 )}
               </select>
@@ -903,9 +914,10 @@ const handleSubmit = useCallback(async () => {
           </select>
         </div>
       
-      <div className="action-buttons">
+      <div className="action-buttons"> 
         <button onClick={handleSubmit}>Submit</button>
         <button onClick={navigateSummary}>Generate Summary</button>
+        <button onClick={navigateProfessional}>Professional Electives</button>
         <button onClick={navigateWordPage}>Downloadable Word Format</button>
       </div>
     </div>

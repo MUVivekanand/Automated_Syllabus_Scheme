@@ -27,36 +27,6 @@ function CourseWord() {
   const degree = searchParams.get('degree');
   const department = searchParams.get('department');
 
-  // useEffect(() => {
-  //   const fetchData = async () => {
-  //     try {
-  //       setLoading(true);
-        
-  //       if (degree && department) {
-  //         // Pass the degree and department to the fetch function
-  //         await fetchAllSemestersData(degree, department);
-          
-  //         // If you need course details as well
-  //         const response = await axios.get("http://localhost:4000/api/course/courseDetailsInfo", {
-  //           params: { degree, department }
-  //         });
-  //         setCoursesData(response.data);
-  //       } else {
-  //         // Handle the case where params are missing
-  //         setError("Department and degree parameters are missing");
-  //       }
-        
-  //       setLoading(false);
-  //     } catch (error) {
-  //       console.error("Error fetching data:", error);
-  //       setError("Failed to fetch data. Please try again later.");
-  //       setLoading(false);
-  //     }
-  //   };
-    
-  //   fetchData();
-  // }, [degree, department]);
-
   // In your useEffect hook, replace the fetchData function with:
 useEffect(() => {
   const fetchData = async () => {
@@ -287,7 +257,7 @@ useEffect(() => {
         return { ...semester, courses: semesterCourses };
       }));
 
-      console.log(semestersData);
+      // console.log(semestersData);
 
 
 
@@ -580,7 +550,192 @@ const exportToPDF = async () => {
     
     // FINALLY ADD COURSE DETAILS SECTION WITH REDUCED FONT SIZE FOR COURSE OUTCOMES
     
-    // Course Details section - one course per page with proper margins
+    // // Course Details section - one course per page with proper margins
+    // for (const semester of semestersData) {
+    //   const coursesWithDetails = semester.courses.filter(course => course.courseDetails);
+      
+    //   if (coursesWithDetails.length > 0) {
+    //     doc.addPage();
+    //     doc.setFontSize(14);
+    //     doc.text(`SEMESTER ${semester.semNo} - COURSE DETAILS`, doc.internal.pageSize.width / 2, 20, { align: 'center' });
+        
+    //     let yPosition = 30;
+        
+    //     for (const course of coursesWithDetails) {
+    //       // Check if we need a new page
+    //       if (yPosition > doc.internal.pageSize.height - 40) {
+    //         doc.addPage();
+    //         yPosition = 20;
+    //       }
+          
+    //       // Add more top margin for each course card
+    //       yPosition += 5;
+          
+    //       // Course header
+    //       // doc.setFontSize(12);
+    //       // doc.setFont('helvetica', 'bold');
+    //       doc.setFontSize(12);
+    //       doc.setFont('arial', 'bold');
+    //       doc.text(`${course.course_code} - ${course.course_name}`, pageMargin, yPosition);
+          
+    //       // Credits info
+    //       doc.setFont('arial', 'normal');
+    //       doc.text(`${course.lecture} ${course.tutorial} ${course.practical} ${course.credits}`, doc.internal.pageSize.width - 40, yPosition);
+          
+    //       // doc.text(`(${course.lecture}+${course.tutorial})`, doc.internal.pageSize.width - 40, yPosition + 6);
+
+    //       yPosition += 10;
+
+    //       const courseDetailsBorderMargin = 15; // Increased from default
+    //       const effectiveCourseWidth = doc.internal.pageSize.width - (pageMargin * 2) - (courseDetailsBorderMargin * 2);
+
+          
+    //       // Course Outcomes - UPDATED WITH SMALLER FONT SIZE
+    //       if (course.courseDetails.co && course.courseDetails.co.length > 0) {
+    //         // Set smaller font size for course outcomes
+    //         // doc.setFontSize(8);  // Reduced from the default size
+
+    //         doc.setFontSize(8);  // Keep at 8 as requested
+    //         doc.setFont('arial', 'normal');
+            
+    //         // Using the first item which contains co1_name, co1_desc format
+    //         const coData = course.courseDetails.co[0];
+            
+    //         for (let i = 1; i <= 5; i++) {
+    //           if (coData[`co${i}_name`]) {
+    //             // Main CO text
+    //             const coText = `${coData[`co${i}_name`]} : ${coData[`co${i}_desc`]}`;
+                
+    //             // Get hours info if available
+    //             let hoursText = "";
+    //             if (course.courseDetails.hours && 
+    //                 course.courseDetails.hours.lecture && 
+    //                 course.courseDetails.hours.tutorial) {
+    //               hoursText = `(${course.courseDetails.hours.lecture[i-1] || 0} + ${course.courseDetails.hours.tutorial[i-1] || 0})`;
+    //             }
+                
+    //             // Split long course outcomes into multiple lines
+    //             const coLines = doc.splitTextToSize(coText, doc.internal.pageSize.width - (pageMargin * 2) - 30);
+                
+    //             // Calculate the width of the hours text
+    //             doc.setFont('helvetica', 'normal');
+    //             const hoursWidth = doc.getTextWidth(hoursText);
+                
+    //             // Position for the hours text (right-aligned)
+    //             const hoursX = doc.internal.pageSize.width - pageMargin - hoursWidth;
+                
+    //             // Draw the CO text and hours text
+    //             doc.text(coLines, pageMargin, yPosition);
+    //             if (hoursText) {
+    //               doc.text(hoursText, hoursX, yPosition);
+    //             }
+                
+    //             yPosition += 6 * coLines.length;
+                
+    //             // Add more space if needed
+    //             if (yPosition > doc.internal.pageSize.height - 40) {
+    //               doc.addPage();
+    //               yPosition = 20;
+    //             }
+    //           }
+    //         }
+    //       }
+          
+    //       // Add more space after course outcomes
+    //       yPosition += 5;
+          
+    //       // Reset font size for subsequent sections
+    //       doc.setFontSize(9);
+          
+    //       // Total Hours - Right aligned (UPDATED FOR RIGHT ALIGNMENT)
+    //       doc.setFont('helvetica', 'bold');
+          
+    //       // Create the total hours text
+    //       const totalHoursText = `L: 45 ${course.credits === 4 ? "+ T: 15 = 60" : ""}`;
+    //       const totalHoursWidth = doc.getTextWidth(totalHoursText);
+    //       const totalHoursX = doc.internal.pageSize.width - pageMargin - totalHoursWidth;
+          
+    //       // Calculate the width of "Total =" text and position it to the left of hours
+    //       const totalText = "Total =";
+    //       const totalTextWidth = doc.getTextWidth(totalText);
+    //       const totalTextX = totalHoursX - totalTextWidth - 5; // 5 is spacing between texts
+          
+    //       // Draw the right-aligned texts
+    //       doc.text(totalText, totalTextX, yPosition);
+    //       doc.setFont('helvetica', 'normal');
+    //       doc.text(totalHoursText, totalHoursX, yPosition);
+          
+    //       yPosition += 10;
+          
+    //       // Textbooks
+    //       doc.setFont('helvetica', 'bold');
+    //       doc.text("TEXT BOOKS", pageMargin, yPosition);
+    //       yPosition += 8;
+    //       doc.setFont('helvetica', 'normal');
+          
+    //       if (course.courseDetails.textbooks && course.courseDetails.textbooks.length > 0) {
+    //         course.courseDetails.textbooks.forEach((book, index) => {
+    //           const bookText = `${index + 1}. ${book.author}, ${book.title}, ${book.publisher}, ${book.place}, ${book.year}.`;
+    //           const bookLines = doc.splitTextToSize(bookText, doc.internal.pageSize.width - (pageMargin * 2));
+              
+    //           doc.text(bookLines, pageMargin, yPosition);
+    //           yPosition += 6 * bookLines.length;
+              
+    //           // Add more space or new page if needed
+    //           if (yPosition > doc.internal.pageSize.height - 40) {
+    //             doc.addPage();
+    //             yPosition = 20;
+    //           }
+    //         });
+    //       } else {
+    //         doc.text("No textbooks available.", pageMargin, yPosition);
+    //         yPosition += 8;
+    //       }
+          
+    //       yPosition += 8;
+          
+    //       // References
+    //       doc.setFont('helvetica', 'bold');
+    //       doc.text("REFERENCES", pageMargin, yPosition);
+    //       yPosition += 8;
+    //       doc.setFont('helvetica', 'normal');
+          
+    //       if (course.courseDetails.references && course.courseDetails.references.length > 0) {
+    //         course.courseDetails.references.forEach((ref, index) => {
+    //           const refText = `${index + 1}. ${ref.author}, ${ref.title}, ${ref.publisher}, ${ref.place}, ${ref.year}.`;
+    //           const refLines = doc.splitTextToSize(refText, doc.internal.pageSize.width - (pageMargin * 2));
+              
+    //           doc.text(refLines, pageMargin, yPosition);
+    //           yPosition += 6 * refLines.length;
+              
+    //           // Add more space or new page if needed
+    //           if (yPosition > doc.internal.pageSize.height - 40 && index < course.courseDetails.references.length - 1) {
+    //             doc.addPage();
+    //             yPosition = 20;
+    //           }
+    //         });
+    //       } else {
+    //         doc.text("No references available.", pageMargin, yPosition);
+    //         yPosition += 8;
+    //       }
+          
+    //       // Add more bottom margin between courses
+    //       yPosition += 15;
+          
+    //       // Add a separator line between courses
+    //       if (yPosition < doc.internal.pageSize.height - 30) {
+    //         doc.line(pageMargin, yPosition - 5, doc.internal.pageSize.width - pageMargin, yPosition - 5);
+    //       }
+          
+    //       // Check if we need a new page for the next course
+    //       if (yPosition > doc.internal.pageSize.height - 40) {
+    //         doc.addPage();
+    //         yPosition = 20;
+    //       }
+    //     }
+    //   }
+    // }
+
     for (const semester of semestersData) {
       const coursesWithDetails = semester.courses.filter(course => course.courseDetails);
       
@@ -601,30 +756,30 @@ const exportToPDF = async () => {
           // Add more top margin for each course card
           yPosition += 5;
           
-          // Course header
+          // Course header - centered
           doc.setFontSize(12);
-          doc.setFont('helvetica', 'bold');
-          doc.text(`${course.course_code} - ${course.course_name}`, pageMargin, yPosition);
+          doc.setFont('arial', 'bold');
+          doc.text(`${course.course_code} - ${course.course_name}`, doc.internal.pageSize.width / 2, yPosition, { align: 'center' });
           
           // Credits info
-          doc.setFont('helvetica', 'normal');
+          doc.setFont('arial', 'normal');
           doc.text(`${course.lecture} ${course.tutorial} ${course.practical} ${course.credits}`, doc.internal.pageSize.width - 40, yPosition);
-          
+    
           yPosition += 10;
+    
+          // Increased border margin around text
+          const courseDetailsBorderMargin = 20;
+          const effectiveCourseWidth = doc.internal.pageSize.width - (pageMargin * 2) - (courseDetailsBorderMargin * 2);
           
-          // Course Outcomes - UPDATED WITH SMALLER FONT SIZE
+          // Course Outcomes with Arial font size 8
           if (course.courseDetails.co && course.courseDetails.co.length > 0) {
-            // Set smaller font size for course outcomes
-            doc.setFontSize(8);  // Reduced from the default size
+            doc.setFontSize(8);
             
             // Using the first item which contains co1_name, co1_desc format
             const coData = course.courseDetails.co[0];
             
             for (let i = 1; i <= 5; i++) {
               if (coData[`co${i}_name`]) {
-                // Main CO text
-                const coText = `${coData[`co${i}_name`]} : ${coData[`co${i}_desc`]}`;
-                
                 // Get hours info if available
                 let hoursText = "";
                 if (course.courseDetails.hours && 
@@ -633,23 +788,56 @@ const exportToPDF = async () => {
                   hoursText = `(${course.courseDetails.hours.lecture[i-1] || 0} + ${course.courseDetails.hours.tutorial[i-1] || 0})`;
                 }
                 
-                // Split long course outcomes into multiple lines
-                const coLines = doc.splitTextToSize(coText, doc.internal.pageSize.width - (pageMargin * 2) - 30);
+                // Set the CO name part in bold
+                doc.setFont('arial', 'bold');
+                const coName = `${coData[`co${i}_name`]}`;
+                doc.text(coName, pageMargin + courseDetailsBorderMargin, yPosition);
                 
-                // Calculate the width of the hours text
-                doc.setFont('helvetica', 'normal');
-                const hoursWidth = doc.getTextWidth(hoursText);
+                // Calculate width of the co_name part to position the description properly
+                const coNameWidth = doc.getTextWidth(coName);
                 
-                // Position for the hours text (right-aligned)
-                const hoursX = doc.internal.pageSize.width - pageMargin - hoursWidth;
+                // Add colon and description in normal font
+                doc.setFont('arial', 'normal');
+                const coDesc = ` : ${coData[`co${i}_desc`]}`;
                 
-                // Draw the CO text and hours text
-                doc.text(coLines, pageMargin, yPosition);
-                if (hoursText) {
-                  doc.text(hoursText, hoursX, yPosition);
+                // Split long course descriptions into multiple lines
+                const availableWidth = doc.internal.pageSize.width - (pageMargin * 2) - (courseDetailsBorderMargin * 2) - coNameWidth;
+                const coLines = doc.splitTextToSize(coDesc, availableWidth);
+                
+                // Position description after the co_name on first line
+                doc.text(coLines[0], pageMargin + courseDetailsBorderMargin + coNameWidth, yPosition);
+                yPosition += 4; // Decreased line spacing within course outcome
+                
+                // Add remaining lines of description if any
+                if (coLines.length > 1) {
+                  for (let j = 1; j < coLines.length - 1; j++) {
+                    doc.text(coLines[j], pageMargin + courseDetailsBorderMargin, yPosition);
+                    yPosition += 4; // Decreased line spacing within course outcome
+                  }
+                  
+                  // For the last line, make space for hours text
+                  const lastLineX = pageMargin + courseDetailsBorderMargin;
+                  doc.text(coLines[coLines.length - 1], lastLineX, yPosition);
+                  
+                  // Right-align hours text on the same line as the last text line
+                  if (hoursText) {
+                    const hoursX = doc.internal.pageSize.width - pageMargin - courseDetailsBorderMargin - doc.getTextWidth(hoursText);
+                    doc.text(hoursText, hoursX, yPosition);
+                  }
+                  
+                  yPosition += 4; // Decreased line spacing within course outcome
+                } else {
+                  // If only one line, add hours on same line
+                  if (hoursText) {
+                    const hoursX = doc.internal.pageSize.width - pageMargin - courseDetailsBorderMargin - doc.getTextWidth(hoursText);
+                    doc.text(hoursText, hoursX, yPosition);
+                  }
+                  
+                  yPosition += 4; // Decreased line spacing within course outcome
                 }
                 
-                yPosition += 6 * coLines.length;
+                // Increased spacing between different course outcomes
+                yPosition += 6;
                 
                 // Add more space if needed
                 if (yPosition > doc.internal.pageSize.height - 40) {
@@ -666,13 +854,13 @@ const exportToPDF = async () => {
           // Reset font size for subsequent sections
           doc.setFontSize(9);
           
-          // Total Hours - Right aligned (UPDATED FOR RIGHT ALIGNMENT)
-          doc.setFont('helvetica', 'bold');
+          // Total Hours - Right aligned
+          doc.setFont('arial', 'bold');
           
           // Create the total hours text
           const totalHoursText = `L: 45 ${course.credits === 4 ? "+ T: 15 = 60" : ""}`;
           const totalHoursWidth = doc.getTextWidth(totalHoursText);
-          const totalHoursX = doc.internal.pageSize.width - pageMargin - totalHoursWidth;
+          const totalHoursX = doc.internal.pageSize.width - pageMargin - courseDetailsBorderMargin - totalHoursWidth;
           
           // Calculate the width of "Total =" text and position it to the left of hours
           const totalText = "Total =";
@@ -681,23 +869,23 @@ const exportToPDF = async () => {
           
           // Draw the right-aligned texts
           doc.text(totalText, totalTextX, yPosition);
-          doc.setFont('helvetica', 'normal');
+          doc.setFont('arial', 'normal');
           doc.text(totalHoursText, totalHoursX, yPosition);
           
           yPosition += 10;
           
           // Textbooks
-          doc.setFont('helvetica', 'bold');
-          doc.text("TEXT BOOKS", pageMargin, yPosition);
+          doc.setFont('arial', 'bold');
+          doc.text("TEXT BOOKS", pageMargin + courseDetailsBorderMargin, yPosition);
           yPosition += 8;
-          doc.setFont('helvetica', 'normal');
+          doc.setFont('arial', 'normal');
           
           if (course.courseDetails.textbooks && course.courseDetails.textbooks.length > 0) {
             course.courseDetails.textbooks.forEach((book, index) => {
               const bookText = `${index + 1}. ${book.author}, ${book.title}, ${book.publisher}, ${book.place}, ${book.year}.`;
-              const bookLines = doc.splitTextToSize(bookText, doc.internal.pageSize.width - (pageMargin * 2));
+              const bookLines = doc.splitTextToSize(bookText, doc.internal.pageSize.width - (pageMargin * 2) - (courseDetailsBorderMargin * 2));
               
-              doc.text(bookLines, pageMargin, yPosition);
+              doc.text(bookLines, pageMargin + courseDetailsBorderMargin, yPosition);
               yPosition += 6 * bookLines.length;
               
               // Add more space or new page if needed
@@ -707,24 +895,24 @@ const exportToPDF = async () => {
               }
             });
           } else {
-            doc.text("No textbooks available.", pageMargin, yPosition);
+            doc.text("No textbooks available.", pageMargin + courseDetailsBorderMargin, yPosition);
             yPosition += 8;
           }
           
           yPosition += 8;
           
           // References
-          doc.setFont('helvetica', 'bold');
-          doc.text("REFERENCES", pageMargin, yPosition);
+          doc.setFont('arial', 'bold');
+          doc.text("REFERENCES", pageMargin + courseDetailsBorderMargin, yPosition);
           yPosition += 8;
-          doc.setFont('helvetica', 'normal');
+          doc.setFont('arial', 'normal');
           
           if (course.courseDetails.references && course.courseDetails.references.length > 0) {
             course.courseDetails.references.forEach((ref, index) => {
               const refText = `${index + 1}. ${ref.author}, ${ref.title}, ${ref.publisher}, ${ref.place}, ${ref.year}.`;
-              const refLines = doc.splitTextToSize(refText, doc.internal.pageSize.width - (pageMargin * 2));
+              const refLines = doc.splitTextToSize(refText, doc.internal.pageSize.width - (pageMargin * 2) - (courseDetailsBorderMargin * 2));
               
-              doc.text(refLines, pageMargin, yPosition);
+              doc.text(refLines, pageMargin + courseDetailsBorderMargin, yPosition);
               yPosition += 6 * refLines.length;
               
               // Add more space or new page if needed
@@ -734,7 +922,7 @@ const exportToPDF = async () => {
               }
             });
           } else {
-            doc.text("No references available.", pageMargin, yPosition);
+            doc.text("No references available.", pageMargin + courseDetailsBorderMargin, yPosition);
             yPosition += 8;
           }
           
@@ -1011,68 +1199,6 @@ const exportToPDF = async () => {
                   {course.lecture} {course.tutorial} {course.practical} {course.credits}
                 </p>
               </div>
-              
-              {/* Course Outcomes */}
-              {/* {course.courseDetails.co && (
-                <div className="section">
-                  {course.courseDetails.co.map((co, i) => (
-                    <div key={i} className="course-topic">
-                      <p className="topic">
-                        <b>{co.name}:</b> {co.desc}
-                      </p>
-                      {course.courseDetails.hours && course.courseDetails.hours[i] && (
-                        <span className="hours">
-                          ({course.courseDetails.hours[i].hour1} + {course.courseDetails.hours[i].hour2})
-                        </span>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )} */}
-
-
-
-
-
-
-
-
-              {/* Course Outcomes */}
-{/* {course.courseDetails.co && course.courseDetails.co.length > 0 && (
-  <div className="section">
-    {course.courseDetails.co.map((co, i) => (
-      <div key={i} className="course-topic">
-        <p className="topic">
-          <b>{co.name}</b> {co.desc}
-        </p>
-        {course.courseDetails.hours && course.courseDetails.hours[i] && (
-          <span className="hours">
-            ({course.courseDetails.hours[i].hour1} + {course.courseDetails.hours[i].hour2})
-          </span>
-        )}
-      </div>
-    ))}
-  </div>
-)} */}
-
-
-      {/* Course Outcomes */}
-{/* {course.courseDetails.co && course.courseDetails.co.length > 0 && (
-  <div className="section">
-    {course.courseDetails.co.map((co, i) => (
-      <div key={i} className="course-topic">
-        <p className="topic">
-          <b>{co.name}</b> {co.desc}
-        </p>
-        {course.courseDetails.hours && course.courseDetails.hours[i] && (
-          <span className="hours">
-            ({course.courseDetails.hours[i].hour1} + {course.courseDetails.hours[i].hour2})
-          </span>
-        )}
-      </div>
-    ))}
-  </div>
-)} */}
 
 {/* Course Outcomes */}
 {course.courseDetails.co && course.courseDetails.co.length > 0 && (
