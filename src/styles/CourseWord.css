@@ -394,3 +394,8 @@ button.toggle-btn:active {
   white-space: nowrap; /* Prevents line breaks */
   font-weight: bold; /* Makes hours bold for better visibility */
 }
+
+.professional-electives-container {
+  margin-top: 100px;
+  margin-bottom: 100px;
+}
