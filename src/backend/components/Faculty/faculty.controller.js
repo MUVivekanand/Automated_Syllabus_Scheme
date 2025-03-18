@@ -8,8 +8,9 @@ const facultyLogin = async (req, res) => {
     const { data, error } = await supabase
       .from("credits") // Assuming "credits" table contains faculty details
       .select("faculty")
-      .eq("faculty", username)
-      .single();
+      .eq("faculty", username);
+
+    console.log(data[0].faculty);
 
     if (error || !data) {
       return res
@@ -25,7 +26,7 @@ const facultyLogin = async (req, res) => {
     }
 
     // Login successful
-    res.json({ success: true, facultyName: data.faculty });
+    res.json({ success: true, facultyName: data[0].faculty});
   } catch (err) {
     console.error("Login error:", err);
     res.status(500).json({ success: false, message: "Internal server error" });
@@ -208,7 +209,7 @@ const getCourse = async (req, res) => {
 
     const { data, error } = await supabase
       .from("credits") // Table name
-      .select("course_code, course_name, lecture, tutorial, practical, credits") // Fetch required fields
+      .select("course_code, course_name, lecture, tutorial, practical, credits, degree") // Fetch required fields
       .eq("faculty", facultyName);
 
     if (error) throw error;
