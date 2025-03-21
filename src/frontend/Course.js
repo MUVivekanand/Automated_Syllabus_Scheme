@@ -42,8 +42,8 @@ function Course() {
   };
 
   const navigateProfessional = () => {
-    if(degree == 'M.E'){
-      navigate(`/ProfessionalMe?degree=${encodeURIComponent(degree)}&department=${encodeURIComponent(department)}`);
+    if(degree == 'B.E'){
+      navigate(`/ProfessionalBe?degree=${encodeURIComponent(degree)}&department=${encodeURIComponent(department)}`);
     }
   };
 

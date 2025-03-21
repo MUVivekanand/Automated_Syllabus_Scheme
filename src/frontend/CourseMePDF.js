@@ -488,10 +488,17 @@ const exportToPDF = async () => {
       doc.addPage();
       
       // Title for the Professional Electives section
-      doc.setFontSize(12);
-      doc.setFont('helvetica', 'bold');
-      doc.text('Professional Electives', doc.internal.pageSize.width / 2, 20, { align: 'center' });
-      doc.setFont('helvetica', 'normal');
+      // doc.setFontSize(12);
+      // doc.setFont('helvetica', 'bold');
+      // doc.text('Professional Electives', doc.internal.pageSize.width / 2, 20, { align: 'center' });
+      // doc.setFont('helvetica', 'normal');
+
+      autoTable(doc, {
+        startY: 30,
+        body: [[{ content: 'PROFESSIONAL ELECTIVE THEORY COURSES (Four to be opted)', colSpan: 10, styles: { halign: 'left', fontStyle: 'bold', fontSize: 10, cellPadding: 6 } }]],
+        theme: 'plain',
+        margin: { left: pageMargin, right: pageMargin }
+    });
       
       // Prepare table data for Professional Electives
       const peTableBody = professionalElectives.map((item, idx) => [
@@ -504,40 +511,41 @@ const exportToPDF = async () => {
         item.practical,
         item.ca_marks,
         item.fe_marks,
-        item.total_marks
+        item.total_marks,
+        'PE'
       ]);
       
       // Calculate totals for the Professional Electives
-      const peTotals = [
-        '',
-        'Total',
-        professionalElectives.reduce((sum, item) => sum + Number(item.credits || 0), 0),
-        professionalElectives.reduce((sum, item) => sum + Number(item.lecture || 0), 0),
-        professionalElectives.reduce((sum, item) => sum + Number(item.tutorial || 0), 0),
-        professionalElectives.reduce((sum, item) => sum + Number(item.practical || 0), 0),
-        professionalElectives.reduce((sum, item) => sum + Number(item.ca_marks || 0), 0),
-        professionalElectives.reduce((sum, item) => sum + Number(item.fe_marks || 0), 0),
-        professionalElectives.reduce((sum, item) => sum + Number(item.total_marks || 0), 0)
-      ];
+      // const peTotals = [
+      //   '',
+      //   'Total',
+      //   professionalElectives.reduce((sum, item) => sum + Number(item.credits || 0), 0),
+      //   professionalElectives.reduce((sum, item) => sum + Number(item.lecture || 0), 0),
+      //   professionalElectives.reduce((sum, item) => sum + Number(item.tutorial || 0), 0),
+      //   professionalElectives.reduce((sum, item) => sum + Number(item.practical || 0), 0),
+      //   professionalElectives.reduce((sum, item) => sum + Number(item.ca_marks || 0), 0),
+      //   professionalElectives.reduce((sum, item) => sum + Number(item.fe_marks || 0), 0),
+      //   professionalElectives.reduce((sum, item) => sum + Number(item.total_marks || 0), 0)
+      // ];
       
       // Add the Professional Electives table
       autoTable(doc, {
         startY: 30,
-        head: [[
-          // 'ID',
-          'Course Code',
-          'Course Name',
-          'Credits',
-          'Lecture',
-          'Tutorial',
-          'Practical',
-          'CA Marks',
-          'FE Marks',
-          'Total Marks'
-        ]],
+        // head: [[
+        //   // 'ID',
+        //   'Course Code',
+        //   'Course Name',
+        //   'Credits',
+        //   'Lecture',
+        //   'Tutorial',
+        //   'Practical',
+        //   'CA Marks',
+        //   'FE Marks',
+        //   'Total Marks'
+        // ]],
         body: [
-          ...peTableBody,
-          peTotals
+          [{ content: 'PROFESSIONAL ELECTIVE THEORY COURSES (Four to be opted)', colSpan: 10, styles: { halign: 'left', fontStyle: 'bold'} }],
+          ...peTableBody
         ],
         theme: 'grid',
         styles: { 
@@ -567,13 +575,13 @@ const exportToPDF = async () => {
         footStyles: {
           fontStyle: 'bold'
         },
-        willDrawCell: function(data) {
-          // Format the total row
-          if (data.row.index === peTableBody.length) {
-            data.cell.styles.fontStyle = 'bold';
-            data.cell.styles.fillColor = [240, 240, 240];
-          }
-        },
+        // willDrawCell: function(data) {
+        //   // Format the total row
+        //   if (data.row.index === peTableBody.length) {
+        //     data.cell.styles.fontStyle = 'bold';
+        //     data.cell.styles.fillColor = [240, 240, 240];
+        //   }
+        // },
         margin: { left: pageMargin, right: pageMargin }
       });
       
@@ -998,7 +1006,7 @@ const exportToPDF = async () => {
       <thead>
         <tr>
           {/* <th>ID</th> */}
-          <th>Course Code</th>
+          {/* <th>Course Code</th>
           <th>Course Name</th>
           <th>Credits</th>
           <th>Lecture</th>
@@ -1006,7 +1014,10 @@ const exportToPDF = async () => {
           <th>Practical</th>
           <th>CA Marks</th>
           <th>FE Marks</th>
-          <th>Total Marks</th>
+          <th>Total Marks</th> */}
+          <td colSpan="10" style={{ textAlign: "left", fontWeight: "bold", padding: "10px" }}>
+            PROFESSIONAL ELECTIVE THEORY COURSES (Four to be opted)
+          </td>
         </tr>
       </thead>
       <tbody>
@@ -1022,10 +1033,11 @@ const exportToPDF = async () => {
             <td>{item.ca_marks}</td>
             <td>{item.fe_marks}</td>
             <td>{item.total_marks}</td>
+            <td>PE</td>
           </tr>
         ))}
       </tbody>
-      <tbody>
+      {/* <tbody>
         <tr className="total-row">
           <td colSpan="2" style={{ textAlign: "center", fontWeight: "bold" }}>Total</td>
           <td style={{ textAlign: "center", fontWeight: "bold" }}>
@@ -1050,7 +1062,7 @@ const exportToPDF = async () => {
             {professionalElectives.reduce((sum, item) => sum + Number(item.total_marks || 0), 0)}
           </td>
         </tr>
-      </tbody>
+      </tbody> */}
     </table>
   </div>
 )}

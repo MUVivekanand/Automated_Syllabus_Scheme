@@ -13,6 +13,7 @@ import CourseWord from "./frontend/CourseWord.js";
 import ProfessionalMe from "./frontend/ProfessionalMe.js";
 import CourseMe from './frontend/CourseMe.js';
 import CourseMePDF from "./frontend/CourseMePDF.js";
+import ProfessionalBe from "./frontend/ProfessionalBe.js";
 
 function App() {
   return (
@@ -30,6 +31,7 @@ function App() {
         <Route path="/Regulations" element={<Regulations />} />
         <Route path = "/wordPage" element = {<CourseWord />}/>
         <Route path = "/ProfessionalMe" element = {<ProfessionalMe/>}/>
+        <Route path = "/ProfessionalBe" element = {<ProfessionalBe/>}/>
         <Route path="/courseME" element = {<CourseMe />} />
         <Route path='/MeWordPage' element = {<CourseMePDF />} />
       </Routes>

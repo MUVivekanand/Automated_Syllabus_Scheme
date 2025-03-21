@@ -73,8 +73,155 @@ const getProfessional = async (req, res) => {
     }
 };
 
+
+
+
+const getCoursesElectiveAll = async(req,res) => {
+  try {
+    const { degree, department } = req.query;
+    // console.log("Attempting to fetch courses from Supabase");
+    let query = supabase.from("electivebe").select("*");
+    
+    if (degree) {
+      query = query.eq("degree", degree);
+    }
+    
+    if (department) {
+      query = query.eq("department", department);
+    }
+    
+    query = query.order("type").order("serial_number");
+    
+    const { data, error } = await query;
+    
+    if (error) {
+      return res.status(400).json({ error: error.message });
+    }
+    
+    res.json(data);
+  } catch (err) {
+    console.error('Error executing query', err);
+    res.status(500).json({ error: 'Database error' });
+  }
+};
+
+const getCoursesElective = async(req,res) => {
+  try {
+    const { code } = req.params;
+    const { data, error } = await supabase
+      .from("electivebe")
+      .select("*")
+      .eq("course_code", code)
+      .single();
+    
+    if (error) {
+      return res.status(404).json({ error: 'Course not found' });
+    }
+    
+    res.json(data);
+  } catch (err) {
+    console.error('Error executing query', err);
+    res.status(500).json({ error: 'Database error' });
+  }
+};
+
+const postCoursesElective = async(req,res) => {
+  try {
+    // console.log(req.body);
+    const { serial_number, course_code, course_title, type, vertical, date, degree, department } = req.body;
+    // console.log("Attempting to fetch courses from Supabase");
+    // Check if course code already exists
+    const { data: existingCourse, error: checkError } = await supabase
+      .from("electivebe")
+      .select("*")
+      .eq("course_code", course_code);
+    
+    if (checkError) {
+      return res.status(400).json({ error: checkError.message });
+    }
+    
+    if (existingCourse.length > 0) {
+      return res.status(400).json({ error: 'Course code already exists' });
+    }
+    
+    const { data, error } = await supabase
+      .from("electivebe")
+      .insert([
+        { serial_number, course_code, course_title, type, vertical, date, degree, department }
+      ])
+      .select();
+    
+    if (error) {
+      return res.status(400).json({ error: error.message });
+    }
+    
+    res.status(201).json(data[0]);
+  } catch (err) {
+    console.error('Error executing query', err);
+    res.status(500).json({ error: 'Database error' });
+  }
+};
+
+const putCoursesElective = async(req,res) => {
+  try {
+    const { code } = req.params;
+    const { serial_number, course_title, type, vertical, date, degree, department } = req.body;
+    
+    const { data, error } = await supabase
+      .from("electivebe")
+      .update({ serial_number, course_title, type, vertical, date, degree, department })
+      .eq("course_code", code)
+      .select();
+    
+    if (error) {
+      return res.status(400).json({ error: error.message });
+    }
+    
+    if (data.length === 0) {
+      return res.status(404).json({ error: 'Course not found' });
+    }
+    
+    res.json(data[0]);
+  } catch (err) {
+    console.error('Error executing query', err);
+    res.status(500).json({ error: 'Database error' });
+  }
+};
+
+const deleteCoursesElective = async(req,res) => {
+  try {
+    const { code } = req.params;
+    const { data, error } = await supabase
+      .from("electivebe")
+      .delete()
+      .eq("course_code", code)
+      .select();
+    
+    if (error) {
+      return res.status(400).json({ error: error.message });
+    }
+    
+    if (data.length === 0) {
+      return res.status(404).json({ error: 'Course not found' });
+    }
+    
+    res.json({ message: 'Course deleted successfully' });
+  } catch (err) {
+    console.error('Error executing query', err);
+    res.status(500).json({ error: 'Database error' });
+  }
+};
+
+
+
 module.exports = {
     insertProfessional,
     updateProfessional,
-    getProfessional
+    getProfessional,
+
+    getCoursesElectiveAll,
+    getCoursesElective,
+    postCoursesElective,
+    putCoursesElective,
+    deleteCoursesElective
 };

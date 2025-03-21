@@ -14,6 +14,11 @@ function CourseWord() {
   const [error, setError] = useState(null);
   const [exportLoading, setExportLoading] = useState(false);
 
+  const [coursesElective, setCoursesElective] = useState([]);
+  const [groupedElectives, setGroupedElectives] = useState({});
+  const [honoursCoursesByVertical, setHonoursCoursesByVertical] = useState({});
+
+
   const [summaryData, setSummaryData] = useState([]);
   const [totalCreditsInfo, setTotalCreditsInfo] = useState(null);
   const courseTypes = ["HS", "BS", "ES", "PC", "PE", "OE", "EEC", "MC"];
@@ -42,6 +47,12 @@ useEffect(() => {
           params: { degree, department }
         });
         const courseDetailsData = response.data;
+
+        const { groupedElectives: electives, honoursCoursesByVertical: honoursCourses } = 
+        await fetchElectiveCourses(degree, department);
+
+        setGroupedElectives(electives);
+        setHonoursCoursesByVertical(honoursCourses);
         
         // Attach course details to semester data
         const enhancedSemestersData = semData.map(semester => {
@@ -54,7 +65,7 @@ useEffect(() => {
         });
         
         setSemestersData(enhancedSemestersData);
-        console.log(enhancedSemestersData)
+        // console.log(enhancedSemestersData)
         
         // Fetch credit summary data
         const [creditsSummaryResponse, totalCreditsResponse] = await Promise.all([
@@ -107,6 +118,70 @@ useEffect(() => {
   
   fetchData();
 }, [degree, department]);
+
+
+const fetchElectiveCourses = async (degree, department) => {
+  try {
+    const electivesResponse = await axios.get(
+      `http://localhost:4000/api/proelective/courses?degree=${encodeURIComponent(degree)}&department=${encodeURIComponent(department)}`
+    );
+    const electivesData = electivesResponse.data;
+    
+    // Group elective courses by type
+    const groupedElectives = electivesData.reduce((acc, course) => {
+      if (!acc[course.type]) {
+        acc[course.type] = [];
+      }
+      acc[course.type].push(course);
+      return acc;
+    }, {});
+    
+    // Sort electives by serial number
+    Object.keys(groupedElectives).forEach(type => {
+      groupedElectives[type].sort((a, b) => a.serial_number - b.serial_number);
+    });
+    
+    // Group BE Honours courses by vertical
+    const honoursCoursesByVertical = electivesData
+      .filter(course => course.type === "Professional Electives for BE Honours / BE Honours with specialization in same discipline and BE Minor degree programmes")
+      .reduce((acc, course) => {
+        const vertical = course.vertical || 0;
+        if (!acc[vertical]) {
+          acc[vertical] = [];
+        }
+        acc[vertical].push(course);
+        return acc;
+      }, {});
+    
+    // Sort each vertical group by serial number
+    Object.keys(honoursCoursesByVertical).forEach(vertical => {
+      honoursCoursesByVertical[vertical].sort((a, b) => a.serial_number - b.serial_number);
+    });
+    console.log(groupedElectives);
+    
+    return { groupedElectives, honoursCoursesByVertical };
+  } catch (error) {
+    console.error("Error fetching elective courses:", error);
+    throw error;
+  }
+};
+
+const getVerticalName = (vertical) => {
+  const verticalNames = {
+    1: "VERTICAL I: Computational Intelligence",
+    2: "VERTICAL II: Networking Technologies",
+    3: "VERTICAL III: Security and Privacy"
+  };
+  return verticalNames[vertical] || "";
+};
+
+const sectionTypes = {
+  LANGUAGE: 'LANGUAGE ELECTIVES',
+  BE: 'Professional electives for BE degree programme',
+  BE_HONOURS: 'Professional Electives for BE Honours / BE Honours with specialization in same discipline and BE Minor degree programmes',
+  OPEN: 'OPEN ELECTIVES',
+  SDL: 'SELF DIRECTED LEARNING COURSES'
+};
   
 
   const fetchAllSemestersData = async (degree, department) => {
@@ -504,6 +579,194 @@ const exportToPDF = async () => {
       doc.setFontSize(9);
       doc.text(pageNum.toString(), doc.internal.pageSize.width / 2, doc.internal.pageSize.height - 10, { align: 'center' });
     }
+// After the 8 semester tables and before the summary table
+// Add this right after the code that creates the 8 semester tables
+// and before the "NEXT ADD SUMMARY TABLE ON A NEW PAGE" comment
+
+// NEXT ADD ELECTIVE SECTIONS ON NEW PAGES BEFORE SUMMARY TABLE
+// Add Professional Electives
+doc.addPage();
+doc.setFontSize(14);
+doc.text('Professional Electives for BE Degree Programme', doc.internal.pageSize.width / 2, 20, { align: 'center' });
+
+// Create table for Professional Electives
+const professionalElectivesData = groupedElectives[sectionTypes.BE].map(course => [
+  course.course_code,
+  course.course_title
+]);
+
+autoTable(doc, {
+  startY: 30,
+  margin: { left: pageMargin, right: pageMargin },
+  head: [['Course Code', 'Course Title']],
+  body: professionalElectivesData,
+  theme: 'grid',
+  styles: { 
+    fontSize: 9,
+    cellPadding: 2 
+  },
+  headStyles: {
+    fillColor: [220, 220, 220],
+    textColor: [0, 0, 0],
+    fontStyle: 'bold'
+  },
+  columnStyles: {
+    0: { cellWidth: 30 },
+    1: { cellWidth: 'auto' }
+  }
+});
+
+// Add Honours Electives by vertical
+if (Object.keys(honoursCoursesByVertical).length > 0) {
+  doc.addPage();
+  doc.setFontSize(14);
+  doc.text('Professional Electives for BE Honours / BE Honours with specialization', doc.internal.pageSize.width / 2, 20, { align: 'center' });
+  doc.text('in same discipline and BE Minor degree programmes', doc.internal.pageSize.width / 2, 30, { align: 'center' });
+
+  let verticalY = 40;
+  
+  for (const vertical of Object.keys(honoursCoursesByVertical).sort()) {
+    // Check if we need a new page
+    if (verticalY > doc.internal.pageSize.height - 60) {
+      doc.addPage();
+      verticalY = 20;
+    }
+    
+    // Add vertical heading
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'bold');
+    doc.text(getVerticalName(vertical), pageMargin, verticalY);
+    verticalY += 10;
+    
+    // Create table for this vertical
+    const verticalData = honoursCoursesByVertical[vertical].map(course => [
+      course.course_code,
+      course.course_title
+    ]);
+
+    autoTable(doc, {
+      startY: verticalY,
+      margin: { left: pageMargin, right: pageMargin },
+      head: [['Course Code', 'Course Title']],
+      body: verticalData,
+      theme: 'grid',
+      styles: { 
+        fontSize: 9,
+        cellPadding: 2 
+      },
+      headStyles: {
+        fillColor: [220, 220, 220],
+        textColor: [0, 0, 0],
+        fontStyle: 'bold'
+      },
+      columnStyles: {
+        0: { cellWidth: 30 },
+        1: { cellWidth: 'auto' }
+      }
+    });
+    
+    verticalY = doc.lastAutoTable.finalY + 15;
+  }
+}
+
+// Add Open Electives
+if (groupedElectives[sectionTypes.OPEN] && groupedElectives[sectionTypes.OPEN].length > 0) {
+  doc.addPage();
+  doc.setFontSize(14);
+  doc.text('Open Electives', doc.internal.pageSize.width / 2, 20, { align: 'center' });
+
+  const openElectivesData = groupedElectives[sectionTypes.OPEN].map(course => [
+    course.course_code,
+    course.course_title
+  ]);
+
+  autoTable(doc, {
+    startY: 30,
+    margin: { left: pageMargin, right: pageMargin },
+    head: [['Course Code', 'Course Title']],
+    body: openElectivesData,
+    theme: 'grid',
+    styles: { 
+      fontSize: 9,
+      cellPadding: 2 
+    },
+    headStyles: {
+      fillColor: [220, 220, 220],
+      textColor: [0, 0, 0],
+      fontStyle: 'bold'
+    },
+    columnStyles: {
+      0: { cellWidth: 30 },
+      1: { cellWidth: 'auto' }
+    }
+  });
+}
+
+// Add Language Electives
+if (groupedElectives[sectionTypes.LANGUAGE] && groupedElectives[sectionTypes.LANGUAGE].length > 0) {
+  doc.addPage();
+  doc.setFontSize(14);
+  doc.text('Language Electives', doc.internal.pageSize.width / 2, 20, { align: 'center' });
+
+  const languageElectivesData = groupedElectives[sectionTypes.LANGUAGE].map(course => [
+    course.course_code,
+    course.course_title
+  ]);
+
+  autoTable(doc, {
+    startY: 30,
+    margin: { left: pageMargin, right: pageMargin },
+    head: [['Course Code', 'Course Title']],
+    body: languageElectivesData,
+    theme: 'grid',
+    styles: { 
+      fontSize: 9,
+      cellPadding: 2 
+    },
+    headStyles: {
+      fillColor: [220, 220, 220],
+      textColor: [0, 0, 0],
+      fontStyle: 'bold'
+    },
+    columnStyles: {
+      0: { cellWidth: 30 },
+      1: { cellWidth: 'auto' }
+    }
+  });
+}
+
+// Add Self Directed Learning Courses
+if (groupedElectives[sectionTypes.SDL] && groupedElectives[sectionTypes.SDL].length > 0) {
+  doc.addPage();
+  doc.setFontSize(14);
+  doc.text('Self Directed Learning Courses', doc.internal.pageSize.width / 2, 20, { align: 'center' });
+
+  const sdlCoursesData = groupedElectives[sectionTypes.SDL].map(course => [
+    course.course_code,
+    course.course_title
+  ]);
+
+  autoTable(doc, {
+    startY: 30,
+    margin: { left: pageMargin, right: pageMargin },
+    head: [['Course Code', 'Course Title']],
+    body: sdlCoursesData,
+    theme: 'grid',
+    styles: { 
+      fontSize: 9,
+      cellPadding: 2 
+    },
+    headStyles: {
+      fillColor: [220, 220, 220],
+      textColor: [0, 0, 0],
+      fontStyle: 'bold'
+    },
+    columnStyles: {
+      0: { cellWidth: 30 },
+      1: { cellWidth: 'auto' }
+    }
+  });
+}
     
     // NEXT ADD SUMMARY TABLE ON A NEW PAGE
     
@@ -955,6 +1218,131 @@ const exportToPDF = async () => {
           </div>
         );
       })}
+
+      {/* Add Elective Courses section here */}
+      <div className="courses-display">
+      <h2>Elective Courses</h2>
+      
+      {/* Display Language Electives */}
+      {groupedElectives[sectionTypes.LANGUAGE] && groupedElectives[sectionTypes.LANGUAGE].length > 0 && (
+        <div className="course-section">
+          <h3>LANGUAGE ELECTIVES</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>Course Code</th>
+                <th>Course Title</th>
+              </tr>
+            </thead>
+            <tbody>
+              {groupedElectives[sectionTypes.LANGUAGE].map(course => (
+                <tr key={course.course_code}>
+                  <td>{course.course_code}</td>
+                  <td>{course.course_title}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+      
+      {/* Display BE Degree Programme Courses */}
+      {groupedElectives[sectionTypes.BE] && groupedElectives[sectionTypes.BE].length > 0 && (
+        <div className="course-section">
+          <h3>Professional electives for BE degree programme</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>Course Code</th>
+                <th>Course Title</th>
+              </tr>
+            </thead>
+            <tbody>
+              {groupedElectives[sectionTypes.BE].map(course => (
+                <tr key={course.course_code}>
+                  <td>{course.course_code}</td>
+                  <td>{course.course_title}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+      
+      {/* Display BE Honours Courses by Vertical */}
+      {Object.keys(honoursCoursesByVertical).length > 0 && (
+        <div className="course-section">
+          <h3>Professional Electives for BE Honours / BE Honours with specialization in same discipline and BE Minor degree programmes</h3>
+          {Object.keys(honoursCoursesByVertical).sort().map(vertical => (
+            <div key={vertical}>
+              <h4>{getVerticalName(vertical)}</h4>
+              <table>
+                <thead>
+                  <tr>
+                    <th>Course Code</th>
+                    <th>Course Title</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {honoursCoursesByVertical[vertical].map(course => (
+                    <tr key={course.course_code}>
+                      <td>{course.course_code}</td>
+                      <td>{course.course_title}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ))}
+        </div>
+      )}
+      
+      {/* Display Open Electives */}
+      {groupedElectives[sectionTypes.OPEN] && groupedElectives[sectionTypes.OPEN].length > 0 && (
+        <div className="course-section">
+          <h3>OPEN ELECTIVES</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>Course Code</th>
+                <th>Course Title</th>
+              </tr>
+            </thead>
+            <tbody>
+              {groupedElectives[sectionTypes.OPEN].map(course => (
+                <tr key={course.course_code}>
+                  <td>{course.course_code}</td>
+                  <td>{course.course_title}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+      
+      {/* Display Self Directed Learning Courses */}
+      {groupedElectives[sectionTypes.SDL] && groupedElectives[sectionTypes.SDL].length > 0 && (
+        <div className="course-section">
+          <h3>SELF DIRECTED LEARNING COURSES</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>Course Code</th>
+                <th>Course Title</th>
+              </tr>
+            </thead>
+            <tbody>
+              {groupedElectives[sectionTypes.SDL].map(course => (
+                <tr key={course.course_code}>
+                  <td>{course.course_code}</td>
+                  <td>{course.course_title}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
 
 {totalCreditsInfo && (
   <div className="summary-section">

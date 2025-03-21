@@ -404,3 +404,55 @@ button.toggle-btn:active {
   color: #000 !important; /* Black text */
   background-color: #f0f0f0 !important; /* Light gray background */
 }
+
+.electives-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 20px;
+}
+
+.electives-table th, .electives-table td {
+  padding: 8px;
+  text-align: left;
+  border-bottom: 1px solid #ddd;
+}
+
+.electives-table th {
+  background-color: #f2f2f2;
+  font-weight: bold;
+}
+
+.course-section {
+  margin-bottom: 30px;
+}
+
+.vertical-section {
+  margin-bottom: 20px;
+}
+
+.courses-display h3 {
+  text-align: center;
+  font-size: 20px;
+  margin-bottom: 15px;
+}
+
+.electives-table {
+  width: 100%;
+  border-collapse: collapse;
+  border: 1px solid #ddd;
+}
+
+.electives-table th, .electives-table td {
+  border: 1px solid #ddd;
+  padding: 8px 12px;
+  text-align: left;
+}
+
+.electives-table th {
+  background-color: #f5f5f5;
+  font-weight: bold;
+}
+
+.electives-table tr:nth-child(even) {
+  background-color: #f9f9f9;
+}
