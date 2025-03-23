@@ -27,6 +27,14 @@ function Faculty() {
     table: false
   });
 
+  const [tableData, setTableData] = useState([
+    { co: "CO1", pos: Array(12).fill(""), pso: ["", ""] },
+    { co: "CO2", pos: Array(12).fill(""), pso: ["", ""] },
+    { co: "CO3", pos: Array(12).fill(""), pso: ["", ""] },
+    { co: "CO4", pos: Array(12).fill(""), pso: ["", ""] },
+    { co: "CO5", pos: Array(12).fill(""), pso: ["", ""] },
+  ]);
+
   // Function to toggle individual sections
   const toggleExpand = (section) => {
     setExpandedSections((prev) => ({
@@ -92,12 +100,17 @@ function Faculty() {
     }
   };
 
+
   // Handle dropdown change
   const handleCourseSelection = (event) => {
     setSelectedCourse(event.target.value);
+    const selectedCourseCode = event.target.value.split(" - ")[0];
+    const selectedCourseObj = courses.find(course => course.course_code === selectedCourseCode);
+    
+    const maxCO = selectedCourseObj?.degree === "B.E" ? 5 : 4;
     setCourseDetails({
-      co: Array(5).fill({ name: "", desc: "" }),
-      hours: Array(5).fill({ hour1: "", hour2: "" }),
+      co: Array(maxCO).fill({ name: "", desc: "" }),
+      hours: Array(maxCO).fill({ hour1: "", hour2: "" }),
       textbooks: [],
       references: [],
       outcomes: Array(5).fill(""),
@@ -116,6 +129,16 @@ function Faculty() {
           : item
       ),
     }));
+  };
+
+  const handleTableInputChange = (rowIndex, key, subIndex, value) => {
+    const updatedData = [...tableData];
+    if (subIndex !== null) {
+      updatedData[rowIndex][key][subIndex] = value;
+    } else {
+      updatedData[rowIndex][key] = value;
+    }
+    setTableData(updatedData);
   };
 
   const generateExcel = () => {
@@ -425,6 +448,8 @@ function Faculty() {
           )}
 
           {/* Textbooks Section */}
+          {courses.find(course => course.course_code === selectedCourse.split(" - ")[0]).degree === ("B.E" || null) && (
+            <>
             <button
               className="toggle-btn"
               onClick={() => toggleExpand("textbooks")}
@@ -475,6 +500,8 @@ function Faculty() {
                 </button>
               </div>
             )}
+            </>
+          )}
 
           {/* References Section */}
           <button
@@ -521,7 +548,7 @@ function Faculty() {
                     ],
                   }))
                 }
-                disabled={courseDetails.references.length >= 4} // Disable when 4 references added
+                disabled={courseDetails.references.length >= (courses.find(course => course.course_code === selectedCourse.split(" - ")[0]).degree === "B.E" ? 4 : 5)} // Disable when 4 references added
               >
                 + Add Reference
               </button>
@@ -541,123 +568,42 @@ function Faculty() {
           </button>
           {expandedSections.table && (
             <div className="table-section">
-              <h4 className="section-title">Table</h4>
-              <div>
-                <table border="/">
-                  <thead>
-                    <tr>
-                      <th>Course Code</th>
-                      <th>Course Name</th>
-                      <th>COs/POs</th>
-                      <th>POa</th>
-                      <th>POb</th>
-                      <th>POc</th>
-                      <th>POd</th>
-                      <th>POe</th>
-                      <th>POf</th>
-                      <th>POg</th>
-                      <th>POh</th>
-                      <th>POi</th>
-                      <th>POj</th>
-                      <th>POk</th>
-                      <th>PSO1</th>
-                      <th>PSO2</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr>
-                      <td>23Z101</td>
-                      <td>Calculas and its Applications</td>
-                      <td>CO1</td>
-                      <td></td>
-                      <td></td>
-                      <td></td>
-                      <td></td>
-                      <td></td>
-                      <td></td>
-                      <td></td>
-                      <td></td>
-                      <td></td>
-                      <td></td>
-                      <td></td>
-                      <td></td>
-                      <td></td>
-                    </tr>
-                    <tr>
-                      <td></td>
-                      <td></td>
-                      <td>CO2</td>
-                      <td></td>
-                      <td></td>
-                      <td></td>
-                      <td></td>
-                      <td></td>
-                      <td></td>
-                      <td></td>
-                      <td></td>
-                      <td></td>
-                      <td></td>
-                      <td></td>
-                      <td></td>
-                      <td></td>
-                    </tr>
-                    <tr>
-                      <td></td>
-                      <td></td>
-                      <td>CO3</td>
-                      <td></td>
-                      <td></td>
-                      <td></td>
-                      <td></td>
-                      <td></td>
-                      <td></td>
-                      <td></td>
-                      <td></td>
-                      <td></td>
-                      <td></td>
-                      <td></td>
-                      <td></td>
-                      <td></td>
-                    </tr>
-                    <tr>
-                      <td></td>
-                      <td></td>
-                      <td>CO4</td>
-                      <td></td>
-                      <td></td>
-                      <td></td>
-                      <td></td>
-                      <td></td>
-                      <td></td>
-                      <td></td>
-                      <td></td>
-                      <td></td>
-                      <td></td>
-                      <td></td>
-                      <td></td>
-                      <td></td>
-                    </tr>
-                    <tr>
-                      <td></td>
-                      <td></td>
-                      <td>CO5</td>
-                      <td></td>
-                      <td></td>
-                      <td></td>
-                      <td></td>
-                      <td></td>
-                      <td></td>
-                      <td></td>
-                      <td></td>
-                      <td></td>
-                      <td></td>
-                      <td></td>
-                      <td></td>
-                      <td></td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
+            <h4 className="section-title">Table</h4>
+            <table border="1">
+              <thead>
+                <tr>
+                  <th>COs/POs</th>
+                  {[...Array(12).keys()].map(i => <th key={i}>{`PO${String.fromCharCode(97 + i)}`}</th>)}
+                  <th>PSO1</th>
+                  <th>PSO2</th>
+                </tr>
+              </thead>
+              <tbody>
+                {tableData.map((row, rowIndex) => (
+                  <tr key={rowIndex}>
+                    <td>{row.co}</td>
+                    {row.pos.map((po, i) => (
+                      <td key={i}>
+                        <input
+                          type="text"
+                          value={po}
+                          onChange={(e) => handleTableInputChange(rowIndex, "pos", i, e.target.value)}
+                        />
+                      </td>
+                    ))}
+                    {row.pso.map((pso, i) => (
+                      <td key={i}>
+                        <input
+                          type="text"
+                          value={pso}
+                          onChange={(e) => handleTableInputChange(rowIndex, "pso", i, e.target.value)}
+                        />
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
             </div>
           )}
 
