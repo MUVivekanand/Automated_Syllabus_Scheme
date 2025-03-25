@@ -12,6 +12,8 @@ function CourseMe() {
     const [degree, setDegree] = useState("M.E"); // Default to "M.E"
     const [department, setDepartment] = useState("CSE"); // Default to "CSE"
 
+    const [professionalElectives, setProfessionalElectives] = useState([]);
+
   const [currentSem, setCurrentSem] = useState(1);
   const [commonInfo, setCommonInfo] = useState({
     semNo: currentSem,
@@ -47,109 +49,14 @@ function CourseMe() {
   };
 
   const navigateProfessional = () => {
-    if(degree == 'B.E'){
-      // navigate(`/ProfessionalMe?degree=${encodeURIComponent(degree)}&department=${encodeURIComponent(department)}`);
-      navigate('/syllabus')
-    }
-  };
+    navigate(`/ProfessionalMe?degree=${encodeURIComponent(degree)}&department=${encodeURIComponent(department)}`);
+
+}
 
   const navigateWordPage = () => {
-    navigate(`/wordPage?degree=${encodeURIComponent(degree)}&department=${encodeURIComponent(department)}`);
+    navigate(`/MewordPage?degree=${encodeURIComponent(degree)}&department=${encodeURIComponent(department)}`);
   }
      
-//   const fetchData = async () => {
-//     try {
-//       setCourses([]);
-//       setExistingCourses([]);
-//       setTotalRow({ lecture: 0, tutorial: 0, practical: 0, credits: 0 });
-  
-//       // Pass degree and department as query parameters
-//       const semResponse = await axios.get(`http://localhost:4000/api/course/seminfo/${currentSem}`, {
-//         params: { degree, department }
-//       });
-//       const semInfo = semResponse.data;
-  
-//       // Create empty course templates
-//       const createEmptyRows = (count, category) => {
-//         return Array.from({ length: count }, () => ({
-//           serial_no: "",
-//           courseCode: "",
-//           courseTitle: "",
-//           lecture: 0,
-//           tutorial: 0,
-//           practical: 0,
-//           credits: 0,
-//           type: "",
-//           faculty: "",
-//           courseType: category
-//         }));
-//       };
-  
-//       // Generate empty rows based on semInfo
-//       const emptyRows = {
-//         theory: createEmptyRows(semInfo.theory_courses, "theory"),
-//         practical: createEmptyRows(semInfo.practical_courses, "practical"),
-//         mandatory: createEmptyRows(semInfo.mandatory_courses || 0, "mandatory")
-//       };
-  
-//       // Fetch existing courses with degree parameter
-//       const coursesResponse = await axios.get(`http://localhost:4000/api/course/courses/${currentSem}`, {
-//         params: { degree, department }
-//       });
-//       const existingCoursesData = coursesResponse.data;
-//       // Organize existing courses by category
-//       const organizedCourses = { theory: [], practical: [], mandatory: [] };
-
-//       existingCoursesData.forEach(course => {
-//         const cat = course.category.toLowerCase();
-//         if (organizedCourses[cat]) {
-//           organizedCourses[cat].push({
-//             serial_no: course.serial_no,
-//             courseCode: course.course_code,
-//             courseTitle: course.course_name,
-//             lecture: course.lecture,
-//             tutorial: course.tutorial,
-//             practical: course.practical,
-//             credits: course.credits,
-//             type: course.type,
-//             faculty: course.faculty,
-//             courseType: cat
-//           });
-//         }
-//       });
-
-//       // Sort each category by serial number
-//       Object.keys(organizedCourses).forEach(category => {
-//         organizedCourses[category].sort((a, b) => a.serial_no - b.serial_no);
-//       });
-
-//       // Merge existing courses with empty rows
-//       const mergedCourses = Object.keys(emptyRows).flatMap(category => {
-//         const existing = organizedCourses[category];
-//         const empty = emptyRows[category];
-//         return existing.concat(empty.slice(existing.length));
-//       });
-
-//       // Store original course names with their indices
-//       const originalNames = {};
-//       mergedCourses.forEach((course, index) => {
-//         if (course.courseTitle) {
-//           originalNames[index] = course.courseTitle;
-//         }
-//       });
-//       setOriginalCourseNames(originalNames);
-
-//       setCourses(mergedCourses);
-//       setExistingCourses(existingCoursesData);
-//       updateCommonInfo(semInfo);
-//       calculateTotalRow(mergedCourses);
-//     } catch (error) {
-//       console.error("Error fetching data:", error);
-//       resetStates();
-//     }
-//   };
-
-
 const fetchData = async () => {
     try {
       setCourses([]);
@@ -353,60 +260,7 @@ const fetchData = async () => {
       return updatedCourses;
     });
   }, []);
-
-// const handleSubmit = useCallback(async () => {
-//   try {
-//     for (let i = 0; i < courses.length; i++) {
-//       const course = courses[i];
-//       const originalName = originalCourseNames[i];
-      
-//       if (course.courseTitle) {
-//         if (originalName && originalName !== course.courseTitle) {
-//           try {
-//             // First delete the old record - the backend will handle related records
-//             await axios.delete(`http://localhost:4000/api/course/credits/${encodeURIComponent(originalName)}`);
-//           } catch (deleteError) {
-//             console.error("Error deleting old course record:", deleteError);
-//             // Continue with update attempt even if delete fails
-//           }
-//         }
-        
-//         try {
-//           // Create or update with new course data
-//           await axios.patch(`http://localhost:4000/api/course/credits/${encodeURIComponent(course.courseTitle)}`, {
-//             serial_no: course.serial_no || 0,
-//             course_code: course.courseCode,
-//             lecture: course.lecture || 0,
-//             tutorial: course.tutorial || 0,
-//             practical: course.practical || 0,
-//             credits: course.credits || 0,
-//             ca_marks: commonInfo.caMarks || 0,
-//             fe_marks: commonInfo.feMarks || 0,
-//             total_marks: commonInfo.totalMarks || 0,
-//             type: course.type || '',
-//             faculty: course.faculty || '',
-//             department: commonInfo.department || '',
-//             degree: commonInfo.degree || '',
-//             sem_no: currentSem,
-//             category: course.courseType
-//           });
-//         } catch (updateError) {
-//           console.error(`Error updating course ${course.courseTitle}:`, updateError.response?.data || updateError.message);
-//           // Alert about specific course update failure but continue with others
-//           alert(`Failed to update course ${course.courseTitle}: ${updateError.response?.data?.message || updateError.message}`);
-//         }
-//       }
-//     }
-    
-//     alert("Data updated successfully!");
-//     fetchData(); // Refresh data to get updated records
-//   } catch (error) {
-//     console.error("Error in submission process:", error);
-//     alert("Failed to update data: " + (error.response?.data?.message || error.message));
-//   }
-// }, [courses, commonInfo, currentSem, originalCourseNames]);
-
-
+  
 
 // const handleSubmit = useCallback(async () => {
 //   try {

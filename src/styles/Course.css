@@ -211,3 +211,8 @@ td.sno-column {
   background-color: #cccccc;
   cursor: not-allowed;
 }
+
+.data-table th, .existing-courses-table th {
+  color: #000 !important; /* Black text */
+  background-color: #f0f0f0 !important; /* Light gray background */
+}

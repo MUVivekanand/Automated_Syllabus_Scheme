@@ -7,22 +7,23 @@ import { Document, Packer, Paragraph, Table, TableRow, TableCell, BorderStyle, W
          Footer, Header, ShadingType } from "docx";
 import { saveAs } from "file-saver";
 
-function CourseWord() {
+function CourseMePDF() {
+
+  // Add this at the top of your state declarations in CourseMe.js
+  const API_BASE_URL = "http://localhost:4000/api/proelective";
+
   const [semestersData, setSemestersData] = useState([]);
   const [coursesData, setCoursesData] = useState({}); // Added missing state
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [exportLoading, setExportLoading] = useState(false);
 
-  const [coursesElective, setCoursesElective] = useState([]);
-  const [groupedElectives, setGroupedElectives] = useState({});
-  const [honoursCoursesByVertical, setHonoursCoursesByVertical] = useState({});
-
+  const [professionalElectives, setProfessionalElectives] = useState([]);
 
   const [summaryData, setSummaryData] = useState([]);
   const [totalCreditsInfo, setTotalCreditsInfo] = useState(null);
   const courseTypes = ["HS", "BS", "ES", "PC", "PE", "OE", "EEC", "MC"];
-  const semesters = Array.from({ length: 8 }, (_, i) => i + 1);
+  const semesters = Array.from({ length: 4 }, (_, i) => i + 1);
   
   const navigate = useNavigate();
   
@@ -47,12 +48,6 @@ useEffect(() => {
           params: { degree, department }
         });
         const courseDetailsData = response.data;
-
-        const { groupedElectives: electives, honoursCoursesByVertical: honoursCourses } = 
-        await fetchElectiveCourses(degree, department);
-
-        setGroupedElectives(electives);
-        setHonoursCoursesByVertical(honoursCourses);
         
         // Attach course details to semester data
         const enhancedSemestersData = semData.map(semester => {
@@ -65,7 +60,7 @@ useEffect(() => {
         });
         
         setSemestersData(enhancedSemestersData);
-        // console.log(enhancedSemestersData)
+        console.log(enhancedSemestersData)
         
         // Fetch credit summary data
         const [creditsSummaryResponse, totalCreditsResponse] = await Promise.all([
@@ -117,70 +112,18 @@ useEffect(() => {
   };
   
   fetchData();
+  fetchProfessionalElectives();
 }, [degree, department]);
 
-
-const fetchElectiveCourses = async (degree, department) => {
+const fetchProfessionalElectives = async () => {
   try {
-    const electivesResponse = await axios.get(
-      `http://localhost:4000/api/proelective/courses?degree=${encodeURIComponent(degree)}&department=${encodeURIComponent(department)}`
-    );
-    const electivesData = electivesResponse.data;
-    
-    // Group elective courses by type
-    const groupedElectives = electivesData.reduce((acc, course) => {
-      if (!acc[course.type]) {
-        acc[course.type] = [];
-      }
-      acc[course.type].push(course);
-      return acc;
-    }, {});
-    
-    // Sort electives by serial number
-    Object.keys(groupedElectives).forEach(type => {
-      groupedElectives[type].sort((a, b) => a.serial_number - b.serial_number);
+    const response = await axios.get(`${API_BASE_URL}/getproelective`, {
+      params: { degree, department }
     });
-    
-    // Group BE Honours courses by vertical
-    const honoursCoursesByVertical = electivesData
-      .filter(course => course.type === "Professional Electives for BE Honours / BE Honours with specialization in same discipline and BE Minor degree programmes")
-      .reduce((acc, course) => {
-        const vertical = course.vertical || 0;
-        if (!acc[vertical]) {
-          acc[vertical] = [];
-        }
-        acc[vertical].push(course);
-        return acc;
-      }, {});
-    
-    // Sort each vertical group by serial number
-    Object.keys(honoursCoursesByVertical).forEach(vertical => {
-      honoursCoursesByVertical[vertical].sort((a, b) => a.serial_number - b.serial_number);
-    });
-    console.log(groupedElectives);
-    
-    return { groupedElectives, honoursCoursesByVertical };
-  } catch (error) {
-    console.error("Error fetching elective courses:", error);
-    throw error;
+    setProfessionalElectives(response.data);
+  } catch (err) {
+    console.error("Error fetching professional electives:", err);
   }
-};
-
-const getVerticalName = (vertical) => {
-  const verticalNames = {
-    1: "VERTICAL I: Computational Intelligence",
-    2: "VERTICAL II: Networking Technologies",
-    3: "VERTICAL III: Security and Privacy"
-  };
-  return verticalNames[vertical] || "";
-};
-
-const sectionTypes = {
-  LANGUAGE: 'LANGUAGE ELECTIVES',
-  BE: 'Professional electives for BE degree programme',
-  BE_HONOURS: 'Professional Electives for BE Honours / BE Honours with specialization in same discipline and BE Minor degree programmes',
-  OPEN: 'OPEN ELECTIVES',
-  SDL: 'SELF DIRECTED LEARNING COURSES'
 };
   
 
@@ -189,7 +132,7 @@ const sectionTypes = {
       const semestersData = [];
       
       // Fetch data for all 8 semesters
-      for (let semNo = 1; semNo <= 8; semNo++) {
+      for (let semNo = 1; semNo <= 4; semNo++) {
         const semInfoResponse = await axios.get(
           `http://localhost:4000/api/course/seminfo/${semNo}`, 
           { params: { degree, department } }
@@ -364,6 +307,8 @@ const sectionTypes = {
 
 
 
+
+
 const exportToPDF = async () => {
   try {
     setExportLoading(true);
@@ -385,106 +330,84 @@ const exportToPDF = async () => {
     // Set default font
     doc.setFont('helvetica');
     
-    // FIRST RENDER ALL 8 SEMESTER TABLES (4 PAGES WITH 2 TABLES EACH)
-    
     // Title and header for first page
     doc.setFontSize(10);
     
     doc.setFontSize(11);
     doc.text('Courses of Study and Scheme of Assessment', 20, 20);
-    doc.text('BE COMPUTER SCIENCE AND ENGINEERING', 20, 25);
+    doc.text('ME COMPUTER SCIENCE AND ENGINEERING', 20, 25);
     
     // Add 2023 REGULATIONS text and credits info
     doc.setFontSize(9);
     doc.text('[2023 REGULATIONS]', doc.internal.pageSize.width - 20, 20, { align: 'right' });
     
-    // Function to create semester table
-    const createSemesterTable = (semNo, startY, courses) => {
-      // Filter courses by category
-      const theoryCourses = courses.filter(course => course.category?.toLowerCase() === "theory");
-      const practicalCourses = courses.filter(course => course.category?.toLowerCase() === "practical");
-      const mandatoryCourses = courses.filter(course => course.category?.toLowerCase() === "mandatory");
-      
-      // Calculate totals
-      const totals = calculateSemesterTotals(courses);
-      
+    // MODIFIED: Create a single large table for all semesters
+    const createCombinedTable = (startY) => {
       // Prepare table data
       const tableBody = [];
       
-      // Add SEMESTER header
-      tableBody.push([{ content: `SEMESTER ${semNo}`, colSpan: 11, styles: { halign: 'left', fontStyle: 'bold' } }]);
-      
-      // Add THEORY header and courses
-      tableBody.push([{ content: 'THEORY', colSpan: 11, styles: { halign: 'left', fontStyle: 'bold' } }]);
-      theoryCourses.forEach((course, idx) => {
-        tableBody.push([
-          idx + 1,
-          course.course_code,
-          course.course_name,
-          course.lecture,
-          course.tutorial,
-          course.practical,
-          course.credits,
-          course.ca_marks,
-          course.fe_marks,
-          course.total_marks,
-          course.type
-        ]);
-      });
-      
-      // Add PRACTICALS header and courses
-      tableBody.push([{ content: 'PRACTICALS', colSpan: 11, styles: { halign: 'left', fontStyle: 'bold' } }]);
-      practicalCourses.forEach((course, idx) => {
-        tableBody.push([
-          theoryCourses.length + idx + 1,
-          course.course_code,
-          course.course_name,
-          course.lecture,
-          course.tutorial,
-          course.practical,
-          course.credits,
-          course.ca_marks,
-          course.fe_marks,
-          course.total_marks,
-          course.type
-        ]);
-      });
-      
-      // Add MANDATORY COURSES header and courses if any exist
-      if (mandatoryCourses.length > 0) {
-        tableBody.push([{ content: 'MANDATORY COURSES', colSpan: 11, styles: { halign: 'left', fontStyle: 'bold' } }]);
-        mandatoryCourses.forEach((course, idx) => {
+      // Loop through all semesters
+      for (let semIndex = 0; semIndex < semestersData.length; semIndex++) {
+        const semester = semestersData[semIndex];
+        
+        // Add SEMESTER header
+        tableBody.push([{ 
+          content: `SEMESTER ${semester.semNo}`, 
+          colSpan: 11, 
+          styles: { halign: 'left', fontStyle: 'bold' } 
+        }]);
+        
+        // Add courses
+        const courses = semester.courses;
+        
+        // Filter courses by category
+        const theoryCourses = courses.filter(course => course.category?.toLowerCase() === "theory");
+        const practicalCourses = courses.filter(course => course.category?.toLowerCase() === "practical");
+        const mandatoryCourses = courses.filter(course => course.category?.toLowerCase() === "mandatory");
+        
+        // Add all courses in order
+        courses.forEach((course, idx) => {
           tableBody.push([
-            theoryCourses.length + practicalCourses.length + idx + 1,
+            idx + 1,
             course.course_code,
             course.course_name,
-            course.lecture || "-",
-            course.tutorial || "-",
-            course.practical || "-",
-            course.credits || "Grade",
-            course.ca_marks || "-",
-            course.fe_marks || "-",
-            course.total_marks || "",
+            course.lecture,
+            course.tutorial,
+            course.practical,
+            course.credits,
+            course.ca_marks,
+            course.fe_marks,
+            course.total_marks,
             course.type
           ]);
         });
+        
+        // Calculate totals
+        const totals = calculateSemesterTotals(courses);
+        
+        // Add semester total row
+        const totalHours = semester.semNo === 1 ? "31" : semester.semNo === 2 ? "31" : 
+                           semester.semNo === 3 ? "18" : "24"; // Based on image example
+        
+        tableBody.push([{
+          content: `Total ${totalHours} hrs`, 
+          colSpan: 2,
+          styles: { fontStyle: 'bold' }
+        }, '', 
+          totals.totalLecture, 
+          totals.totalTutorial, 
+          totals.totalPractical, 
+          totals.totalCredits, 
+          totals.totalCAMarks, 
+          totals.totalFEMarks, 
+          totals.totalMarks, 
+          '']);
+        
+        // Add spacing between semesters (empty row)
+        if (semIndex < semestersData.length - 1) {
+          tableBody.push([{ content: '', colSpan: 11, styles: { cellPadding: 0 } }]);
+        }
       }
-      
-      // Add semester total row
-      const totalHours = semNo === 1 ? "26" : "29"; // Based on image example
-      tableBody.push([{
-        content: `Total ${totalHours} hrs`, 
-        colSpan: 2,
-        styles: { fontStyle: 'bold' }
-      },'', 
-        totals.totalLecture, 
-        totals.totalTutorial, 
-        totals.totalPractical, 
-        totals.totalCredits, 
-        totals.totalCAMarks, 
-        totals.totalFEMarks, 
-        totals.totalMarks, 
-        '']);
       
       // Create the table
       autoTable(doc, {
@@ -531,15 +454,23 @@ const exportToPDF = async () => {
           fontStyle: 'bold',
           lineWidth: 0.1
         },
+        willDrawCell: function(data) {
+          // Create a slightly different background for each semester
+          const rowData = data.row.raw;
+          if (rowData && rowData[0] && typeof rowData[0] === 'object' && rowData[0].content) {
+            if (rowData[0].content.includes('SEMESTER')) {
+              data.cell.styles.fillColor = [240, 240, 240];
+            }
+          }
+        },
         margin: { left: pageMargin, right: pageMargin }
       });
       
       return doc.lastAutoTable.finalY + 10;
     };
     
-    // Create semester tables for semester I and II on first page
-    let finalY = createSemesterTable(1, 35, semestersData[0].courses);
-    finalY = createSemesterTable(2, finalY, semestersData[1].courses);
+    // Create the combined table
+    let finalY = createCombinedTable(35);
     
     // Add the category legend
     doc.setFontSize(8);
@@ -551,368 +482,116 @@ const exportToPDF = async () => {
     // Add page number
     doc.setFontSize(9);
     doc.text('103', doc.internal.pageSize.width / 2, doc.internal.pageSize.height - 10, { align: 'center' });
-    
-    // Add content for remaining semesters (starting from semester 3)
-    // Display two tables per page for remaining semesters
-    for (let i = 2; i < semestersData.length; i += 2) {
+
+    if (professionalElectives.length > 0) {
+      // Add a new page for Professional Electives
       doc.addPage();
-      let currentY = 20;
       
-      // Add first semester table on this page
-      currentY = createSemesterTable(i + 1, currentY, semestersData[i].courses);
+      // Title for the Professional Electives section
+      // doc.setFontSize(12);
+      // doc.setFont('helvetica', 'bold');
+      // doc.text('Professional Electives', doc.internal.pageSize.width / 2, 20, { align: 'center' });
+      // doc.setFont('helvetica', 'normal');
+
+      autoTable(doc, {
+        startY: 30,
+        body: [[{ content: 'PROFESSIONAL ELECTIVE THEORY COURSES (Four to be opted)', colSpan: 10, styles: { halign: 'left', fontStyle: 'bold', fontSize: 10, cellPadding: 6 } }]],
+        theme: 'plain',
+        margin: { left: pageMargin, right: pageMargin }
+    });
       
-      // Check if there's another semester to add
-      if (i + 1 < semestersData.length) {
-        // Add second semester table on the same page
-        currentY = createSemesterTable(i + 2, currentY, semestersData[i + 1].courses);
-      }
+      // Prepare table data for Professional Electives
+      const peTableBody = professionalElectives.map((item, idx) => [
+        // item.id,
+        item.course_code,
+        item.course_name,
+        item.credits,
+        item.lecture,
+        item.tutorial,
+        item.practical,
+        item.ca_marks,
+        item.fe_marks,
+        item.total_marks,
+        'PE'
+      ]);
       
-      // Add legend text at the bottom if space allows
-      if (currentY < doc.internal.pageSize.height - 20) {
-        doc.setFontSize(8);
-        const legendLines = doc.splitTextToSize(legendText, doc.internal.pageSize.width - (pageMargin * 2));
-        doc.text(legendLines, pageMargin, currentY);
-      }
+      // Calculate totals for the Professional Electives
+      // const peTotals = [
+      //   '',
+      //   'Total',
+      //   professionalElectives.reduce((sum, item) => sum + Number(item.credits || 0), 0),
+      //   professionalElectives.reduce((sum, item) => sum + Number(item.lecture || 0), 0),
+      //   professionalElectives.reduce((sum, item) => sum + Number(item.tutorial || 0), 0),
+      //   professionalElectives.reduce((sum, item) => sum + Number(item.practical || 0), 0),
+      //   professionalElectives.reduce((sum, item) => sum + Number(item.ca_marks || 0), 0),
+      //   professionalElectives.reduce((sum, item) => sum + Number(item.fe_marks || 0), 0),
+      //   professionalElectives.reduce((sum, item) => sum + Number(item.total_marks || 0), 0)
+      // ];
       
-      // Add page number
-      const pageNum = 103 + Math.floor((i - 1) / 2);
-      doc.setFontSize(9);
-      doc.text(pageNum.toString(), doc.internal.pageSize.width / 2, doc.internal.pageSize.height - 10, { align: 'center' });
-    }
-// After the 8 semester tables and before the summary table
-// Add this right after the code that creates the 8 semester tables
-// and before the "NEXT ADD SUMMARY TABLE ON A NEW PAGE" comment
-
-// NEXT ADD ELECTIVE SECTIONS ON NEW PAGES BEFORE SUMMARY TABLE
-// Add Professional Electives
-// doc.addPage();
-// doc.setFontSize(14);
-// doc.text('Professional Electives for BE Degree Programme', doc.internal.pageSize.width / 2, 20, { align: 'center' });
-
-// // Create table for Professional Electives
-// const professionalElectivesData = groupedElectives[sectionTypes.BE].map(course => [
-//   course.course_code,
-//   course.course_title
-// ]);
-
-// autoTable(doc, {
-//   startY: 30,
-//   margin: { left: pageMargin, right: pageMargin },
-//   head: [['Course Code', 'Course Title']],
-//   body: professionalElectivesData,
-//   theme: 'grid',
-//   styles: { 
-//     fontSize: 9,
-//     cellPadding: 2 
-//   },
-//   headStyles: {
-//     fillColor: [220, 220, 220],
-//     textColor: [0, 0, 0],
-//     fontStyle: 'bold'
-//   },
-//   columnStyles: {
-//     0: { cellWidth: 30 },
-//     1: { cellWidth: 'auto' }
-//   }
-// });
-
-// // Add Honours Electives by vertical
-// if (Object.keys(honoursCoursesByVertical).length > 0) {
-//   doc.addPage();
-//   doc.setFontSize(14);
-//   doc.text('Professional Electives for BE Honours / BE Honours with specialization', doc.internal.pageSize.width / 2, 20, { align: 'center' });
-//   doc.text('in same discipline and BE Minor degree programmes', doc.internal.pageSize.width / 2, 30, { align: 'center' });
-
-//   let verticalY = 40;
-  
-//   for (const vertical of Object.keys(honoursCoursesByVertical).sort()) {
-//     // Check if we need a new page
-//     if (verticalY > doc.internal.pageSize.height - 60) {
-//       doc.addPage();
-//       verticalY = 20;
-//     }
-    
-//     // Add vertical heading
-//     doc.setFontSize(12);
-//     doc.setFont('helvetica', 'bold');
-//     doc.text(getVerticalName(vertical), pageMargin, verticalY);
-//     verticalY += 10;
-    
-//     // Create table for this vertical
-//     const verticalData = honoursCoursesByVertical[vertical].map(course => [
-//       course.course_code,
-//       course.course_title
-//     ]);
-
-//     autoTable(doc, {
-//       startY: verticalY,
-//       margin: { left: pageMargin, right: pageMargin },
-//       head: [['Course Code', 'Course Title']],
-//       body: verticalData,
-//       theme: 'grid',
-//       styles: { 
-//         fontSize: 9,
-//         cellPadding: 2 
-//       },
-//       headStyles: {
-//         fillColor: [220, 220, 220],
-//         textColor: [0, 0, 0],
-//         fontStyle: 'bold'
-//       },
-//       columnStyles: {
-//         0: { cellWidth: 30 },
-//         1: { cellWidth: 'auto' }
-//       }
-//     });
-    
-//     verticalY = doc.lastAutoTable.finalY + 15;
-//   }
-// }
-
-// // Add Open Electives
-// if (groupedElectives[sectionTypes.OPEN] && groupedElectives[sectionTypes.OPEN].length > 0) {
-//   doc.addPage();
-//   doc.setFontSize(14);
-//   doc.text('Open Electives', doc.internal.pageSize.width / 2, 20, { align: 'center' });
-
-//   const openElectivesData = groupedElectives[sectionTypes.OPEN].map(course => [
-//     course.course_code,
-//     course.course_title
-//   ]);
-
-//   autoTable(doc, {
-//     startY: 30,
-//     margin: { left: pageMargin, right: pageMargin },
-//     head: [['Course Code', 'Course Title']],
-//     body: openElectivesData,
-//     theme: 'grid',
-//     styles: { 
-//       fontSize: 9,
-//       cellPadding: 2 
-//     },
-//     headStyles: {
-//       fillColor: [220, 220, 220],
-//       textColor: [0, 0, 0],
-//       fontStyle: 'bold'
-//     },
-//     columnStyles: {
-//       0: { cellWidth: 30 },
-//       1: { cellWidth: 'auto' }
-//     }
-//   });
-// }
-
-// // Add Language Electives
-// if (groupedElectives[sectionTypes.LANGUAGE] && groupedElectives[sectionTypes.LANGUAGE].length > 0) {
-//   doc.addPage();
-//   doc.setFontSize(14);
-//   doc.text('Language Electives', doc.internal.pageSize.width / 2, 20, { align: 'center' });
-
-//   const languageElectivesData = groupedElectives[sectionTypes.LANGUAGE].map(course => [
-//     course.course_code,
-//     course.course_title
-//   ]);
-
-//   autoTable(doc, {
-//     startY: 30,
-//     margin: { left: pageMargin, right: pageMargin },
-//     head: [['Course Code', 'Course Title']],
-//     body: languageElectivesData,
-//     theme: 'grid',
-//     styles: { 
-//       fontSize: 9,
-//       cellPadding: 2 
-//     },
-//     headStyles: {
-//       fillColor: [220, 220, 220],
-//       textColor: [0, 0, 0],
-//       fontStyle: 'bold'
-//     },
-//     columnStyles: {
-//       0: { cellWidth: 30 },
-//       1: { cellWidth: 'auto' }
-//     }
-//   });
-// }
-
-// // Add Self Directed Learning Courses
-// if (groupedElectives[sectionTypes.SDL] && groupedElectives[sectionTypes.SDL].length > 0) {
-//   doc.addPage();
-//   doc.setFontSize(14);
-//   doc.text('Self Directed Learning Courses', doc.internal.pageSize.width / 2, 20, { align: 'center' });
-
-//   const sdlCoursesData = groupedElectives[sectionTypes.SDL].map(course => [
-//     course.course_code,
-//     course.course_title
-//   ]);
-
-//   autoTable(doc, {
-//     startY: 30,
-//     margin: { left: pageMargin, right: pageMargin },
-//     head: [['Course Code', 'Course Title']],
-//     body: sdlCoursesData,
-//     theme: 'grid',
-//     styles: { 
-//       fontSize: 9,
-//       cellPadding: 2 
-//     },
-//     headStyles: {
-//       fillColor: [220, 220, 220],
-//       textColor: [0, 0, 0],
-//       fontStyle: 'bold'
-//     },
-//     columnStyles: {
-//       0: { cellWidth: 30 },
-//       1: { cellWidth: 'auto' }
-//     }
-//   });
-// }
-
-// Professional Electives for BE Degree Programme
-doc.addPage();
-doc.setFontSize(14);
-doc.text('Professional Electives for BE Degree Programme', doc.internal.pageSize.width / 2, 20, { align: 'center' });
-
-// Add Course Code and Course Title header in bold
-doc.setFontSize(10);
-doc.setFont('helvetica', 'bold');
-doc.text('Course Code        Course Title', pageMargin, 35);
-
-doc.setFont('helvetica', 'normal');
-let yPosition = 45;
-groupedElectives[sectionTypes.BE].forEach((course) => {
-  doc.text(`${course.course_code}            ${course.course_title}`, pageMargin, yPosition);
-  yPosition += 10;
-});
-
-// Professional Electives for BE Honours
-if (Object.keys(honoursCoursesByVertical).length > 0) {
-  // Don't force a new page if there's space
-  if (yPosition > doc.internal.pageSize.height - 60) {
-    doc.addPage();
-    yPosition = 20;
-  }
-
-  doc.setFontSize(14);
-  doc.text('Professional Electives for BE Honours / BE Honours with specialization', doc.internal.pageSize.width / 2, yPosition, { align: 'center' });
-  doc.text('in same discipline and BE Minor degree programmes', doc.internal.pageSize.width / 2, yPosition + 10, { align: 'center' });
-
-  yPosition += 25;
-  
-  // Iterate through ALL verticals using Object.entries to ensure full access
-  for (const [vertical, courses] of Object.entries(honoursCoursesByVertical)) {
-    // Ensure courses exist for this vertical
-    if (courses && courses.length > 0) {
-      if (yPosition > doc.internal.pageSize.height - 60) {
-        doc.addPage();
-        yPosition = 20;
-      }
-      
-      doc.setFontSize(12);
-      doc.setFont('helvetica', 'bold');
-      doc.text(getVerticalName(vertical), pageMargin, yPosition);
-      yPosition += 10;
-      
-      // Add Course Code and Course Title header in bold
-      doc.setFontSize(10);
-      doc.setFont('helvetica', 'bold');
-      doc.text('Course Code        Course Title', pageMargin, yPosition);
-      yPosition += 10;
-      
-      doc.setFont('helvetica', 'normal');
-      courses.forEach((course) => {
-        doc.text(`${course.course_code}            ${course.course_title}`, pageMargin, yPosition);
-        yPosition += 10;
+      // Add the Professional Electives table
+      autoTable(doc, {
+        startY: 30,
+        // head: [[
+        //   // 'ID',
+        //   'Course Code',
+        //   'Course Name',
+        //   'Credits',
+        //   'Lecture',
+        //   'Tutorial',
+        //   'Practical',
+        //   'CA Marks',
+        //   'FE Marks',
+        //   'Total Marks'
+        // ]],
+        body: [
+          [{ content: 'PROFESSIONAL ELECTIVE THEORY COURSES (Four to be opted)', colSpan: 10, styles: { halign: 'left', fontStyle: 'bold'} }],
+          ...peTableBody
+        ],
+        theme: 'grid',
+        styles: { 
+          fontSize: 8,
+          cellPadding: 2,
+          lineColor: [0, 0, 0],
+          lineWidth: 0.1
+        },
+        columnStyles: {
+          // 0: { cellWidth: 15 },      // ID
+          0: { cellWidth: 20 },      // Course Code
+          1: { cellWidth: 50 },      // Course Name
+          2: { cellWidth: 15 },      // Credits
+          3: { cellWidth: 15 },      // Lecture
+          4: { cellWidth: 15 },      // Tutorial
+          5: { cellWidth: 15 },      // Practical
+          6: { cellWidth: 15 },      // CA Marks
+          7: { cellWidth: 15 },      // FE Marks
+          8: { cellWidth: 15 }       // Total Marks
+        },
+        headStyles: {
+          fillColor: [220, 220, 220],
+          textColor: [0, 0, 0],
+          fontStyle: 'bold',
+          lineWidth: 0.1
+        },
+        footStyles: {
+          fontStyle: 'bold'
+        },
+        // willDrawCell: function(data) {
+        //   // Format the total row
+        //   if (data.row.index === peTableBody.length) {
+        //     data.cell.styles.fontStyle = 'bold';
+        //     data.cell.styles.fillColor = [240, 240, 240];
+        //   }
+        // },
+        margin: { left: pageMargin, right: pageMargin }
       });
       
-      yPosition += 5;
+      // Add page number
+      doc.setFontSize(9);
+      doc.text(String(doc.internal.getCurrentPageInfo().pageNumber), 
+               doc.internal.pageSize.width / 2, 
+               doc.internal.pageSize.height - 10, 
+               { align: 'center' });
     }
-  }
-
-  // If the page is not filled, add some padding
-  while (yPosition < doc.internal.pageSize.height - 30) {
-    doc.text('', pageMargin, yPosition);
-    yPosition += 10;
-  }
-}
-
-// Open Electives
-if (groupedElectives[sectionTypes.OPEN] && groupedElectives[sectionTypes.OPEN].length > 0) {
-  // Don't force a new page if there's space
-  if (yPosition > doc.internal.pageSize.height - 60) {
-    doc.addPage();
-    yPosition = 20;
-  }
-
-  doc.setFontSize(14);
-  doc.text('Open Electives', doc.internal.pageSize.width / 2, yPosition, { align: 'center' });
-
-  yPosition += 15;
-  
-  // Add Course Code and Course Title header in bold
-  doc.setFontSize(10);
-  doc.setFont('helvetica', 'bold');
-  doc.text('Course Code        Course Title', pageMargin, yPosition);
-  yPosition += 10;
-
-  doc.setFont('helvetica', 'normal');
-  groupedElectives[sectionTypes.OPEN].forEach((course) => {
-    doc.text(`${course.course_code}            ${course.course_title}`, pageMargin, yPosition);
-    yPosition += 10;
-  });
-}
-
-// Language Electives
-if (groupedElectives[sectionTypes.LANGUAGE] && groupedElectives[sectionTypes.LANGUAGE].length > 0) {
-  // Don't force a new page if there's space
-  if (yPosition > doc.internal.pageSize.height - 60) {
-    doc.addPage();
-    yPosition = 20;
-  }
-
-  doc.setFontSize(14);
-  doc.text('Language Electives', doc.internal.pageSize.width / 2, yPosition, { align: 'center' });
-
-  yPosition += 15;
-  
-  // Add Course Code and Course Title header in bold
-  doc.setFontSize(10);
-  doc.setFont('helvetica', 'bold');
-  doc.text('Course Code        Course Title', pageMargin, yPosition);
-  yPosition += 10;
-
-  doc.setFont('helvetica', 'normal');
-  groupedElectives[sectionTypes.LANGUAGE].forEach((course) => {
-    doc.text(`${course.course_code}            ${course.course_title}`, pageMargin, yPosition);
-    yPosition += 10;
-  });
-}
-
-// Self Directed Learning Courses
-if (groupedElectives[sectionTypes.SDL] && groupedElectives[sectionTypes.SDL].length > 0) {
-  // Don't force a new page if there's space
-  if (yPosition > doc.internal.pageSize.height - 60) {
-    doc.addPage();
-    yPosition = 20;
-  }
-
-  doc.setFontSize(14);
-  doc.text('Self Directed Learning Courses', doc.internal.pageSize.width / 2, yPosition, { align: 'center' });
-
-  yPosition += 15;
-  
-  // Add Course Code and Course Title header in bold
-  doc.setFontSize(10);
-  doc.setFont('helvetica', 'bold');
-  doc.text('Course Code        Course Title', pageMargin, yPosition);
-  yPosition += 10;
-
-  doc.setFont('helvetica', 'normal');
-  groupedElectives[sectionTypes.SDL].forEach((course) => {
-    doc.text(`${course.course_code}            ${course.course_title}`, pageMargin, yPosition);
-    yPosition += 10;
-  });
-}
     
     // NEXT ADD SUMMARY TABLE ON A NEW PAGE
     
@@ -956,8 +635,8 @@ if (groupedElectives[sectionTypes.SDL] && groupedElectives[sectionTypes.SDL].len
         fontStyle: 'bold'
       }
     });
+    
     //Course Details Section
-
     for (const semester of semestersData) {
       const coursesWithDetails = semester.courses.filter(course => course.courseDetails);
       
@@ -1184,7 +863,7 @@ if (groupedElectives[sectionTypes.SDL] && groupedElectives[sectionTypes.SDL].len
     }
     
     // Save the document
-    doc.save('Course_Structure.pdf');
+    doc.save('ME Course_Structure.pdf');
     setExportLoading(false);
   } catch (error) {
     console.error('Error exporting to PDF:', error);
@@ -1234,7 +913,7 @@ if (groupedElectives[sectionTypes.SDL] && groupedElectives[sectionTypes.SDL].len
 
   return (
     <div className="course-word-container">
-      <h1>BE COMPUTER SCIENCE AND ENGINEERING</h1>
+      <h1>ME COMPUTER SCIENCE AND ENGINEERING</h1>
       <h2>Courses of Study and Scheme of Assessment</h2>
       <div className="action-buttons">
         <button onClick={exportToPDF} disabled={exportLoading}>
@@ -1273,7 +952,7 @@ if (groupedElectives[sectionTypes.SDL] && groupedElectives[sectionTypes.SDL].len
               <tbody>
                 {/* THEORY COURSES */}
                 <tr className="category-header">
-                  <td colSpan="11">THEORY</td>
+                  {/* <td colSpan="11">THEORY</td> */}
                 </tr>
                 {semester.courses
                   .filter((course) => course.category?.toLowerCase() === "theory")
@@ -1289,52 +968,6 @@ if (groupedElectives[sectionTypes.SDL] && groupedElectives[sectionTypes.SDL].len
                       <td>{course.ca_marks}</td>
                       <td>{course.fe_marks}</td>
                       <td>{course.total_marks}</td>
-                      <td>{course.type}</td>
-                    </tr>
-                  ))}
-
-                {/* PRACTICAL COURSES */}
-                <tr className="category-header">
-                  <td colSpan="11">PRACTICALS</td>
-                </tr>
-                {semester.courses
-                  .filter((course) => course.category?.toLowerCase() === "practical")
-                  .map((course, index) => (
-                    <tr key={`practical-${index}`}>
-                      <td>{semester.courses.filter(c => c.category?.toLowerCase() === "theory").length + index + 1}</td>
-                      <td>{course.course_code}</td>
-                      <td>{course.course_name}</td>
-                      <td>{course.lecture}</td>
-                      <td>{course.tutorial}</td>
-                      <td>{course.practical}</td>
-                      <td>{course.credits}</td>
-                      <td>{course.ca_marks}</td>
-                      <td>{course.fe_marks}</td>
-                      <td>{course.total_marks}</td>
-                      <td>{course.type}</td>
-                    </tr>
-                  ))}
-
-                {/* MANDATORY COURSES */}
-                <tr className="category-header">
-                  <td colSpan="11">MANDATORY COURSES</td>
-                </tr>
-                {semester.courses
-                  .filter((course) => course.category?.toLowerCase() === "mandatory")
-                  .map((course, index) => (
-                    <tr key={`mandatory-${index}`}>
-                      <td>
-                        {semester.courses.filter(c => c.category?.toLowerCase() === "theory" || c.category?.toLowerCase() === "practical").length + index + 1}
-                      </td>
-                      <td>{course.course_code}</td>
-                      <td>{course.course_name}</td>
-                      <td>{course.lecture || "-"}</td>
-                      <td>{course.tutorial || "-"}</td>
-                      <td>{course.practical || "-"}</td>
-                      <td>{course.credits || "Grade"}</td>
-                      <td>{course.ca_marks || "-"}</td>
-                      <td>{course.fe_marks || "-"}</td>
-                      <td>{course.total_marks || "-"}</td>
                       <td>{course.type}</td>
                     </tr>
                   ))}
@@ -1365,130 +998,74 @@ if (groupedElectives[sectionTypes.SDL] && groupedElectives[sectionTypes.SDL].len
         );
       })}
 
-      {/* Add Elective Courses section here */}
-      <div className="courses-display">
-      <h2>Elective Courses</h2>
-      
-      {/* Display Language Electives */}
-      {groupedElectives[sectionTypes.LANGUAGE] && groupedElectives[sectionTypes.LANGUAGE].length > 0 && (
-        <div className="course-section">
-          <h3>LANGUAGE ELECTIVES</h3>
-          <table>
-            <thead>
-              <tr>
-                <th>Course Code</th>
-                <th>Course Title</th>
-              </tr>
-            </thead>
-            <tbody>
-              {groupedElectives[sectionTypes.LANGUAGE].map(course => (
-                <tr key={course.course_code}>
-                  <td>{course.course_code}</td>
-                  <td>{course.course_title}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-      
-      {/* Display BE Degree Programme Courses */}
-      {groupedElectives[sectionTypes.BE] && groupedElectives[sectionTypes.BE].length > 0 && (
-        <div className="course-section">
-          <h3>Professional electives for BE degree programme</h3>
-          <table>
-            <thead>
-              <tr>
-                <th>Course Code</th>
-                <th>Course Title</th>
-              </tr>
-            </thead>
-            <tbody>
-              {groupedElectives[sectionTypes.BE].map(course => (
-                <tr key={course.course_code}>
-                  <td>{course.course_code}</td>
-                  <td>{course.course_title}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-      
-      {/* Display BE Honours Courses by Vertical */}
-      {Object.keys(honoursCoursesByVertical).length > 0 && (
-        <div className="course-section">
-          <h3>Professional Electives for BE Honours / BE Honours with specialization in same discipline and BE Minor degree programmes</h3>
-          {Object.keys(honoursCoursesByVertical).sort().map(vertical => (
-            <div key={vertical}>
-              <h4>{getVerticalName(vertical)}</h4>
-              <table>
-                <thead>
-                  <tr>
-                    <th>Course Code</th>
-                    <th>Course Title</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {honoursCoursesByVertical[vertical].map(course => (
-                    <tr key={course.course_code}>
-                      <td>{course.course_code}</td>
-                      <td>{course.course_title}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ))}
-        </div>
-      )}
-      
-      {/* Display Open Electives */}
-      {groupedElectives[sectionTypes.OPEN] && groupedElectives[sectionTypes.OPEN].length > 0 && (
-        <div className="course-section">
-          <h3>OPEN ELECTIVES</h3>
-          <table>
-            <thead>
-              <tr>
-                <th>Course Code</th>
-                <th>Course Title</th>
-              </tr>
-            </thead>
-            <tbody>
-              {groupedElectives[sectionTypes.OPEN].map(course => (
-                <tr key={course.course_code}>
-                  <td>{course.course_code}</td>
-                  <td>{course.course_title}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-      
-      {/* Display Self Directed Learning Courses */}
-      {groupedElectives[sectionTypes.SDL] && groupedElectives[sectionTypes.SDL].length > 0 && (
-        <div className="course-section">
-          <h3>SELF DIRECTED LEARNING COURSES</h3>
-          <table>
-            <thead>
-              <tr>
-                <th>Course Code</th>
-                <th>Course Title</th>
-              </tr>
-            </thead>
-            <tbody>
-              {groupedElectives[sectionTypes.SDL].map(course => (
-                <tr key={course.course_code}>
-                  <td>{course.course_code}</td>
-                  <td>{course.course_title}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-    </div>
+      {/* Professional Electives Section */}
+{professionalElectives.length > 0 && (
+  <div className="professional-electives-container">
+    <h2>Professional Electives</h2>
+    <table className="data-table">
+      <thead>
+        <tr>
+          {/* <th>ID</th> */}
+          {/* <th>Course Code</th>
+          <th>Course Name</th>
+          <th>Credits</th>
+          <th>Lecture</th>
+          <th>Tutorial</th>
+          <th>Practical</th>
+          <th>CA Marks</th>
+          <th>FE Marks</th>
+          <th>Total Marks</th> */}
+          <td colSpan="10" style={{ textAlign: "left", fontWeight: "bold", padding: "10px" }}>
+            PROFESSIONAL ELECTIVE THEORY COURSES (Four to be opted)
+          </td>
+        </tr>
+      </thead>
+      <tbody>
+        {professionalElectives.map((item, idx) => (
+          <tr key={`pe-${idx}`}>
+            {/* <td>{item.id}</td> */}
+            <td>{item.course_code}</td>
+            <td>{item.course_name}</td>
+            <td>{item.credits}</td>
+            <td>{item.lecture}</td>
+            <td>{item.tutorial}</td>
+            <td>{item.practical}</td>
+            <td>{item.ca_marks}</td>
+            <td>{item.fe_marks}</td>
+            <td>{item.total_marks}</td>
+            <td>PE</td>
+          </tr>
+        ))}
+      </tbody>
+      {/* <tbody>
+        <tr className="total-row">
+          <td colSpan="2" style={{ textAlign: "center", fontWeight: "bold" }}>Total</td>
+          <td style={{ textAlign: "center", fontWeight: "bold" }}>
+            {professionalElectives.reduce((sum, item) => sum + Number(item.credits || 0), 0)}
+          </td>
+          <td style={{ textAlign: "center", fontWeight: "bold" }}>
+            {professionalElectives.reduce((sum, item) => sum + Number(item.lecture || 0), 0)}
+          </td>
+          <td style={{ textAlign: "center", fontWeight: "bold" }}>
+            {professionalElectives.reduce((sum, item) => sum + Number(item.tutorial || 0), 0)}
+          </td>
+          <td style={{ textAlign: "center", fontWeight: "bold" }}>
+            {professionalElectives.reduce((sum, item) => sum + Number(item.practical || 0), 0)}
+          </td>
+          <td style={{ textAlign: "center", fontWeight: "bold" }}>
+            {professionalElectives.reduce((sum, item) => sum + Number(item.ca_marks || 0), 0)}
+          </td>
+          <td style={{ textAlign: "center", fontWeight: "bold" }}>
+            {professionalElectives.reduce((sum, item) => sum + Number(item.fe_marks || 0), 0)}
+          </td>
+          <td style={{ textAlign: "center", fontWeight: "bold" }}>
+            {professionalElectives.reduce((sum, item) => sum + Number(item.total_marks || 0), 0)}
+          </td>
+        </tr>
+      </tbody> */}
+    </table>
+  </div>
+)}
 
 {totalCreditsInfo && (
   <div className="summary-section">
@@ -1654,4 +1231,4 @@ if (groupedElectives[sectionTypes.SDL] && groupedElectives[sectionTypes.SDL].len
   );
 }
 
-export default CourseWord;
+export default CourseMePDF;
