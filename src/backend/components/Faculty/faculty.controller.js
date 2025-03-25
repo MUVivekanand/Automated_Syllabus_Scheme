@@ -26,7 +26,7 @@ const facultyLogin = async (req, res) => {
     }
 
     // Login successful
-    res.json({ success: true, facultyName: data[0].faculty});
+    res.json({ success: true, facultyName: data[0].faculty });
   } catch (err) {
     console.error("Login error:", err);
     res.status(500).json({ success: false, message: "Internal server error" });
@@ -35,8 +35,18 @@ const facultyLogin = async (req, res) => {
 
 const updateCourseDetails = async (req, res) => {
   try {
-    const { courseName, coDetails, hours, textbooks, references, outcomes } =
-      req.body;
+    const {
+      courseCode,
+      courseName,
+      facultyName,
+      degree,
+      department,
+      coDetails,
+      hours,
+      textbooks,
+      references,
+      outcomes,
+    } = req.body;
 
     // Check if the course exists in `course_details`
     const { data: existingCourse, error: fetchError } = await supabase
@@ -76,6 +86,9 @@ const updateCourseDetails = async (req, res) => {
         .from("course_details")
         .insert({
           course_name: courseName,
+          course_code: courseCode,
+          degree: degree,
+          department: department,
           co1_name: coDetails[0]?.name || null,
           co1_desc: coDetails[0]?.desc || null,
           co2_name: coDetails[1]?.name || null,
@@ -129,6 +142,9 @@ const updateCourseDetails = async (req, res) => {
         .from("timings")
         .insert({
           course_name: courseName,
+          course_code: courseCode,
+          degree: degree,
+          department: department,
           hour1_1: hours[0]?.hour1 || null,
           hour2_1: hours[0]?.hour2 || null,
           hour1_2: hours[1]?.hour1 || null,
@@ -157,6 +173,9 @@ const updateCourseDetails = async (req, res) => {
     if (Array.isArray(textbooks) && textbooks.length > 0) {
       const textbookData = textbooks.map((t) => ({
         course_name: courseName,
+        course_code: courseCode,
+        degree: degree,
+        department: department,
         title: t.title || "Unknown Title",
         author: t.author || "Unknown Author",
         publisher: t.publisher || "N/A",
@@ -176,6 +195,9 @@ const updateCourseDetails = async (req, res) => {
     if (Array.isArray(references) && references.length > 0) {
       const referenceData = references.map((r) => ({
         course_name: courseName,
+        course_code: courseCode,
+        degree: degree,
+        department: department,
         title: r.title || "Unknown Title",
         author: r.author || "Unknown Author",
         publisher: r.publisher || "N/A",
@@ -209,7 +231,9 @@ const getCourse = async (req, res) => {
 
     const { data, error } = await supabase
       .from("credits") // Table name
-      .select("course_code, course_name, lecture, tutorial, practical, credits, degree") // Fetch required fields
+      .select(
+        "course_code, course_name, lecture, tutorial, practical, credits, degree, category, department"
+      ) // Fetch required fields
       .eq("faculty", facultyName);
 
     if (error) throw error;

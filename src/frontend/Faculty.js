@@ -24,8 +24,16 @@ function Faculty() {
     textbooks: false,
     references: false,
     courseOutcomes: false,
-    table: false
+    table: false,
   });
+
+  const [tableData, setTableData] = useState([
+    { co: "CO1", pos: Array(12).fill(""), pso: ["", ""] },
+    { co: "CO2", pos: Array(12).fill(""), pso: ["", ""] },
+    { co: "CO3", pos: Array(12).fill(""), pso: ["", ""] },
+    { co: "CO4", pos: Array(12).fill(""), pso: ["", ""] },
+    { co: "CO5", pos: Array(12).fill(""), pso: ["", ""] },
+  ]);
 
   // Function to toggle individual sections
   const toggleExpand = (section) => {
@@ -95,9 +103,15 @@ function Faculty() {
   // Handle dropdown change
   const handleCourseSelection = (event) => {
     setSelectedCourse(event.target.value);
+    const selectedCourseCode = event.target.value.split(" - ")[0];
+    const selectedCourseObj = courses.find(
+      (course) => course.course_code === selectedCourseCode
+    );
+
+    const maxCO = selectedCourseObj?.degree === "B.E" ? 5 : 4;
     setCourseDetails({
-      co: Array(5).fill({ name: "", desc: "" }),
-      hours: Array(5).fill({ hour1: "", hour2: "" }),
+      co: Array(maxCO).fill({ name: "", desc: "" }),
+      hours: Array(maxCO).fill({ hour1: "", hour2: "" }),
       textbooks: [],
       references: [],
       outcomes: Array(5).fill(""),
@@ -118,14 +132,24 @@ function Faculty() {
     }));
   };
 
+  const handleTableInputChange = (rowIndex, key, subIndex, value) => {
+    const updatedData = [...tableData];
+    if (subIndex !== null) {
+      updatedData[rowIndex][key][subIndex] = value;
+    } else {
+      updatedData[rowIndex][key] = value;
+    }
+    setTableData(updatedData);
+  };
+
   const generateExcel = () => {
     if (!selectedCourse) {
       alert("Please select a course first.");
       return;
     }
-  
+
     const [courseCode, courseName] = selectedCourse.split(" - "); // Extract Course Code & Name
-  
+
     // Headers Row
     const headers = [
       "Course Code",
@@ -145,13 +169,13 @@ function Faculty() {
       "PSO1",
       "PSO2",
     ];
-  
+
     // Generate rows for each CO with '\n' for wrapping
     const dataRows = courseDetails.outcomes.map((outcome, index) => {
       return [
         index === 0 ? courseCode : "", // Course Code in first CO row only
         index === 0 ? courseName : "", // Course Name in first CO row only
-        `CO${index + 1}:\n${outcome || "N/A"}`,// CO description with '\n' to force wrap
+        `CO${index + 1}:\n${outcome || "N/A"}`, // CO description with '\n' to force wrap
         "",
         "",
         "",
@@ -168,10 +192,10 @@ function Faculty() {
         "", // Empty PO values
       ];
     });
-  
+
     // Create the worksheet
     const ws = XLSX.utils.aoa_to_sheet([headers, ...dataRows]);
-  
+
     // Set column widths (Increased for Course Name and COs/POs)
     ws["!cols"] = [
       { wch: 15 }, // Course Code
@@ -179,24 +203,25 @@ function Faculty() {
       { wch: 60 }, // COs/POs (Increased width to accommodate wrapping)
       ...Array(13).fill({ wch: 10 }), // Default width for PO mappings
     ];
-  
+
     // Set cell styles manually (Enable wrap text in Excel)
     Object.keys(ws).forEach((cell) => {
-      if (cell.startsWith("C")) { // COs/POs Column (Column C)
+      if (cell.startsWith("C")) {
+        // COs/POs Column (Column C)
         ws[cell].s = { alignment: { wrapText: true } }; // Wrap text
       }
     });
-  
+
     // Create a workbook and append the worksheet
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "PO Mapping");
-  
+
     // Convert to Blob and trigger download
     const excelBuffer = XLSX.write(wb, { bookType: "xlsx", type: "array" });
     const dataBlob = new Blob([excelBuffer], {
       type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     });
-  
+
     saveAs(dataBlob, `PO_Mapping_${courseCode}.xlsx`);
   };
 
@@ -209,7 +234,6 @@ function Faculty() {
     }
 
     const [courseCode, courseName] = selectedCourse.split(" - ");
-
     const selectedCourseDetails = courses.find(
       (course) => course.course_code === courseCode
     );
@@ -218,7 +242,12 @@ function Faculty() {
       alert("Course not found.");
       return;
     }
-
+    const degree = courses.find(
+      (course) => course.course_code === selectedCourse.split(" - ")[0]
+    ).degree;
+    const department = courses.find(
+      (course) => course.course_code === selectedCourse.split(" - ")[0]
+    ).department;
     const { credits } = selectedCourseDetails;
     const totalHours = courseDetails.hours.reduce(
       (total, hour) =>
@@ -239,8 +268,11 @@ function Faculty() {
       const response = await axios.post(
         "http://localhost:4000/api/faculty/updateCourseDetails",
         {
+          courseCode,
           courseName, // ✅ Send courseName instead of courseCode
           facultyName,
+          degree,
+          department,
           coDetails: courseDetails.co,
           hours: courseDetails.hours,
           textbooks: courseDetails.textbooks,
@@ -273,7 +305,6 @@ function Faculty() {
       );
     }
   };
-  
 
   return (
     <div className="faculty-container">
@@ -425,56 +456,67 @@ function Faculty() {
           )}
 
           {/* Textbooks Section */}
-            <button
-              className="toggle-btn"
-              onClick={() => toggleExpand("textbooks")}
-            >
-              Textbooks
-            </button>
-            {expandedSections.textbooks && (
-              <div className="textbook-section">
-                <h4 className="section-title">Textbooks</h4>
-                {courseDetails.textbooks.map((textbook, i) => (
-                  <div key={i} className="textbook-entry">
-                    {["title", "author", "publisher", "place", "year"].map(
-                      (field) => (
-                        <input
-                          key={field}
-                          className="input-field"
-                          type="text"
-                          placeholder={`Textbook ${i + 1} ${field}`}
-                          value={textbook[field] || ""}
-                          onChange={(e) =>
-                            handleChange("textbooks", i, field, e.target.value)
-                          }
-                        />
-                      )
-                    )}
-                  </div>
-                ))}
-                <button
-                  className="add-button"
-                  onClick={() =>
-                    setCourseDetails((prev) => ({
-                      ...prev,
-                      textbooks: [
-                        ...prev.textbooks,
-                        {
-                          title: "",
-                          author: "",
-                          publisher: "",
-                          place: "",
-                          year: "",
-                        },
-                      ],
-                    }))
-                  }
-                  disabled={courseDetails.textbooks.length >= 2} // Disable when 2 textbooks added
-                >
-                  + Add Textbook
-                </button>
-              </div>
-            )}
+          {courses.find(
+            (course) => course.course_code === selectedCourse.split(" - ")[0]
+          ).degree === ("B.E" || null) && (
+            <>
+              <button
+                className="toggle-btn"
+                onClick={() => toggleExpand("textbooks")}
+              >
+                Textbooks
+              </button>
+              {expandedSections.textbooks && (
+                <div className="textbook-section">
+                  <h4 className="section-title">Textbooks</h4>
+                  {courseDetails.textbooks.map((textbook, i) => (
+                    <div key={i} className="textbook-entry">
+                      {["title", "author", "publisher", "place", "year"].map(
+                        (field) => (
+                          <input
+                            key={field}
+                            className="input-field"
+                            type="text"
+                            placeholder={`Textbook ${i + 1} ${field}`}
+                            value={textbook[field] || ""}
+                            onChange={(e) =>
+                              handleChange(
+                                "textbooks",
+                                i,
+                                field,
+                                e.target.value
+                              )
+                            }
+                          />
+                        )
+                      )}
+                    </div>
+                  ))}
+                  <button
+                    className="add-button"
+                    onClick={() =>
+                      setCourseDetails((prev) => ({
+                        ...prev,
+                        textbooks: [
+                          ...prev.textbooks,
+                          {
+                            title: "",
+                            author: "",
+                            publisher: "",
+                            place: "",
+                            year: "",
+                          },
+                        ],
+                      }))
+                    }
+                    disabled={courseDetails.textbooks.length >= 2} // Disable when 2 textbooks added
+                  >
+                    + Add Textbook
+                  </button>
+                </div>
+              )}
+            </>
+          )}
 
           {/* References Section */}
           <button
@@ -521,7 +563,15 @@ function Faculty() {
                     ],
                   }))
                 }
-                disabled={courseDetails.references.length >= 4} // Disable when 4 references added
+                disabled={
+                  courseDetails.references.length >=
+                  (courses.find(
+                    (course) =>
+                      course.course_code === selectedCourse.split(" - ")[0]
+                  ).degree === "B.E"
+                    ? 4
+                    : 5)
+                } // Disable when 4 references added
               >
                 + Add Reference
               </button>
@@ -530,7 +580,9 @@ function Faculty() {
 
           <button className="save-button" onClick={handleSave}>
             Save
-          </button><br/><br/>
+          </button>
+          <br />
+          <br />
 
           {/* Table Section */}
           <button
@@ -542,122 +594,57 @@ function Faculty() {
           {expandedSections.table && (
             <div className="table-section">
               <h4 className="section-title">Table</h4>
-              <div>
-                <table border="/">
-                  <thead>
-                    <tr>
-                      <th>Course Code</th>
-                      <th>Course Name</th>
-                      <th>COs/POs</th>
-                      <th>POa</th>
-                      <th>POb</th>
-                      <th>POc</th>
-                      <th>POd</th>
-                      <th>POe</th>
-                      <th>POf</th>
-                      <th>POg</th>
-                      <th>POh</th>
-                      <th>POi</th>
-                      <th>POj</th>
-                      <th>POk</th>
-                      <th>PSO1</th>
-                      <th>PSO2</th>
+              <table border="1">
+                <thead>
+                  <tr>
+                    <th>COs/POs</th>
+                    {[...Array(12).keys()].map((i) => (
+                      <th key={i}>{`PO${String.fromCharCode(97 + i)}`}</th>
+                    ))}
+                    <th>PSO1</th>
+                    <th>PSO2</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {tableData.map((row, rowIndex) => (
+                    <tr key={rowIndex}>
+                      <td>{row.co}</td>
+                      {row.pos.map((po, i) => (
+                        <td key={i}>
+                          <input
+                            type="text"
+                            value={po}
+                            onChange={(e) =>
+                              handleTableInputChange(
+                                rowIndex,
+                                "pos",
+                                i,
+                                e.target.value
+                              )
+                            }
+                          />
+                        </td>
+                      ))}
+                      {row.pso.map((pso, i) => (
+                        <td key={i}>
+                          <input
+                            type="text"
+                            value={pso}
+                            onChange={(e) =>
+                              handleTableInputChange(
+                                rowIndex,
+                                "pso",
+                                i,
+                                e.target.value
+                              )
+                            }
+                          />
+                        </td>
+                      ))}
                     </tr>
-                  </thead>
-                  <tbody>
-                    <tr>
-                      <td>23Z101</td>
-                      <td>Calculas and its Applications</td>
-                      <td>CO1</td>
-                      <td></td>
-                      <td></td>
-                      <td></td>
-                      <td></td>
-                      <td></td>
-                      <td></td>
-                      <td></td>
-                      <td></td>
-                      <td></td>
-                      <td></td>
-                      <td></td>
-                      <td></td>
-                      <td></td>
-                    </tr>
-                    <tr>
-                      <td></td>
-                      <td></td>
-                      <td>CO2</td>
-                      <td></td>
-                      <td></td>
-                      <td></td>
-                      <td></td>
-                      <td></td>
-                      <td></td>
-                      <td></td>
-                      <td></td>
-                      <td></td>
-                      <td></td>
-                      <td></td>
-                      <td></td>
-                      <td></td>
-                    </tr>
-                    <tr>
-                      <td></td>
-                      <td></td>
-                      <td>CO3</td>
-                      <td></td>
-                      <td></td>
-                      <td></td>
-                      <td></td>
-                      <td></td>
-                      <td></td>
-                      <td></td>
-                      <td></td>
-                      <td></td>
-                      <td></td>
-                      <td></td>
-                      <td></td>
-                      <td></td>
-                    </tr>
-                    <tr>
-                      <td></td>
-                      <td></td>
-                      <td>CO4</td>
-                      <td></td>
-                      <td></td>
-                      <td></td>
-                      <td></td>
-                      <td></td>
-                      <td></td>
-                      <td></td>
-                      <td></td>
-                      <td></td>
-                      <td></td>
-                      <td></td>
-                      <td></td>
-                      <td></td>
-                    </tr>
-                    <tr>
-                      <td></td>
-                      <td></td>
-                      <td>CO5</td>
-                      <td></td>
-                      <td></td>
-                      <td></td>
-                      <td></td>
-                      <td></td>
-                      <td></td>
-                      <td></td>
-                      <td></td>
-                      <td></td>
-                      <td></td>
-                      <td></td>
-                      <td></td>
-                      <td></td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
+                  ))}
+                </tbody>
+              </table>
             </div>
           )}
 
