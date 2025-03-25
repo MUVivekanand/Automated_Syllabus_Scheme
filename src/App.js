@@ -9,7 +9,9 @@ import Summary from "./frontend/Summary.js";
 import FacultyLogin from "./frontend/FacultyLogin.js";
 import CourseDetailsPage from "./frontend/CourseDetailsPage.js";
 import Regulations from "./frontend/Regulations.js";
-import CourseWord from "./frontend/CourseWord.js"
+import CourseWord from "./frontend/CourseWord.js";
+import ProfessionalMe from "./frontend/ProfessionalMe.js";
+import CourseMe from './frontend/CourseMe.js';
 
 function App() {
   return (
@@ -26,6 +28,8 @@ function App() {
         <Route path="/Summary" element={<Summary />} />
         <Route path="/Regulations" element={<Regulations />} />
         <Route path = "/wordPage" element = {<CourseWord />}/>
+        <Route path = "/ProfessionalMe" element = {<ProfessionalMe/>}/>
+        <Route path="/courseME" element = {<CourseMe />} />
       </Routes>
     </div>
   );

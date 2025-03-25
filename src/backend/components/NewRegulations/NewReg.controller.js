@@ -23,13 +23,20 @@ const getAllCourses = async (req, res) => {
 const updateCourse = async (req, res) => {
   const { course_name } = req.params;
   const updatedCourse = req.body;
+  const { degree, department } = updatedCourse;
 
   try {
+    // Make sure we have the composite key values
+    if (!degree || !department) {
+      return res.status(400).json({ message: "Degree and department are required" });
+    }
     
     const { data, error } = await supabase
       .from("credits")
       .update(updatedCourse)
-      .ilike("course_name", `%${course_name}%`) // Case-insensitive search
+      .eq("course_name", course_name)
+      .eq("degree", degree)
+      .eq("department", department)
       .select();
 
     if (error) throw error;
@@ -42,15 +49,22 @@ const updateCourse = async (req, res) => {
   }
 };
 
-
 const deleteMoveCourse = async (req, res) => {
   const { course_name } = req.params;
+  const { degree, department } = req.body;
 
   try {
+    // Make sure we have the composite key values
+    if (!degree || !department) {
+      return res.status(400).json({ message: "Degree and department are required" });
+    }
+
     const { data, error } = await supabase
       .from("credits")
       .delete()
-      .eq("course_name", course_name);
+      .eq("course_name", course_name)
+      .eq("degree", degree)
+      .eq("department", department);
 
     if (error) throw error;
 
@@ -71,13 +85,30 @@ const addCourse = async (req, res) => {
   }
 
   try {
+    // Check if a course with the same composite key exists
+    const { data: existingCourse, error: checkError } = await supabase
+      .from("credits")
+      .select("*")
+      .eq("course_name", newCourse.course_name)
+      .eq("degree", newCourse.degree)
+      .eq("department", newCourse.department);
+
+    if (checkError) throw checkError;
+
+    if (existingCourse && existingCourse.length > 0) {
+      return res.status(409).json({ 
+        message: "A course with this name already exists for this degree and department." 
+      });
+    }
+
     const { data, error } = await supabase
       .from("credits")
-      .insert(newCourse);
+      .insert(newCourse)
+      .select();
 
     if (error) throw error;
 
-    res.json({ message: "Course added successfully!", data });
+    res.json(data[0] || { message: "Course added successfully!" });
   } catch (error) {
     res.status(500).json({ message: "Error adding course", error: error.message });
   }
@@ -85,12 +116,20 @@ const addCourse = async (req, res) => {
 
 const deleteCourse = async (req, res) => {
   const { course_name } = req.params;
+  const { degree, department } = req.body;
 
   try {
+    // Make sure we have the composite key values
+    if (!degree || !department) {
+      return res.status(400).json({ message: "Degree and department are required" });
+    }
+
     const { data, error } = await supabase
       .from("credits")
       .delete()
-      .eq("course_name", course_name);
+      .eq("course_name", course_name)
+      .eq("degree", degree)
+      .eq("department", department);
 
     if (error) throw error;
 

@@ -451,7 +451,6 @@ function SemInfo() {
             {degree === "B.E" && (
               <>
                 <option value="CSE AI-ML">CSE AI-ML</option>
-                <option value="IT">IT</option>
               </>
             )}
           </select>

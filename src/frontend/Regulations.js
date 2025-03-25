@@ -154,7 +154,11 @@ const Regulations = () => {
     }
   
     try {
-      await axios.put(`http://localhost:4000/api/regulations/updatecourse/${courseName}`, updatedCourse);
+      await axios.put(`http://localhost:4000/api/regulations/updatecourse/${courseName}`, {
+        ...updatedCourse,
+        degree,
+        department
+      });
       alert("Course updated successfully!");
       setRefresh((prev) => !prev);
     } catch (error) {
@@ -177,7 +181,9 @@ const Regulations = () => {
     }
   
     try {
-      await axios.delete(`http://localhost:4000/api/regulations/deletemovecourse/${fromCourseName}`);
+      await axios.delete(`http://localhost:4000/api/regulations/deletemovecourse/${fromCourseName}`, {
+        data: { degree, department }
+      });
       const updatedCourse = { ...courseToMove, sem_no: parseInt(toSemester, 10) };
       await axios.post("http://localhost:4000/api/regulations/addcourse", updatedCourse);
       
@@ -201,7 +207,9 @@ const Regulations = () => {
     if (!confirmDelete) return;
 
     try {
-      const response = await axios.delete(`http://localhost:4000/api/regulations/delete-course/${courseName}`);
+      const response = await axios.delete(`http://localhost:4000/api/regulations/delete-course/${courseName}`, {
+        data: { degree, department }
+      });
 
       if (response.status === 200) {
         setCourses((prevCourses) => prevCourses.filter((course) => course.course_name !== courseName));
@@ -412,7 +420,7 @@ const Regulations = () => {
                           />
                         </td>
                         <td>
-                          <input 
+                        <input 
                             type="number"
                             value={newRow.credits}
                             onChange={(e) => handleNewRowChange(semesterNumber, rowIndex, "credits", e.target.value)}
