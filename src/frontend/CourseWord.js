@@ -585,186 +585,332 @@ const exportToPDF = async () => {
 
 // NEXT ADD ELECTIVE SECTIONS ON NEW PAGES BEFORE SUMMARY TABLE
 // Add Professional Electives
+// doc.addPage();
+// doc.setFontSize(14);
+// doc.text('Professional Electives for BE Degree Programme', doc.internal.pageSize.width / 2, 20, { align: 'center' });
+
+// // Create table for Professional Electives
+// const professionalElectivesData = groupedElectives[sectionTypes.BE].map(course => [
+//   course.course_code,
+//   course.course_title
+// ]);
+
+// autoTable(doc, {
+//   startY: 30,
+//   margin: { left: pageMargin, right: pageMargin },
+//   head: [['Course Code', 'Course Title']],
+//   body: professionalElectivesData,
+//   theme: 'grid',
+//   styles: { 
+//     fontSize: 9,
+//     cellPadding: 2 
+//   },
+//   headStyles: {
+//     fillColor: [220, 220, 220],
+//     textColor: [0, 0, 0],
+//     fontStyle: 'bold'
+//   },
+//   columnStyles: {
+//     0: { cellWidth: 30 },
+//     1: { cellWidth: 'auto' }
+//   }
+// });
+
+// // Add Honours Electives by vertical
+// if (Object.keys(honoursCoursesByVertical).length > 0) {
+//   doc.addPage();
+//   doc.setFontSize(14);
+//   doc.text('Professional Electives for BE Honours / BE Honours with specialization', doc.internal.pageSize.width / 2, 20, { align: 'center' });
+//   doc.text('in same discipline and BE Minor degree programmes', doc.internal.pageSize.width / 2, 30, { align: 'center' });
+
+//   let verticalY = 40;
+  
+//   for (const vertical of Object.keys(honoursCoursesByVertical).sort()) {
+//     // Check if we need a new page
+//     if (verticalY > doc.internal.pageSize.height - 60) {
+//       doc.addPage();
+//       verticalY = 20;
+//     }
+    
+//     // Add vertical heading
+//     doc.setFontSize(12);
+//     doc.setFont('helvetica', 'bold');
+//     doc.text(getVerticalName(vertical), pageMargin, verticalY);
+//     verticalY += 10;
+    
+//     // Create table for this vertical
+//     const verticalData = honoursCoursesByVertical[vertical].map(course => [
+//       course.course_code,
+//       course.course_title
+//     ]);
+
+//     autoTable(doc, {
+//       startY: verticalY,
+//       margin: { left: pageMargin, right: pageMargin },
+//       head: [['Course Code', 'Course Title']],
+//       body: verticalData,
+//       theme: 'grid',
+//       styles: { 
+//         fontSize: 9,
+//         cellPadding: 2 
+//       },
+//       headStyles: {
+//         fillColor: [220, 220, 220],
+//         textColor: [0, 0, 0],
+//         fontStyle: 'bold'
+//       },
+//       columnStyles: {
+//         0: { cellWidth: 30 },
+//         1: { cellWidth: 'auto' }
+//       }
+//     });
+    
+//     verticalY = doc.lastAutoTable.finalY + 15;
+//   }
+// }
+
+// // Add Open Electives
+// if (groupedElectives[sectionTypes.OPEN] && groupedElectives[sectionTypes.OPEN].length > 0) {
+//   doc.addPage();
+//   doc.setFontSize(14);
+//   doc.text('Open Electives', doc.internal.pageSize.width / 2, 20, { align: 'center' });
+
+//   const openElectivesData = groupedElectives[sectionTypes.OPEN].map(course => [
+//     course.course_code,
+//     course.course_title
+//   ]);
+
+//   autoTable(doc, {
+//     startY: 30,
+//     margin: { left: pageMargin, right: pageMargin },
+//     head: [['Course Code', 'Course Title']],
+//     body: openElectivesData,
+//     theme: 'grid',
+//     styles: { 
+//       fontSize: 9,
+//       cellPadding: 2 
+//     },
+//     headStyles: {
+//       fillColor: [220, 220, 220],
+//       textColor: [0, 0, 0],
+//       fontStyle: 'bold'
+//     },
+//     columnStyles: {
+//       0: { cellWidth: 30 },
+//       1: { cellWidth: 'auto' }
+//     }
+//   });
+// }
+
+// // Add Language Electives
+// if (groupedElectives[sectionTypes.LANGUAGE] && groupedElectives[sectionTypes.LANGUAGE].length > 0) {
+//   doc.addPage();
+//   doc.setFontSize(14);
+//   doc.text('Language Electives', doc.internal.pageSize.width / 2, 20, { align: 'center' });
+
+//   const languageElectivesData = groupedElectives[sectionTypes.LANGUAGE].map(course => [
+//     course.course_code,
+//     course.course_title
+//   ]);
+
+//   autoTable(doc, {
+//     startY: 30,
+//     margin: { left: pageMargin, right: pageMargin },
+//     head: [['Course Code', 'Course Title']],
+//     body: languageElectivesData,
+//     theme: 'grid',
+//     styles: { 
+//       fontSize: 9,
+//       cellPadding: 2 
+//     },
+//     headStyles: {
+//       fillColor: [220, 220, 220],
+//       textColor: [0, 0, 0],
+//       fontStyle: 'bold'
+//     },
+//     columnStyles: {
+//       0: { cellWidth: 30 },
+//       1: { cellWidth: 'auto' }
+//     }
+//   });
+// }
+
+// // Add Self Directed Learning Courses
+// if (groupedElectives[sectionTypes.SDL] && groupedElectives[sectionTypes.SDL].length > 0) {
+//   doc.addPage();
+//   doc.setFontSize(14);
+//   doc.text('Self Directed Learning Courses', doc.internal.pageSize.width / 2, 20, { align: 'center' });
+
+//   const sdlCoursesData = groupedElectives[sectionTypes.SDL].map(course => [
+//     course.course_code,
+//     course.course_title
+//   ]);
+
+//   autoTable(doc, {
+//     startY: 30,
+//     margin: { left: pageMargin, right: pageMargin },
+//     head: [['Course Code', 'Course Title']],
+//     body: sdlCoursesData,
+//     theme: 'grid',
+//     styles: { 
+//       fontSize: 9,
+//       cellPadding: 2 
+//     },
+//     headStyles: {
+//       fillColor: [220, 220, 220],
+//       textColor: [0, 0, 0],
+//       fontStyle: 'bold'
+//     },
+//     columnStyles: {
+//       0: { cellWidth: 30 },
+//       1: { cellWidth: 'auto' }
+//     }
+//   });
+// }
+
+// Professional Electives for BE Degree Programme
 doc.addPage();
 doc.setFontSize(14);
 doc.text('Professional Electives for BE Degree Programme', doc.internal.pageSize.width / 2, 20, { align: 'center' });
 
-// Create table for Professional Electives
-const professionalElectivesData = groupedElectives[sectionTypes.BE].map(course => [
-  course.course_code,
-  course.course_title
-]);
+// Add Course Code and Course Title header in bold
+doc.setFontSize(10);
+doc.setFont('helvetica', 'bold');
+doc.text('Course Code        Course Title', pageMargin, 35);
 
-autoTable(doc, {
-  startY: 30,
-  margin: { left: pageMargin, right: pageMargin },
-  head: [['Course Code', 'Course Title']],
-  body: professionalElectivesData,
-  theme: 'grid',
-  styles: { 
-    fontSize: 9,
-    cellPadding: 2 
-  },
-  headStyles: {
-    fillColor: [220, 220, 220],
-    textColor: [0, 0, 0],
-    fontStyle: 'bold'
-  },
-  columnStyles: {
-    0: { cellWidth: 30 },
-    1: { cellWidth: 'auto' }
-  }
+doc.setFont('helvetica', 'normal');
+let yPosition = 45;
+groupedElectives[sectionTypes.BE].forEach((course) => {
+  doc.text(`${course.course_code}            ${course.course_title}`, pageMargin, yPosition);
+  yPosition += 10;
 });
 
-// Add Honours Electives by vertical
+// Professional Electives for BE Honours
 if (Object.keys(honoursCoursesByVertical).length > 0) {
-  doc.addPage();
+  // Don't force a new page if there's space
+  if (yPosition > doc.internal.pageSize.height - 60) {
+    doc.addPage();
+    yPosition = 20;
+  }
+
   doc.setFontSize(14);
-  doc.text('Professional Electives for BE Honours / BE Honours with specialization', doc.internal.pageSize.width / 2, 20, { align: 'center' });
-  doc.text('in same discipline and BE Minor degree programmes', doc.internal.pageSize.width / 2, 30, { align: 'center' });
+  doc.text('Professional Electives for BE Honours / BE Honours with specialization', doc.internal.pageSize.width / 2, yPosition, { align: 'center' });
+  doc.text('in same discipline and BE Minor degree programmes', doc.internal.pageSize.width / 2, yPosition + 10, { align: 'center' });
 
-  let verticalY = 40;
+  yPosition += 25;
   
-  for (const vertical of Object.keys(honoursCoursesByVertical).sort()) {
-    // Check if we need a new page
-    if (verticalY > doc.internal.pageSize.height - 60) {
-      doc.addPage();
-      verticalY = 20;
-    }
-    
-    // Add vertical heading
-    doc.setFontSize(12);
-    doc.setFont('helvetica', 'bold');
-    doc.text(getVerticalName(vertical), pageMargin, verticalY);
-    verticalY += 10;
-    
-    // Create table for this vertical
-    const verticalData = honoursCoursesByVertical[vertical].map(course => [
-      course.course_code,
-      course.course_title
-    ]);
-
-    autoTable(doc, {
-      startY: verticalY,
-      margin: { left: pageMargin, right: pageMargin },
-      head: [['Course Code', 'Course Title']],
-      body: verticalData,
-      theme: 'grid',
-      styles: { 
-        fontSize: 9,
-        cellPadding: 2 
-      },
-      headStyles: {
-        fillColor: [220, 220, 220],
-        textColor: [0, 0, 0],
-        fontStyle: 'bold'
-      },
-      columnStyles: {
-        0: { cellWidth: 30 },
-        1: { cellWidth: 'auto' }
+  // Iterate through ALL verticals using Object.entries to ensure full access
+  for (const [vertical, courses] of Object.entries(honoursCoursesByVertical)) {
+    // Ensure courses exist for this vertical
+    if (courses && courses.length > 0) {
+      if (yPosition > doc.internal.pageSize.height - 60) {
+        doc.addPage();
+        yPosition = 20;
       }
-    });
-    
-    verticalY = doc.lastAutoTable.finalY + 15;
+      
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'bold');
+      doc.text(getVerticalName(vertical), pageMargin, yPosition);
+      yPosition += 10;
+      
+      // Add Course Code and Course Title header in bold
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Course Code        Course Title', pageMargin, yPosition);
+      yPosition += 10;
+      
+      doc.setFont('helvetica', 'normal');
+      courses.forEach((course) => {
+        doc.text(`${course.course_code}            ${course.course_title}`, pageMargin, yPosition);
+        yPosition += 10;
+      });
+      
+      yPosition += 5;
+    }
+  }
+
+  // If the page is not filled, add some padding
+  while (yPosition < doc.internal.pageSize.height - 30) {
+    doc.text('', pageMargin, yPosition);
+    yPosition += 10;
   }
 }
 
-// Add Open Electives
+// Open Electives
 if (groupedElectives[sectionTypes.OPEN] && groupedElectives[sectionTypes.OPEN].length > 0) {
-  doc.addPage();
+  // Don't force a new page if there's space
+  if (yPosition > doc.internal.pageSize.height - 60) {
+    doc.addPage();
+    yPosition = 20;
+  }
+
   doc.setFontSize(14);
-  doc.text('Open Electives', doc.internal.pageSize.width / 2, 20, { align: 'center' });
+  doc.text('Open Electives', doc.internal.pageSize.width / 2, yPosition, { align: 'center' });
 
-  const openElectivesData = groupedElectives[sectionTypes.OPEN].map(course => [
-    course.course_code,
-    course.course_title
-  ]);
+  yPosition += 15;
+  
+  // Add Course Code and Course Title header in bold
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'bold');
+  doc.text('Course Code        Course Title', pageMargin, yPosition);
+  yPosition += 10;
 
-  autoTable(doc, {
-    startY: 30,
-    margin: { left: pageMargin, right: pageMargin },
-    head: [['Course Code', 'Course Title']],
-    body: openElectivesData,
-    theme: 'grid',
-    styles: { 
-      fontSize: 9,
-      cellPadding: 2 
-    },
-    headStyles: {
-      fillColor: [220, 220, 220],
-      textColor: [0, 0, 0],
-      fontStyle: 'bold'
-    },
-    columnStyles: {
-      0: { cellWidth: 30 },
-      1: { cellWidth: 'auto' }
-    }
+  doc.setFont('helvetica', 'normal');
+  groupedElectives[sectionTypes.OPEN].forEach((course) => {
+    doc.text(`${course.course_code}            ${course.course_title}`, pageMargin, yPosition);
+    yPosition += 10;
   });
 }
 
-// Add Language Electives
+// Language Electives
 if (groupedElectives[sectionTypes.LANGUAGE] && groupedElectives[sectionTypes.LANGUAGE].length > 0) {
-  doc.addPage();
+  // Don't force a new page if there's space
+  if (yPosition > doc.internal.pageSize.height - 60) {
+    doc.addPage();
+    yPosition = 20;
+  }
+
   doc.setFontSize(14);
-  doc.text('Language Electives', doc.internal.pageSize.width / 2, 20, { align: 'center' });
+  doc.text('Language Electives', doc.internal.pageSize.width / 2, yPosition, { align: 'center' });
 
-  const languageElectivesData = groupedElectives[sectionTypes.LANGUAGE].map(course => [
-    course.course_code,
-    course.course_title
-  ]);
+  yPosition += 15;
+  
+  // Add Course Code and Course Title header in bold
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'bold');
+  doc.text('Course Code        Course Title', pageMargin, yPosition);
+  yPosition += 10;
 
-  autoTable(doc, {
-    startY: 30,
-    margin: { left: pageMargin, right: pageMargin },
-    head: [['Course Code', 'Course Title']],
-    body: languageElectivesData,
-    theme: 'grid',
-    styles: { 
-      fontSize: 9,
-      cellPadding: 2 
-    },
-    headStyles: {
-      fillColor: [220, 220, 220],
-      textColor: [0, 0, 0],
-      fontStyle: 'bold'
-    },
-    columnStyles: {
-      0: { cellWidth: 30 },
-      1: { cellWidth: 'auto' }
-    }
+  doc.setFont('helvetica', 'normal');
+  groupedElectives[sectionTypes.LANGUAGE].forEach((course) => {
+    doc.text(`${course.course_code}            ${course.course_title}`, pageMargin, yPosition);
+    yPosition += 10;
   });
 }
 
-// Add Self Directed Learning Courses
+// Self Directed Learning Courses
 if (groupedElectives[sectionTypes.SDL] && groupedElectives[sectionTypes.SDL].length > 0) {
-  doc.addPage();
+  // Don't force a new page if there's space
+  if (yPosition > doc.internal.pageSize.height - 60) {
+    doc.addPage();
+    yPosition = 20;
+  }
+
   doc.setFontSize(14);
-  doc.text('Self Directed Learning Courses', doc.internal.pageSize.width / 2, 20, { align: 'center' });
+  doc.text('Self Directed Learning Courses', doc.internal.pageSize.width / 2, yPosition, { align: 'center' });
 
-  const sdlCoursesData = groupedElectives[sectionTypes.SDL].map(course => [
-    course.course_code,
-    course.course_title
-  ]);
+  yPosition += 15;
+  
+  // Add Course Code and Course Title header in bold
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'bold');
+  doc.text('Course Code        Course Title', pageMargin, yPosition);
+  yPosition += 10;
 
-  autoTable(doc, {
-    startY: 30,
-    margin: { left: pageMargin, right: pageMargin },
-    head: [['Course Code', 'Course Title']],
-    body: sdlCoursesData,
-    theme: 'grid',
-    styles: { 
-      fontSize: 9,
-      cellPadding: 2 
-    },
-    headStyles: {
-      fillColor: [220, 220, 220],
-      textColor: [0, 0, 0],
-      fontStyle: 'bold'
-    },
-    columnStyles: {
-      0: { cellWidth: 30 },
-      1: { cellWidth: 'auto' }
-    }
+  doc.setFont('helvetica', 'normal');
+  groupedElectives[sectionTypes.SDL].forEach((course) => {
+    doc.text(`${course.course_code}            ${course.course_title}`, pageMargin, yPosition);
+    yPosition += 10;
   });
 }
     
