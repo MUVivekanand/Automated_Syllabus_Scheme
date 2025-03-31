@@ -389,6 +389,8 @@ const handleSubmit = useCallback(async () => {
     }
   }, [degree]);
 
+  
+
   // Update this handler for degree change
   const handleDegreeChange = (e) => {
     const selectedDegree = e.target.value;
