@@ -77,6 +77,8 @@ function Course() {
           tutorial: 0,
           practical: 0,
           credits: 0,
+          ca_marks: 0,  
+          fe_marks: 0, 
           type: "",
           faculty: "",
           courseType: category
@@ -109,6 +111,8 @@ function Course() {
             tutorial: course.tutorial,
             practical: course.practical,
             credits: course.credits,
+            ca_marks: course.ca_marks,
+            fe_marks: course.fe_marks,
             type: course.type,
             faculty: course.faculty,
             courseType: cat
@@ -290,8 +294,8 @@ const handleSubmit = useCallback(async () => {
             tutorial: course.tutorial || 0,
             practical: course.practical || 0,
             credits: course.credits || 0,
-            ca_marks: commonInfo.caMarks || 0,
-            fe_marks: commonInfo.feMarks || 0,
+            ca_marks: course.ca_marks || 0,
+            fe_marks: course.fe_marks || 0,
             total_marks: commonInfo.totalMarks || 0,
             type: course.type || '',
             faculty: course.faculty || '',
@@ -562,6 +566,8 @@ const handleSubmit = useCallback(async () => {
               <th>Tutorial</th>
               <th>Practical</th>
               <th>Credits</th>
+              <th>CA_Marks</th>
+              <th>FE_Marks</th>
               <th className="wide-column">Type</th>
               <th className="wide-column">Faculty Assigned</th>
             </tr>
@@ -611,6 +617,8 @@ const handleSubmit = useCallback(async () => {
               <th>Tutorial</th>
               <th>Practical</th>
               <th>Credits</th>
+              <th>CA_Marks</th>
+              <th>FE_Marks</th>
               <th className="wide-column">Type</th>
               <th className="wide-column">Faculty Assigned</th>
             </tr>
@@ -648,110 +656,55 @@ const handleSubmit = useCallback(async () => {
           </tbody>
         </table>
 
-<h4>Mandatory Courses</h4>
-<table className="data-table">
-  <thead>
-    <tr>
-      <th className="sno-column">Serial No</th>
-      <th className="wide-column">Course Code</th>
-      <th className="extra-wide-column">Course Title</th>
-      <th>Lecture</th>
-      <th>Tutorial</th>
-      <th>Practical</th>
-      <th>Credits</th>
-      <th className="wide-column">Type</th>
-      <th className="wide-column">Faculty Assigned</th>
-    </tr>
-  </thead>
-  <tbody>
-    {courses
-      .filter((course) => course.courseType === "mandatory")
-      .map((course, index) => (
-        <tr key={`mandatory-${index}`}>
-          <td>
-            <input
-              type="number"
-              value={course.serial_no || ""}
-              onChange={(e) =>
-                handleCourseChange(courses.findIndex((c) => c === course), "serial_no", e.target.value)
-              }
-            />
-          </td>
-          <td>
-            <input
-              type="text"
-              value={course.courseCode || ""}
-              onChange={(e) =>
-                handleCourseChange(courses.findIndex((c) => c === course), "courseCode", e.target.value)
-              }
-            />
-          </td>
-          <td>
-            <input
-              type="text"
-              value={course.courseTitle || ""}
-              onChange={(e) =>
-                handleCourseChange(courses.findIndex((c) => c === course), "courseTitle", e.target.value)
-              }
-            />
-          </td>
-          <td>
-            <input
-              type="number"
-              value={course.lecture || ""}
-              onChange={(e) =>
-                handleCourseChange(courses.findIndex((c) => c === course), "lecture", e.target.value)
-              }
-            />
-          </td>
-          <td>
-            <input
-              type="number"
-              value={course.tutorial || ""}
-              onChange={(e) =>
-                handleCourseChange(courses.findIndex((c) => c === course), "tutorial", e.target.value)
-              }
-            />
-          </td>
-          <td>
-            <input
-              type="number"
-              value={course.practical || ""}
-              onChange={(e) =>
-                handleCourseChange(courses.findIndex((c) => c === course), "practical", e.target.value)
-              }
-            />
-          </td>
-          <td>
-            <input
-              type="number"
-              value={course.credits || ""}
-              onChange={(e) =>
-                handleCourseChange(courses.findIndex((c) => c === course), "credits", e.target.value)
-              }
-            />
-          </td>
-          <td>
-            <input
-              type="text"
-              value={course.type || ""}
-              onChange={(e) =>
-                handleCourseChange(courses.findIndex((c) => c === course), "type", e.target.value)
-              }
-            />
-          </td>
-          <td>
-            <input
-              type="text"
-              value={course.faculty || ""}
-              onChange={(e) =>
-                handleCourseChange(courses.findIndex((c) => c === course), "faculty", e.target.value)
-              }
-            />
-          </td>
-        </tr>
-      ))}
-  </tbody>
+      {/* Mandatory Courses Section */}
+      <h4>Mandatory Courses</h4>
+      <table className="data-table">
+        <thead>
+          <tr>
+            <th>Serial No</th>
+            <th className="wide-column">Course Code</th>
+            <th className="extra-wide-column">Course Title</th>
+            <th>Lecture</th>
+            <th>Tutorial</th>
+            <th>Practical</th>
+            <th>Credits</th>
+            <th>CA_Marks</th>
+            <th>FE_Marks</th>
+            <th className="wide-column">Type</th>
+            <th className="wide-column">Faculty Assigned</th>
+          </tr>
+        </thead>
+        <tbody>
+          {courses
+            .filter((course) => course.courseType === "mandatory")
+            .map((course, index) => (
+              <tr key={`mandatory-${index}`}>
+                <td>
+                  <input
+                    type="number"
+                    value={course.serial_no || ""}
+                    onChange={(e) => handleCourseChange(courses.findIndex((c) => c === course), "serial_no", e.target.value)}
+                  />
+                </td>
+                
+                {Object.keys(course)
+                  .filter((key) => key !== "courseType" && key !== "serial_no")
+                  .map((field) => (
+                    <td key={field}>
+                      {field === "credits" ? (
+                        <span>{course[field]}</span>
+                      ) : (
+                        <input
+                          type={["lecture", "tutorial", "practical"].includes(field) ? "number" : "text"}
+                          value={course[field]}
+                          onChange={(e) => handleCourseChange(courses.findIndex((c) => c === course), field, e.target.value)}
+                        />
+                      )}
+                    </td>
+                  ))}
+              </tr>
+            ))}
+        </tbody>
   <tbody>
     <tr className="total-row">
       <td colSpan="3" style={{ textAlign: "center", fontWeight: "bold" }}>Total</td>
@@ -860,6 +813,7 @@ const handleSubmit = useCallback(async () => {
                 <th>FE</th>
                 <th>Total</th>
                 <th>Type</th>
+                
               </tr>
             </thead>
             <tbody>
