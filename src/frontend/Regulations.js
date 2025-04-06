@@ -214,11 +214,90 @@ const Regulations = () => {
       if (response.status === 200) {
         setCourses((prevCourses) => prevCourses.filter((course) => course.course_name !== courseName));
         alert(response.data.message);
-      }
-    } catch (error) {
-      console.error("Error deleting course:", error);
-      alert(error.response?.data?.error || "Failed to delete course.");
-    }
+          }
+        } catch (error) {
+          console.error("Error deleting course:", error);
+          alert(error.response?.data?.error || "Failed to delete course.");
+        }
+      };
+
+   const handleConfirmRegulation = async () => {
+        if (!degree || !department) {
+          alert("Degree and department information is required!");
+          return;
+        }
+      
+        if (!regulationYear) {
+          alert("Regulation year is required!");
+          return;
+        }
+      
+        try {
+          setLoading(true);
+          
+          // Process the existing courses
+          const coursesToSubmit = courses.map(course => {
+            return {
+              course_code: regulationYear.length === 2 
+                ? `${regulationYear}${course.course_code.slice(2)}` 
+                : course.course_code,
+              course_name: course.course_name,
+              sem_no: course.sem_no,
+              degree,
+              department,
+              lecture: course.lecture,
+              tutorial: course.tutorial,
+              practical: course.practical,
+              credits: course.credits,
+              type: course.type,
+              faculty: course.faculty,
+              category: course.category,
+              serial_no: course.serial_no
+            };
+          });
+          
+          // Process any new rows
+          Object.keys(newRows).forEach(sem => {
+            if (newRows[sem]?.length > 0) {
+              newRows[sem].forEach(row => {
+                if (row.course_code) {
+                  coursesToSubmit.push({
+                    course_code: row.course_code,
+                    course_name: row.course_name,
+                    sem_no: parseInt(sem),
+                    degree,
+                    department,
+                    lecture: row.lecture || 0,
+                    tutorial: row.tutorial || 0,
+                    practical: row.practical || 0,
+                    credits: row.credits || 0,
+                    type: row.type || "",
+                    faculty: row.faculty || "",
+                    category: row.category || "",
+                    serial_no: row.serial_no || 0
+                  });
+                }
+              });
+            }
+          });
+      
+          const response = await axios.post('http://localhost:4000/api/regulations/confirm-regulation', {
+            courses: coursesToSubmit,
+            degree,
+            department,
+            regulationYear // Pass the regulation year to the backend
+          });
+          
+          console.log("Regulation confirmed successfully:", response.data);
+          alert(`Regulation confirmed successfully! Saved with department: ${response.data.department}`);
+          
+        } catch (error) {
+          console.error("Error confirming regulation:", error);
+          const errorMessage = error.response?.data?.message || error.message;
+          alert(`Failed to confirm regulation: ${errorMessage}`);
+        } finally {
+          setLoading(false);
+        }
   };
 
   return (
@@ -237,35 +316,28 @@ const Regulations = () => {
               <label>Department:</label>
               <input type="text" value={department || ""} readOnly />
             </div>
-            <div>
-              <label>CA Marks:</label>
-              <input 
-                type="number" 
-                value={commonInfo.ca_marks} 
-                onChange={(e) => handleCommonInfoChange("ca_marks", e.target.value)} 
-              />
-            </div>
-            <div>
-              <label>FE Marks:</label>
-              <input 
-                type="number" 
-                value={commonInfo.fe_marks} 
-                onChange={(e) => handleCommonInfoChange("fe_marks", e.target.value)} 
-              />
-            </div>
-            <div>
-              <label>Total Marks:</label>
-              <input 
-                type="number" 
-                value={commonInfo.total_marks} 
-                onChange={(e) => handleCommonInfoChange("total_marks", e.target.value)} 
-              />
-            </div>
           </div>
         </div>
 
-      <label>Enter Regulation Year: </label>
-      <input type="text" value={regulationYear} onChange={handleRegulationChange} />
+      <div className="regulation-controls">
+        <label>Enter Regulation Year: </label>
+        <input type="text" value={regulationYear} onChange={handleRegulationChange} />
+        <button 
+          className="confirm-regulation-btn"
+          onClick={handleConfirmRegulation}
+          style={{ 
+            marginLeft: '10px',
+            padding: '8px 16px',
+            backgroundColor: '#007BFF',
+            color: 'white',
+            border: 'none',
+            borderRadius: '4px',
+            cursor: 'pointer'
+          }}
+        >
+          Confirm Regulation
+        </button>
+      </div>
 
       {loading ? (
         <p>Loading...</p>

@@ -2,18 +2,39 @@ const supabase = require("../../supabaseClient");
 
 const getAllCourses = async (req, res) => {
   try {
-    const { degree, department } = req.query; // Get values from request query params
+    const { degree, department } = req.query;
 
-    let query = supabase.from("credits").select("*").order("serial_no");
-
+    let query = supabase.from("credits").select("*");
     if (degree) query = query.eq("degree", degree);
     if (department) query = query.eq("department", department);
 
-    const { data, error } = await query;
+    const { data: allCourses, error } = await query;
 
     if (error) throw error;
+    
+    if (allCourses.length === 0) {
+      return res.json([]);
+    }
 
-    res.json(data);
+    const regulationYears = allCourses
+      .map(course => course.course_code?.substring(0, 2))
+      .filter(Boolean)
+      .map(year => parseInt(year, 10))
+      .filter(year => !isNaN(year));
+
+    if (regulationYears.length === 0) {
+      return res.json(allCourses);
+    }
+
+    const mostRecentYear = Math.max(...regulationYears);
+    
+    const mostRecentCourses = allCourses.filter(course => 
+      course.course_code?.startsWith(mostRecentYear.toString().padStart(2, '0'))
+    );
+
+    mostRecentCourses.sort((a, b) => (a.serial_no || 0) - (b.serial_no || 0));
+    
+    res.json(mostRecentCourses);
   } catch (error) {
     console.error("Error fetching courses:", error);
     res.status(500).json({ error: "Internal Server Error" });
@@ -139,4 +160,89 @@ const deleteCourse = async (req, res) => {
   }
 };
 
-module.exports = { getAllCourses, updateCourse, deleteMoveCourse, addCourse, deleteCourse };
+const confirmRegulation = async (req, res) => {
+  const { courses, degree, department, regulationYear } = req.body;
+
+  if (!courses || !Array.isArray(courses) || courses.length === 0) {
+    return res.status(400).json({ message: "No courses provided" });
+  }
+
+  if (!degree || !department) {
+    return res.status(400).json({ message: "Degree and department are required" });
+  }
+
+  if (!regulationYear) {
+    return res.status(400).json({ message: "Regulation year is required" });
+  }
+
+  const departmentWithYear = `${department}-${regulationYear}`;
+
+  try {
+    const { data: existingCourses, error: fetchError } = await supabase
+      .from("credits")
+      .select("course_name, ca_marks, fe_marks, total_marks")
+      .eq("degree", degree)
+      .eq("department", department);
+
+    if (fetchError) throw fetchError;
+
+    const courseCommonValuesMap = {};
+    if (existingCourses && existingCourses.length > 0) {
+      existingCourses.forEach(course => {
+        courseCommonValuesMap[course.course_name] = {
+          ca_marks: course.ca_marks,
+          fe_marks: course.fe_marks,
+          total_marks: course.total_marks
+        };
+      });
+    }
+
+    const coursesToInsert = courses.map(course => {
+      const commonValues = courseCommonValuesMap[course.course_name] || {
+        ca_marks: null,
+        fe_marks: null,
+        total_marks: null
+      };
+
+      return {
+        course_code: course.course_code,
+        course_name: course.course_name || "",
+        sem_no: course.sem_no,
+        degree,
+        department: departmentWithYear, // Use the department with year suffix
+        lecture: course.lecture || 0,
+        tutorial: course.tutorial || 0,
+        practical: course.practical || 0,
+        credits: course.credits || 0,
+        type: course.type || "",
+        faculty: course.faculty || "",
+        category: course.category || "",
+        serial_no: course.serial_no || 0,
+        // Use course-specific common values
+        ca_marks: commonValues.ca_marks,
+        fe_marks: commonValues.fe_marks,
+        total_marks: commonValues.total_marks
+      };
+    });
+
+    // Insert the courses
+    const { data, error } = await supabase
+      .from("credits")
+      .insert(coursesToInsert);
+    
+    if (error) {
+      console.error("Supabase insert error:", error);
+      throw error;
+    }
+
+    res.json({ 
+      message: "New regulation confirmed successfully!",
+      department: departmentWithYear
+    });
+  } catch (error) {
+    console.error("Error confirming regulation:", error);
+    res.status(500).json({ message: "Error confirming regulation", error: error.message });
+  }
+};
+
+module.exports = { getAllCourses, updateCourse, deleteMoveCourse, addCourse, deleteCourse, confirmRegulation };
