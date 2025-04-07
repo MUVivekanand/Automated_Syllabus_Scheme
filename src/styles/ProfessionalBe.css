@@ -193,3 +193,26 @@
   .electives-table tr:nth-child(even) {
     background-color: #f9f9f9;
   }
+
+  table td button {
+    margin-right: 5px;
+    padding: 5px 10px;
+    font-size: 14px;
+    min-width: 80px; /* Set a minimum width for buttons */
+    display: inline-block;
+    margin-bottom: 5px; /* Add some spacing between buttons */
+  }
+  
+  /* Adjust the actions column width */
+  table th:last-child, 
+  table td:last-child {
+    width: 180px; /* Set fixed width for the Actions column */
+    text-align: center; /* Center the content */
+  }
+  
+  /* Style for action buttons container */
+  .action-butto {
+    display: flex;
+    justify-content: center;
+    gap: 8px; /* Space between buttons */
+  }

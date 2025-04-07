@@ -76,6 +76,9 @@ const getProfessional = async (req, res) => {
 
 
 
+
+
+
 const getCoursesElectiveAll = async(req,res) => {
   try {
     const { degree, department } = req.query;
@@ -212,6 +215,177 @@ const deleteCoursesElective = async(req,res) => {
   }
 };
 
+// New functions for managing verticals
+const getVerticals = async(req, res) => {
+  try {
+    const { degree, department } = req.query;
+    let query = supabase.from("verticals").select("*");
+    
+    if (degree) {
+      query = query.eq("degree", degree);
+    }
+    
+    if (department) {
+      query = query.eq("department", department);
+    }
+    
+    query = query.order("id");
+    
+    const { data, error } = await query;
+    
+    if (error) {
+      return res.status(400).json({ error: error.message });
+    }
+    
+    // If no verticals found, create default ones
+    if (data.length === 0) {
+      const defaultVerticals = [
+        { id: 1, name: "VERTICAL I: Computational Intelligence", degree, department },
+        { id: 2, name: "VERTICAL II: Networking Technologies", degree, department },
+        { id: 3, name: "VERTICAL III: Security and Privacy", degree, department }
+      ];
+      
+      const { data: insertedData, error: insertError } = await supabase
+        .from("verticals")
+        .insert(defaultVerticals)
+        .select();
+      
+      if (insertError) {
+        return res.status(400).json({ error: insertError.message });
+      }
+      
+      return res.json(insertedData);
+    }
+    
+    res.json(data);
+  } catch (err) {
+    console.error('Error executing query', err);
+    res.status(500).json({ error: 'Database error' });
+  }
+};
+
+const getVertical = async(req, res) => {
+  try {
+    const { id } = req.params;
+    const { data, error } = await supabase
+      .from("verticals")
+      .select("*")
+      .eq("id", id)
+      .single();
+    
+    if (error) {
+      return res.status(404).json({ error: 'Vertical not found' });
+    }
+    
+    res.json(data);
+  } catch (err) {
+    console.error('Error executing query', err);
+    res.status(500).json({ error: 'Database error' });
+  }
+};
+
+const postVertical = async(req, res) => {
+  try {
+    const { id, name, degree, department } = req.body;
+    
+    // Check if id already exists
+    const { data: existingVertical, error: checkError } = await supabase
+      .from("verticals")
+      .select("*")
+      .eq("id", id)
+      .eq("degree", degree)
+      .eq("department", department);
+    
+    if (checkError) {
+      return res.status(400).json({ error: checkError.message });
+    }
+    
+    if (existingVertical.length > 0) {
+      return res.status(400).json({ error: 'Vertical ID already exists for this degree/department' });
+    }
+    
+    const { data, error } = await supabase
+      .from("verticals")
+      .insert([
+        { id, name, degree, department }
+      ])
+      .select();
+    
+    if (error) {
+      return res.status(400).json({ error: error.message });
+    }
+    
+    res.status(201).json(data[0]);
+  } catch (err) {
+    console.error('Error executing query', err);
+    res.status(500).json({ error: 'Database error' });
+  }
+};
+
+const putVertical = async(req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, degree, department } = req.body;
+    
+    const { data, error } = await supabase
+      .from("verticals")
+      .update({ name })
+      .eq("id", id)
+      .eq("degree", degree)
+      .eq("department", department)
+      .select();
+    
+    if (error) {
+      return res.status(400).json({ error: error.message });
+    }
+    
+    if (data.length === 0) {
+      return res.status(404).json({ error: 'Vertical not found' });
+    }
+    
+    res.json(data[0]);
+  } catch (err) {
+    console.error('Error executing query', err);
+    res.status(500).json({ error: 'Database error' });
+  }
+};
+
+const deleteVertical = async(req, res) => {
+  try {
+    const { id } = req.params;
+    
+    // First, delete all courses associated with this vertical
+    const { error: coursesError } = await supabase
+      .from("electivebe")
+      .delete()
+      .eq("vertical", id);
+    
+    if (coursesError) {
+      return res.status(400).json({ error: coursesError.message });
+    }
+    
+    // Then delete the vertical
+    const { data, error } = await supabase
+      .from("verticals")
+      .delete()
+      .eq("id", id)
+      .select();
+    
+    if (error) {
+      return res.status(400).json({ error: error.message });
+    }
+    
+    if (data.length === 0) {
+      return res.status(404).json({ error: 'Vertical not found' });
+    }
+    
+    res.json({ message: 'Vertical and associated courses deleted successfully' });
+  } catch (err) {
+    console.error('Error executing query', err);
+    res.status(500).json({ error: 'Database error' });
+  }
+};
+
 
 
 module.exports = {
@@ -223,5 +397,10 @@ module.exports = {
     getCoursesElective,
     postCoursesElective,
     putCoursesElective,
-    deleteCoursesElective
+    deleteCoursesElective,
+    getVerticals,
+    getVertical,
+    postVertical,
+    putVertical,
+    deleteVertical
 };

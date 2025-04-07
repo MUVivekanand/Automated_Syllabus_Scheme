@@ -15,6 +15,7 @@ function ProfessionalBe() {
     course_title: '',
     type: '',
     vertical: '',
+    vertical_name: '',
     date: new Date().toISOString().substring(0, 10),
     degree: degree,
     department: department
@@ -24,6 +25,9 @@ function ProfessionalBe() {
   const [currentCourse, setCurrentCourse] = useState(initialFormState);
   const [editing, setEditing] = useState(false);
   const [activeSection, setActiveSection] = useState('LANGUAGE');
+  const [verticals, setVerticals] = useState({});
+  const [newVerticalName, setNewVerticalName] = useState('');
+  const [showAddVerticalForm, setShowAddVerticalForm] = useState(false);
 
   // Group types
   const sectionTypes = {
@@ -34,18 +38,18 @@ function ProfessionalBe() {
     SDL: 'SELF DIRECTED LEARNING COURSES'
   };
 
-  // Fetch courses from backend
+  // Fetch courses and verticals from backend
   useEffect(() => {
     fetchCourses();
+    fetchVerticals();
   }, [degree, department]);
 
   const saveCourse = async (e) => {
     e.preventDefault();
     try {
-        const verticalValue = currentCourse.vertical === '' ? 0 : 
-                          currentCourse.vertical ? parseInt(currentCourse.vertical) : 0;
+      const verticalValue = currentCourse.vertical === '' ? 0 : 
+                        currentCourse.vertical ? parseInt(currentCourse.vertical) : 0;
     
-
       const courseData = {
         ...currentCourse,
         vertical: verticalValue,
@@ -84,6 +88,27 @@ function ProfessionalBe() {
       alert(`Error fetching courses: ${error.message}`);
     }
   };
+
+  const fetchVerticals = async () => {
+    try {
+      const response = await axios.get(`http://localhost:4000/api/proelective/verticals?degree=${encodeURIComponent(degree)}&department=${encodeURIComponent(department)}`);
+      const verticalsData = {};
+      response.data.forEach(vertical => {
+        verticalsData[vertical.id] = vertical.name;
+      });
+      setVerticals(verticalsData);
+    } catch (error) {
+      console.error('Error fetching verticals:', error);
+      // Initialize with default verticals if none exist
+      if (Object.keys(verticals).length === 0) {
+        setVerticals({
+          1: "VERTICAL I: Computational Intelligence",
+          2: "VERTICAL II: Networking Technologies",
+          3: "VERTICAL III: Security and Privacy"
+        });
+      }
+    }
+  };
   
   const deleteCourse = async (course_code) => {
     if (window.confirm('Are you sure you want to delete this course?')) {
@@ -96,6 +121,70 @@ function ProfessionalBe() {
       } catch (error) {
         console.error('Error deleting course:', error);
         alert(`Error: ${error.response?.data?.message || 'Failed to delete course'}`);
+      }
+    }
+  };
+
+  const saveVertical = async (e) => {
+    e.preventDefault();
+    if (!newVerticalName.trim()) {
+      alert('Please enter a vertical name');
+      return;
+    }
+
+    try {
+      const nextVerticalId = Object.keys(verticals).length > 0 ? 
+                              Math.max(...Object.keys(verticals).map(Number)) + 1 : 1;
+      
+      const verticalData = {
+        id: nextVerticalId,
+        name: newVerticalName,
+        degree: degree,
+        department: department
+      };
+
+      const response = await axios.post('http://localhost:4000/api/proelective/verticals', verticalData);
+      if (response.status === 201) {
+        alert('Vertical added successfully');
+        setNewVerticalName('');
+        setShowAddVerticalForm(false);
+        fetchVerticals();
+      }
+    } catch (error) {
+      console.error('Error saving vertical:', error);
+      alert(`Error: ${error.response?.data?.message || 'Failed to save vertical'}`);
+    }
+  };
+
+  const updateVerticalName = async (id, newName) => {
+    try {
+      const response = await axios.put(`http://localhost:4000/api/proelective/verticals/${id}`, {
+        name: newName,
+        degree: degree,
+        department: department
+      });
+      
+      if (response.status === 200) {
+        fetchVerticals();
+      }
+    } catch (error) {
+      console.error('Error updating vertical name:', error);
+      alert(`Error: ${error.response?.data?.message || 'Failed to update vertical name'}`);
+    }
+  };
+
+  const deleteVertical = async (id) => {
+    if (window.confirm('Are you sure you want to delete this vertical? All associated courses will be deleted.')) {
+      try {
+        const response = await axios.delete(`http://localhost:4000/api/proelective/verticals/${id}`);
+        if (response.status === 200) {
+          alert('Vertical deleted successfully');
+          fetchVerticals();
+          fetchCourses();
+        }
+      } catch (error) {
+        console.error('Error deleting vertical:', error);
+        alert(`Error: ${error.response?.data?.message || 'Failed to delete vertical'}`);
       }
     }
   };
@@ -169,14 +258,12 @@ function ProfessionalBe() {
     honoursCoursesByVertical[vertical].sort((a, b) => a.serial_number - b.serial_number);
   });
 
-  // Get vertical name based on number
-  const getVerticalName = (vertical) => {
-    const verticalNames = {
-      1: "VERTICAL I: Computational Intelligence",
-      2: "VERTICAL II: Networking Technologies",
-      3: "VERTICAL III: Security and Privacy"
-    };
-    return verticalNames[vertical] || "";
+  // Handle vertical name edit
+  const handleVerticalNameEdit = (id, currentName) => {
+    const newName = prompt("Enter new name for vertical:", currentName);
+    if (newName && newName.trim() !== "" && newName !== currentName) {
+      updateVerticalName(id, newName);
+    }
   };
 
   return (
@@ -219,6 +306,44 @@ function ProfessionalBe() {
           Self Directed Learning
         </button>
       </div>
+
+      {activeSection === 'BE_HONOURS' && (
+        <div className="verticals-management">
+          <h3>Verticals Management</h3>
+          <div className="verticals-list">
+            {Object.entries(verticals).map(([id, name]) => (
+              <div key={id} className="vertical-item">
+                <span>{name}</span>
+                <div className="vertical-actions">
+                  <button onClick={() => handleVerticalNameEdit(id, name)}>Edit</button>
+                  <button onClick={() => deleteVertical(id)}>Delete</button>
+                </div>
+              </div>
+            ))}
+          </div>
+          
+          {showAddVerticalForm ? (
+            <form onSubmit={saveVertical} className="add-vertical-form">
+              <input
+                type="text"
+                value={newVerticalName}
+                onChange={(e) => setNewVerticalName(e.target.value)}
+                placeholder="Enter vertical name"
+                required
+              />
+              <button type="submit">Save</button>
+              <button type="button" onClick={() => setShowAddVerticalForm(false)}>Cancel</button>
+            </form>
+          ) : (
+            <button 
+              className="add-vertical-button" 
+              onClick={() => setShowAddVerticalForm(true)}
+            >
+              Add New Vertical
+            </button>
+          )}
+        </div>
+      )}
 
       <div className="form-section">
         <h2>{sectionTypes[activeSection]}</h2>
@@ -265,9 +390,9 @@ function ProfessionalBe() {
                   required
                 >
                   <option value="">Select Vertical</option>
-                  <option value="1">VERTICAL I: Computational Intelligence</option>
-                  <option value="2">VERTICAL II: Networking Technologies</option>
-                  <option value="3">VERTICAL III: Security and Privacy</option>
+                  {Object.entries(verticals).map(([id, name]) => (
+                    <option key={id} value={id}>{name}</option>
+                  ))}
                 </select>
               </div>
             )}
@@ -318,8 +443,10 @@ function ProfessionalBe() {
                     <td>{course.course_code}</td>
                     <td>{course.course_title}</td>
                     <td>
-                      <button onClick={() => editCourse(course)}>Edit</button>
-                      <button onClick={() => deleteCourse(course.course_code)}>Delete</button>
+                      <div className="action-butto">
+                        <button onClick={() => editCourse(course)}>Edit</button>
+                        <button onClick={() => deleteCourse(course.course_code)}>Delete</button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -346,8 +473,10 @@ function ProfessionalBe() {
                     <td>{course.course_code}</td>
                     <td>{course.course_title}</td>
                     <td>
-                      <button onClick={() => editCourse(course)}>Edit</button>
-                      <button onClick={() => deleteCourse(course.course_code)}>Delete</button>
+                      <div className="action-butto">
+                        <button onClick={() => editCourse(course)}>Edit</button>
+                        <button onClick={() => deleteCourse(course.course_code)}>Delete</button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -362,7 +491,7 @@ function ProfessionalBe() {
             <h3>Professional Electives for BE Honours / BE Honours with specialization in same discipline and BE Minor degree programmes</h3>
             {Object.keys(honoursCoursesByVertical).sort().map(vertical => (
               <div key={vertical}>
-                <h4>{getVerticalName(vertical)}</h4>
+                <h4>{verticals[vertical] || `Vertical ${vertical}`}</h4>
                 <table>
                   <thead>
                     <tr>
@@ -377,8 +506,10 @@ function ProfessionalBe() {
                         <td>{course.course_code}</td>
                         <td>{course.course_title}</td>
                         <td>
-                          <button onClick={() => editCourse(course)}>Edit</button>
-                          <button onClick={() => deleteCourse(course.course_code)}>Delete</button>
+                          <div className="action-butto">
+                            <button onClick={() => editCourse(course)}>Edit</button>
+                            <button onClick={() => deleteCourse(course.course_code)}>Delete</button>
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -407,8 +538,10 @@ function ProfessionalBe() {
                     <td>{course.course_code}</td>
                     <td>{course.course_title}</td>
                     <td>
-                      <button onClick={() => editCourse(course)}>Edit</button>
-                      <button onClick={() => deleteCourse(course.course_code)}>Delete</button>
+                      <div className="action-butto">
+                        <button onClick={() => editCourse(course)}>Edit</button>
+                        <button onClick={() => deleteCourse(course.course_code)}>Delete</button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -435,8 +568,10 @@ function ProfessionalBe() {
                     <td>{course.course_code}</td>
                     <td>{course.course_title}</td>
                     <td>
-                      <button onClick={() => editCourse(course)}>Edit</button>
-                      <button onClick={() => deleteCourse(course.course_code)}>Delete</button>
+                      <div className="action-butto">
+                        <button onClick={() => editCourse(course)}>Edit</button>
+                        <button onClick={() => deleteCourse(course.course_code)}>Delete</button>
+                      </div>
                     </td>
                   </tr>
                 ))}

@@ -10,7 +10,12 @@ const {
     getCoursesElective,
     postCoursesElective,
     putCoursesElective,
-    deleteCoursesElective
+    deleteCoursesElective,
+    getVerticals,
+    getVertical,
+    postVertical,
+    putVertical,
+    deleteVertical
 } = require("./proelect.controller");
 
 const router = express.Router();
@@ -25,6 +30,12 @@ router.get("/courses/:code", getCoursesElective);
 router.post("/courses", postCoursesElective);
 router.put("/courses/:code", putCoursesElective);
 router.delete("/courses/:code", deleteCoursesElective);
+
+router.get('/verticals', getVerticals);
+router.get('/verticals/:id', getVertical);
+router.post('/verticals', postVertical);
+router.put('/verticals/:id', putVertical);
+router.delete('/verticals/:id', deleteVertical);
 
 
 
