@@ -27,13 +27,29 @@ function Faculty() {
     table: false
   });
 
-  const [tableData, setTableData] = useState([
+  const baseData = [
     { co: "CO1", pos: Array(12).fill(""), pso: ["", ""] },
     { co: "CO2", pos: Array(12).fill(""), pso: ["", ""] },
     { co: "CO3", pos: Array(12).fill(""), pso: ["", ""] },
     { co: "CO4", pos: Array(12).fill(""), pso: ["", ""] },
-    { co: "CO5", pos: Array(12).fill(""), pso: ["", ""] },
-  ]);
+  ];
+  
+  const [tableData, setTableData] = useState(baseData);
+  
+  useEffect(() => {
+    const selectedDegree = courses.find(
+      (course) => course.course_code === selectedCourse.split(" - ")[0]
+    )?.degree;
+  
+    if (selectedDegree === "B.E") {
+      setTableData([
+        ...baseData,
+        { co: "CO5", pos: Array(12).fill(""), pso: ["", ""] },
+      ]);
+    } else {
+      setTableData(baseData);
+    }
+  }, [selectedCourse, courses]);
 
   // Function to toggle individual sections
   const toggleExpand = (section) => {
@@ -113,7 +129,7 @@ function Faculty() {
       hours: Array(maxCO).fill({ hour1: "", hour2: "" }),
       textbooks: [],
       references: [],
-      outcomes: Array(5).fill(""),
+      outcomes: Array(maxCO).fill(""),
     });
   };
 
@@ -573,7 +589,7 @@ function Faculty() {
               <thead>
                 <tr>
                   <th>COs/POs</th>
-                  {[...Array(12).keys()].map(i => <th key={i}>{`PO${String.fromCharCode(97 + i)}`}</th>)}
+                  {[...Array(12).keys()].map(i => <th key={i}>{`PO${i+1}`}</th>)}
                   <th>PSO1</th>
                   <th>PSO2</th>
                 </tr>
