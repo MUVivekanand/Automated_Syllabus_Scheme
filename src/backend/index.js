@@ -19,7 +19,7 @@ app.use("/api/course", courseRoutes);
 app.use("/api/summary", summaryRoutes);
 app.use("/api/seminfo", seminfoRoutes);
 app.use("/api/faculty", facultyRoutes);
-app.use("/api/proelective",professionalRoutes);
+app.use("/api/proelective", professionalRoutes);
 
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => {
