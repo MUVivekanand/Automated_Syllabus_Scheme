@@ -366,233 +366,237 @@ const sectionTypes = {
     try {
       setExportLoading(true);
       
-      // Import libraries dynamically to reduce initial load time
-      const { jsPDF } = await import("jspdf");
-      const { default: autoTable } = await import("jspdf-autotable");
-      
-      const doc = new jsPDF({
-        orientation: 'portrait',
-        unit: 'mm',
-        format: 'a4'
-      });
-      
-      // Define consistent margins
-      const pageMargin = 10;
-      const effectiveWidth = doc.internal.pageSize.width - (pageMargin * 2);
-      
-      // Set default font
-      doc.setFont('helvetica');
-      
-      // FIRST RENDER ALL 8 SEMESTER TABLES (4 PAGES WITH 2 TABLES EACH)
-      
-      // Title and header for first page
-      doc.setFontSize(10);
-      
-      doc.setFontSize(11);
-      doc.text('Courses of Study and Scheme of Assessment', 20, 20);
-      doc.text('BE COMPUTER SCIENCE AND ENGINEERING', 20, 25);
-      
-      // Add 2023 REGULATIONS text and credits info
-      doc.setFontSize(9);
-      doc.text('[2023 REGULATIONS]', doc.internal.pageSize.width - 20, 20, { align: 'right' });
-      
-      // Function to create semester table
-      const createSemesterTable = (semNo, startY, courses) => {
-        // Filter courses by category
-        const theoryCourses = courses.filter(course => course.category?.toLowerCase() === "theory");
-        const practicalCourses = courses.filter(course => course.category?.toLowerCase() === "practical");
-        const mandatoryCourses = courses.filter(course => course.category?.toLowerCase() === "mandatory");
-        
-        // Calculate totals
-        const totals = calculateSemesterTotals(courses);
-        
-        // Prepare table data
-        const tableBody = [];
-        
-        // Add SEMESTER header
-        tableBody.push([{ content: `SEMESTER ${semNo}`, colSpan: 11, styles: { halign: 'left', fontStyle: 'bold' } }]);
-        
-        // Add THEORY header and courses
-        tableBody.push([{ content: 'THEORY', colSpan: 11, styles: { halign: 'left', fontStyle: 'bold' } }]);
-        theoryCourses.forEach((course, idx) => {
-          tableBody.push([
-            idx + 1,
-            course.course_code,
-            course.course_name,
-            course.lecture,
-            course.tutorial,
-            course.practical,
-            course.credits,
-            course.ca_marks,
-            course.fe_marks,
-            course.total_marks,
-            course.type
-          ]);
-        });
-        
-        // Add PRACTICALS header and courses
-        tableBody.push([{ content: 'PRACTICALS', colSpan: 11, styles: { halign: 'left', fontStyle: 'bold' } }]);
-        practicalCourses.forEach((course, idx) => {
-          tableBody.push([
-            theoryCourses.length + idx + 1,
-            course.course_code,
-            course.course_name,
-            course.lecture,
-            course.tutorial,
-            course.practical,
-            course.credits,
-            course.ca_marks,
-            course.fe_marks,
-            course.total_marks,
-            course.type
-          ]);
-        });
-        
-        // Add MANDATORY COURSES header and courses if any exist
-        if (mandatoryCourses.length > 0) {
-          tableBody.push([{ content: 'MANDATORY COURSES', colSpan: 11, styles: { halign: 'left', fontStyle: 'bold' } }]);
-          mandatoryCourses.forEach((course, idx) => {
-            tableBody.push([
-              theoryCourses.length + practicalCourses.length + idx + 1,
-              course.course_code,
-              course.course_name,
-              course.lecture || "-",
-              course.tutorial || "-",
-              course.practical || "-",
-              course.credits || "Grade",
-              course.ca_marks || "-",
-              course.fe_marks || "-",
-              course.total_marks || "",
-              course.type
-            ]);
-          });
-        }
-        
-        // Add semester total row
-        const totalHours = semNo === 1 ? "26" : "29"; // Based on image example
-        tableBody.push([{
-          content: `Total ${totalHours} hrs`, 
-          colSpan: 2,
-          styles: { fontStyle: 'bold' }
-        },'', 
-          totals.totalLecture, 
-          totals.totalTutorial, 
-          totals.totalPractical, 
-          totals.totalCredits, 
-          totals.totalCAMarks, 
-          totals.totalFEMarks, 
-          totals.totalMarks, 
-          '']);
-        
-        // Create the table
-        autoTable(doc, {
-          startY: startY,
-          head: [[
-            { content: 'S.No', styles: { halign: 'center' } },
-            { content: 'Course Code', styles: { halign: 'center' } },
-            { content: 'Course Title', styles: { halign: 'center' } },
-            { content: 'Hours / Week', colSpan: 3, styles: { halign: 'center' } },
-            { content: 'Credits', styles: { halign: 'center' } },
-            { content: 'Maximum Marks', colSpan: 3, styles: { halign: 'center' } },
-            { content: 'CAT', styles: { halign: 'center' } }
-          ], [
-            '', '', '', 
-            'Lecture', 'Tutorial', 'Practical', 
-            '', 
-            'CA', 'FE', 'Total',
-            ''
-          ]],
-          body: tableBody,
-          theme: 'grid',
-          styles: { 
-            fontSize: 8,
-            cellPadding: 1,
-            lineColor: [0, 0, 0],
-            lineWidth: 0.1
-          },
-          columnStyles: {
-            0: { cellWidth: 10 },      // S.No
-            1: { cellWidth: 16 },     // Course Code
-            2: { cellWidth: 40 },     // Course Title
-            3: { cellWidth: 12 },     // Lecture
-            4: { cellWidth: 12 },     // Tutorial
-            5: { cellWidth: 14 },     // Practical
-            6: { cellWidth: 12 },     // Credits
-            7: { cellWidth: 9 },      // CA
-            8: { cellWidth: 9 },      // FE
-            9: { cellWidth: 10 },     // Total
-            10: { cellWidth: 10 }     // CAT
-          },
-          headStyles: {
-            fillColor: [255, 255, 255],
-            textColor: [0, 0, 0],
-            fontStyle: 'bold',
-            lineWidth: 0.1
-          },
-          margin: { left: pageMargin, right: pageMargin }
-        });
-        
-        return doc.lastAutoTable.finalY + 10;
-      };
-      
-      // Create semester tables for semester I and II on first page
-      let finalY = createSemesterTable(1, 35, semestersData[0].courses);
-      finalY = createSemesterTable(2, finalY, semestersData[1].courses);
-      
-      // Add the category legend
-      doc.setFontSize(8);
-      const legendText = "CAT - Category; BS - Basic Science; HS - Humanities and Social Sciences; ES - Engineering Sciences; PC - Professional Core; PE - Professional Elective; OE - Open Elective; EEC - Employability Enhancement Course; MC - Mandatory Course";
-      
-      const legendLines = doc.splitTextToSize(legendText, doc.internal.pageSize.width - (pageMargin * 2));
-      doc.text(legendLines, pageMargin, finalY);
-      
-      // Add page number
-      doc.setFontSize(9);
-      doc.text('103', doc.internal.pageSize.width / 2, doc.internal.pageSize.height - 10, { align: 'center' });
-      
-      // Add content for remaining semesters (starting from semester 3)
-      // Display two tables per page for remaining semesters
-      for (let i = 2; i < semestersData.length; i += 2) {
-        doc.addPage();
-        let currentY = 20;
-        
-        // Add first semester table on this page
-        currentY = createSemesterTable(i + 1, currentY, semestersData[i].courses);
-        
-        // Check if there's another semester to add
-        if (i + 1 < semestersData.length) {
-          // Add second semester table on the same page
-          currentY = createSemesterTable(i + 2, currentY, semestersData[i + 1].courses);
-        }
-        
-        // Add legend text at the bottom if space allows
-        if (currentY < doc.internal.pageSize.height - 20) {
-          doc.setFontSize(8);
-          const legendLines = doc.splitTextToSize(legendText, doc.internal.pageSize.width - (pageMargin * 2));
-          doc.text(legendLines, pageMargin, currentY);
-        }
-        
-        // Add page number
-        const pageNum = 103 + Math.floor((i - 1) / 2);
-        doc.setFontSize(9);
-        doc.text(pageNum.toString(), doc.internal.pageSize.width / 2, doc.internal.pageSize.height - 10, { align: 'center' });
-      }
+// Import libraries dynamically to reduce initial load time
+const { jsPDF } = await import("jspdf");
+const { default: autoTable } = await import("jspdf-autotable");
+
+const doc = new jsPDF({
+  orientation: 'portrait',
+  unit: 'mm',
+  format: 'a4'
+});
+
+// Define consistent margins
+const pageMargin = 10;
+const effectiveWidth = doc.internal.pageSize.width - (pageMargin * 2);
+
+// Set default font
+doc.setFont('helvetica');
+
+// FIRST RENDER ALL 8 SEMESTER TABLES (4 PAGES WITH 2 TABLES EACH)
+
+// Title and header for first page - centered
+doc.setFontSize(11);
+doc.text('Courses of Study and Scheme of Assessment', doc.internal.pageSize.width / 2, 20, { align: 'center' });
+doc.text('BE COMPUTER SCIENCE AND ENGINEERING', doc.internal.pageSize.width / 2, 25, { align: 'center' });
+
+// Add 2023 REGULATIONS text and credits info
+doc.setFontSize(9);
+doc.text('[2023 REGULATIONS]', doc.internal.pageSize.width - 20, 20, { align: 'right' });
+
+// Function to create semester table
+const createSemesterTable = (semNo, startY, courses) => {
+  // Filter courses by category
+  const theoryCourses = courses.filter(course => course.category?.toLowerCase() === "theory");
+  const practicalCourses = courses.filter(course => course.category?.toLowerCase() === "practical");
+  const mandatoryCourses = courses.filter(course => course.category?.toLowerCase() === "mandatory");
+  
+  // Calculate totals
+  const totals = calculateSemesterTotals(courses);
+  
+  // Prepare table data
+  const tableBody = [];
+  
+  // Add SEMESTER header
+  tableBody.push([{ content: `SEMESTER ${semNo}`, colSpan: 11, styles: { halign: 'left', fontStyle: 'bold' } }]);
+  
+  // Add THEORY header and courses
+  tableBody.push([{ content: 'THEORY', colSpan: 11, styles: { halign: 'left', fontStyle: 'bold' } }]);
+  theoryCourses.forEach((course, idx) => {
+    tableBody.push([
+      idx + 1,
+      course.course_code,
+      course.course_name,
+      course.lecture,
+      course.tutorial,
+      course.practical,
+      course.credits,
+      course.ca_marks,
+      course.fe_marks,
+      course.total_marks,
+      course.type
+    ]);
+  });
+  
+  // Add PRACTICALS header and courses
+  tableBody.push([{ content: 'PRACTICALS', colSpan: 11, styles: { halign: 'left', fontStyle: 'bold' } }]);
+  practicalCourses.forEach((course, idx) => {
+    tableBody.push([
+      theoryCourses.length + idx + 1,
+      course.course_code,
+      course.course_name,
+      course.lecture,
+      course.tutorial,
+      course.practical,
+      course.credits,
+      course.ca_marks,
+      course.fe_marks,
+      course.total_marks,
+      course.type
+    ]);
+  });
+  
+  // Add MANDATORY COURSES header and courses if any exist
+  if (mandatoryCourses.length > 0) {
+    tableBody.push([{ content: 'MANDATORY COURSES', colSpan: 11, styles: { halign: 'left', fontStyle: 'bold' } }]);
+    mandatoryCourses.forEach((course, idx) => {
+      tableBody.push([
+        theoryCourses.length + practicalCourses.length + idx + 1,
+        course.course_code,
+        course.course_name,
+        course.lecture || "-",
+        course.tutorial || "-",
+        course.practical || "-",
+        course.credits || "Grade",
+        course.ca_marks || "-",
+        course.fe_marks || "-",
+        course.total_marks || "",
+        course.type
+      ]);
+    });
+  }
+  
+  // Add semester total row
+  const totalHours = semNo === 1 ? "26" : "29"; // Based on image example
+  tableBody.push([{
+    content: `Total ${totalHours} hrs`, 
+    colSpan: 2,
+    styles: { fontStyle: 'bold' }
+  },'', 
+    totals.totalLecture, 
+    totals.totalTutorial, 
+    totals.totalPractical, 
+    totals.totalCredits, 
+    totals.totalCAMarks, 
+    totals.totalFEMarks, 
+    totals.totalMarks, 
+    '']);
+  
+  // Calculate table width and centered position
+  const tableWidth = 154; // Approximate total width of all columns
+  const leftMargin = (doc.internal.pageSize.width - tableWidth) / 2;
+  
+  // Create the table with centered position
+  autoTable(doc, {
+    startY: startY,
+    head: [[
+      { content: 'S.No', styles: { halign: 'center' } },
+      { content: 'Course Code', styles: { halign: 'center' } },
+      { content: 'Course Title', styles: { halign: 'center' } },
+      { content: 'Hours / Week', colSpan: 3, styles: { halign: 'center' } },
+      { content: 'Credits', styles: { halign: 'center' } },
+      { content: 'Maximum Marks', colSpan: 3, styles: { halign: 'center' } },
+      { content: 'CAT', styles: { halign: 'center' } }
+    ], [
+      '', '', '', 
+      'Lecture', 'Tutorial', 'Practical', 
+      '', 
+      'CA', 'FE', 'Total',
+      ''
+    ]],
+    body: tableBody,
+    theme: 'grid',
+    styles: { 
+      fontSize: 8,
+      cellPadding: 1,
+      lineColor: [0, 0, 0],
+      lineWidth: 0.1
+    },
+    columnStyles: {
+      0: { cellWidth: 10 },      // S.No
+      1: { cellWidth: 16 },     // Course Code
+      2: { cellWidth: 40 },     // Course Title
+      3: { cellWidth: 12 },     // Lecture
+      4: { cellWidth: 12 },     // Tutorial
+      5: { cellWidth: 14 },     // Practical
+      6: { cellWidth: 12 },     // Credits
+      7: { cellWidth: 9 },      // CA
+      8: { cellWidth: 9 },      // FE
+      9: { cellWidth: 10 },     // Total
+      10: { cellWidth: 10 }     // CAT
+    },
+    headStyles: {
+      fillColor: [255, 255, 255],
+      textColor: [0, 0, 0],
+      fontStyle: 'bold',
+      lineWidth: 0.1
+    },
+    margin: { left: leftMargin, right: leftMargin }
+  });
+  
+  return doc.lastAutoTable.finalY + 10;
+};
+
+// Create semester tables for semester I and II on first page
+let finalY = createSemesterTable(1, 35, semestersData[0].courses);
+finalY = createSemesterTable(2, finalY, semestersData[1].courses);
+
+// Add the category legend - also centered
+doc.setFontSize(8);
+const legendText = "CAT - Category; BS - Basic Science; HS - Humanities and Social Sciences; ES - Engineering Sciences; PC - Professional Core; PE - Professional Elective; OE - Open Elective; EEC - Employability Enhancement Course; MC - Mandatory Course";
+
+const legendLines = doc.splitTextToSize(legendText, doc.internal.pageSize.width - (pageMargin * 2));
+doc.text(legendLines, doc.internal.pageSize.width / 2, finalY, { align: 'center' });
+
+// Add page number
+doc.setFontSize(9);
+doc.text('103', doc.internal.pageSize.width / 2, doc.internal.pageSize.height - 10, { align: 'center' });
+
+// Add content for remaining semesters (starting from semester 3)
+// Display two tables per page for remaining semesters
+for (let i = 2; i < semestersData.length; i += 2) {
+  doc.addPage();
+  let currentY = 20;
+  
+  // Add first semester table on this page
+  currentY = createSemesterTable(i + 1, currentY, semestersData[i].courses);
+  
+  // Check if there's another semester to add
+  if (i + 1 < semestersData.length) {
+    // Add second semester table on the same page
+    currentY = createSemesterTable(i + 2, currentY, semestersData[i + 1].courses);
+  }
+  
+  // Add legend text at the bottom if space allows
+  if (currentY < doc.internal.pageSize.height - 20) {
+    doc.setFontSize(8);
+    const legendLines = doc.splitTextToSize(legendText, doc.internal.pageSize.width - (pageMargin * 2));
+    doc.text(legendLines, doc.internal.pageSize.width / 2, currentY, { align: 'center' });
+  }
+  
+  // Add page number
+  const pageNum = 103 + Math.floor((i - 1) / 2);
+  doc.setFontSize(9);
+  doc.text(pageNum.toString(), doc.internal.pageSize.width / 2, doc.internal.pageSize.height - 10, { align: 'center' });
+}
   
   // Professional Electives for BE Degree Programme
   doc.addPage();
-  doc.setFontSize(14);
+  doc.setFont('arial');
+  doc.setFontSize(12);
   doc.text('Professional Electives for BE Degree Programme', doc.internal.pageSize.width / 2, 20, { align: 'center' });
   
   // Add Course Code and Course Title header in bold
   doc.setFontSize(10);
-  doc.setFont('helvetica', 'bold');
+  doc.setFont('arial', 'bold');
   doc.text('Course Code        Course Title', pageMargin, 35);
   
-  doc.setFont('helvetica', 'normal');
-  let yPosition = 45;
+  doc.setFont('arial', 'normal');
+  let yPosition = 42; // Reduced from 45 to decrease spacing
+  
   groupedElectives[sectionTypes.BE].forEach((course) => {
     doc.text(`${course.course_code}            ${course.course_title}`, pageMargin, yPosition);
-    yPosition += 10;
+    yPosition += 7; // Reduced from 10 to decrease line spacing
   });
   
   // Professional Electives for BE Honours
@@ -603,11 +607,11 @@ const sectionTypes = {
       yPosition = 20;
     }
   
-    doc.setFontSize(14);
+    doc.setFontSize(12);
     doc.text('Professional Electives for BE Honours / BE Honours with specialization', doc.internal.pageSize.width / 2, yPosition, { align: 'center' });
-    doc.text('in same discipline and BE Minor degree programmes', doc.internal.pageSize.width / 2, yPosition + 10, { align: 'center' });
+    doc.text('in same discipline and BE Minor degree programmes', doc.internal.pageSize.width / 2, yPosition + 8, { align: 'center' }); // Reduced from 10
   
-    yPosition += 25;
+    yPosition += 20; // Reduced from 25
     
     // Iterate through ALL verticals using Object.entries to ensure full access
     for (const [vertical, courses] of Object.entries(honoursCoursesByVertical)) {
@@ -618,31 +622,31 @@ const sectionTypes = {
           yPosition = 20;
         }
         
-        doc.setFontSize(12);
-        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(11);
+        doc.setFont('arial', 'bold');
         doc.text(getVerticalName(vertical), pageMargin, yPosition);
-        yPosition += 10;
+        yPosition += 7; // Reduced from 10
         
         // Add Course Code and Course Title header in bold
         doc.setFontSize(10);
-        doc.setFont('helvetica', 'bold');
+        doc.setFont('arial', 'bold');
         doc.text('Course Code        Course Title', pageMargin, yPosition);
-        yPosition += 10;
+        yPosition += 7; // Reduced from 10
         
-        doc.setFont('helvetica', 'normal');
+        doc.setFont('arial', 'normal');
         courses.forEach((course) => {
           doc.text(`${course.course_code}            ${course.course_title}`, pageMargin, yPosition);
-          yPosition += 10;
+          yPosition += 7; // Reduced from 10
         });
         
-        yPosition += 5;
+        yPosition += 4; // Reduced from 5
       }
     }
   
     // If the page is not filled, add some padding
     while (yPosition < doc.internal.pageSize.height - 30) {
       doc.text('', pageMargin, yPosition);
-      yPosition += 10;
+      yPosition += 7; // Reduced from 10
     }
   }
   
@@ -654,21 +658,21 @@ const sectionTypes = {
       yPosition = 20;
     }
   
-    doc.setFontSize(14);
+    doc.setFontSize(12);
     doc.text('Open Electives', doc.internal.pageSize.width / 2, yPosition, { align: 'center' });
   
-    yPosition += 15;
+    yPosition += 12; // Reduced from 15
     
     // Add Course Code and Course Title header in bold
     doc.setFontSize(10);
-    doc.setFont('helvetica', 'bold');
+    doc.setFont('arial', 'bold');
     doc.text('Course Code        Course Title', pageMargin, yPosition);
-    yPosition += 10;
+    yPosition += 7; // Reduced from 10
   
-    doc.setFont('helvetica', 'normal');
+    doc.setFont('arial', 'normal');
     groupedElectives[sectionTypes.OPEN].forEach((course) => {
       doc.text(`${course.course_code}            ${course.course_title}`, pageMargin, yPosition);
-      yPosition += 10;
+      yPosition += 7; // Reduced from 10
     });
   }
   
@@ -680,21 +684,21 @@ const sectionTypes = {
       yPosition = 20;
     }
   
-    doc.setFontSize(14);
+    doc.setFontSize(12);
     doc.text('Language Electives', doc.internal.pageSize.width / 2, yPosition, { align: 'center' });
   
-    yPosition += 15;
+    yPosition += 12; // Reduced from 15
     
     // Add Course Code and Course Title header in bold
     doc.setFontSize(10);
-    doc.setFont('helvetica', 'bold');
+    doc.setFont('arial', 'bold');
     doc.text('Course Code        Course Title', pageMargin, yPosition);
-    yPosition += 10;
+    yPosition += 7; // Reduced from 10
   
-    doc.setFont('helvetica', 'normal');
+    doc.setFont('arial', 'normal');
     groupedElectives[sectionTypes.LANGUAGE].forEach((course) => {
       doc.text(`${course.course_code}            ${course.course_title}`, pageMargin, yPosition);
-      yPosition += 10;
+      yPosition += 7; // Reduced from 10
     });
   }
   
@@ -706,21 +710,21 @@ const sectionTypes = {
       yPosition = 20;
     }
   
-    doc.setFontSize(14);
+    doc.setFontSize(12);
     doc.text('Self Directed Learning Courses', doc.internal.pageSize.width / 2, yPosition, { align: 'center' });
   
-    yPosition += 15;
+    yPosition += 12; // Reduced from 15
     
     // Add Course Code and Course Title header in bold
     doc.setFontSize(10);
-    doc.setFont('helvetica', 'bold');
+    doc.setFont('arial', 'bold');
     doc.text('Course Code        Course Title', pageMargin, yPosition);
-    yPosition += 10;
+    yPosition += 7; // Reduced from 10
   
-    doc.setFont('helvetica', 'normal');
+    doc.setFont('arial', 'normal');
     groupedElectives[sectionTypes.SDL].forEach((course) => {
       doc.text(`${course.course_code}            ${course.course_title}`, pageMargin, yPosition);
-      yPosition += 10;
+      yPosition += 7; // Reduced from 10
     });
   }
       
