@@ -11,9 +11,10 @@ import CourseDetailsPage from "./frontend/CourseDetailsPage.js";
 import Regulations from "./frontend/Regulations.js";
 import CourseWord from "./frontend/CourseWord.js";
 import ProfessionalMe from "./frontend/ProfessionalMe.js";
-import CourseMe from './frontend/CourseMe.js';
+import CourseMe from "./frontend/CourseMe.js";
 import CourseMePDF from "./frontend/CourseMePDF.js";
 import ProfessionalBe from "./frontend/ProfessionalBe.js";
+import CoPo from "./frontend/CoPo.js";
 
 function App() {
   return (
@@ -29,11 +30,12 @@ function App() {
         <Route path="/course-details" element={<CourseDetailsPage />} />
         <Route path="/Summary" element={<Summary />} />
         <Route path="/Regulations" element={<Regulations />} />
-        <Route path = "/wordPage" element = {<CourseWord />}/>
-        <Route path = "/ProfessionalMe" element = {<ProfessionalMe/>}/>
-        <Route path = "/ProfessionalBe" element = {<ProfessionalBe/>}/>
-        <Route path="/courseME" element = {<CourseMe />} />
-        <Route path='/MeWordPage' element = {<CourseMePDF />} />
+        <Route path="/wordPage" element={<CourseWord />} />
+        <Route path="/ProfessionalMe" element={<ProfessionalMe />} />
+        <Route path="/ProfessionalBe" element={<ProfessionalBe />} />
+        <Route path="/courseME" element={<CourseMe />} />
+        <Route path="/MeWordPage" element={<CourseMePDF />} />
+        <Route path="/CoPo" element={<CoPo />} />
       </Routes>
     </div>
   );
