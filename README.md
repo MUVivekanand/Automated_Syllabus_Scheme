@@ -50,3 +50,6 @@ Changes made in Faculty login.
 13/3/2025:
 CO_PO Excel file downloadable in faculty login.
 Professional Electives for M.E specialization.
+
+20/10/2025:
+Added faculty login module

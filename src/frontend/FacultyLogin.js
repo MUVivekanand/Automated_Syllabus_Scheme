@@ -63,14 +63,30 @@ function FacultyLogin() {
           Sign In
         </button>
         <div className="login-footer">
-          <button
-            type="button"
-            className="admin-link"
-            onClick={() => navigate("/")}
-          >
-            Admin Login
-          </button>
-        </div>
+            <button
+              type="button"
+              className="faculty-link"
+              onClick={() => navigate("/facultyRegister")}
+            >
+              Create New Account
+            </button>
+            <button
+              type="button"
+              className="admin-link"
+              onClick={() => navigate("/")}
+            >
+              Admin Login
+            </button>
+            <button
+                type="button"
+                className="faculty-link"
+                onClick={() => navigate("/facultyForgotPassword")}
+              >
+                Forgot Password?
+              </button>
+
+          </div>
+
       </form>
     </div>
   );

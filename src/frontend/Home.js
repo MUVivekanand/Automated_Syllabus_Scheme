@@ -13,7 +13,7 @@ function AdminLogin() {
         const trimmedUsername = username.trim().toLowerCase();
         const trimmedPassword = password.trim().toLowerCase();
 
-        if (trimmedUsername === "vivekanand" && trimmedPassword === "vivek") {
+        if (trimmedUsername === "admin" && trimmedPassword === "admin") {
             navigate("/semInfo");
         } else {
             alert("Incorrect username or password!");
