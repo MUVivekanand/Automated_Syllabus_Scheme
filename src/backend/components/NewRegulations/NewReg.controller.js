@@ -48,8 +48,8 @@ const updateCourse = async (req, res) => {
 
   try {
     // Make sure we have the composite key values
-    if (!degree || !department) {
-      return res.status(400).json({ message: "Degree and department are required" });
+    if (!degree || !department || !course_name) {
+      return res.status(400).json({ message: "Course name, degree, and department are required" });
     }
     
     const { data, error } = await supabase
@@ -60,12 +60,18 @@ const updateCourse = async (req, res) => {
       .eq("department", department)
       .select();
 
-    if (error) throw error;
+    if (error) {
+      console.error("Supabase update error:", error);
+      throw error;
+    }
+    
     if (data.length === 0) {
       return res.status(404).json({ message: "Course not found" });
     }
-    res.json({ message: "Course updated successfully" });
+    
+    res.json({ message: "Course updated successfully", data: data[0] });
   } catch (error) {
+    console.error("Error updating course:", error);
     res.status(500).json({ error: error.message });
   }
 };
@@ -76,8 +82,8 @@ const deleteMoveCourse = async (req, res) => {
 
   try {
     // Make sure we have the composite key values
-    if (!degree || !department) {
-      return res.status(400).json({ message: "Degree and department are required" });
+    if (!degree || !department || !course_name) {
+      return res.status(400).json({ message: "Course name, degree, and department are required" });
     }
 
     const { data, error } = await supabase
@@ -87,21 +93,38 @@ const deleteMoveCourse = async (req, res) => {
       .eq("degree", degree)
       .eq("department", department);
 
-    if (error) throw error;
+    if (error) {
+      console.error("Supabase delete error:", error);
+      throw error;
+    }
 
     res.json({ message: "Course deleted successfully!", data });
   } catch (error) {
-    res.status(500).json({ message: "Error deleting course", error });
+    console.error("Error deleting course:", error);
+    res.status(500).json({ message: "Error deleting course", error: error.message });
   }
 };
 
 const addCourse = async (req, res) => {
   const newCourse = req.body;
 
-  if (!newCourse.degree || !newCourse.department || 
-      newCourse.ca_marks === undefined || newCourse.fe_marks === undefined || newCourse.total_marks === undefined) {
+  // Validate required composite key fields
+  if (!newCourse.course_name || !newCourse.course_name.trim()) {
     return res.status(400).json({ 
-      message: "Missing required fields. Please ensure degree, department, ca_marks, fe_marks, and total_marks are provided." 
+      message: "Course name is required and cannot be empty." 
+    });
+  }
+
+  if (!newCourse.degree || !newCourse.department) {
+    return res.status(400).json({ 
+      message: "Degree and department are required." 
+    });
+  }
+
+  // Validate marks fields
+  if (newCourse.ca_marks == null || newCourse.fe_marks == null || newCourse.total_marks == null) {
+    return res.status(400).json({ 
+      message: "Missing required fields. Please ensure ca_marks, fe_marks, and total_marks are provided." 
     });
   }
 
@@ -110,11 +133,14 @@ const addCourse = async (req, res) => {
     const { data: existingCourse, error: checkError } = await supabase
       .from("credits")
       .select("*")
-      .eq("course_name", newCourse.course_name)
+      .eq("course_name", newCourse.course_name.trim())
       .eq("degree", newCourse.degree)
       .eq("department", newCourse.department);
 
-    if (checkError) throw checkError;
+    if (checkError) {
+      console.error("Database check error:", checkError);
+      throw checkError;
+    }
 
     if (existingCourse && existingCourse.length > 0) {
       return res.status(409).json({ 
@@ -122,16 +148,40 @@ const addCourse = async (req, res) => {
       });
     }
 
+    // Prepare the course data
+    const courseToInsert = {
+      ...newCourse,
+      course_name: newCourse.course_name.trim(),
+      course_code: newCourse.course_code || '',
+      lecture: newCourse.lecture || 0,
+      tutorial: newCourse.tutorial || 0,
+      practical: newCourse.practical || 0,
+      credits: newCourse.credits || 0,
+      type: newCourse.type || '',
+      faculty: newCourse.faculty || '',
+      category: newCourse.category || '',
+      serial_no: newCourse.serial_no || 0,
+      sem_no: newCourse.sem_no || 1
+    };
+
     const { data, error } = await supabase
       .from("credits")
-      .insert(newCourse)
+      .insert(courseToInsert)
       .select();
 
-    if (error) throw error;
+    if (error) {
+      console.error("Database insert error:", error);
+      throw error;
+    }
 
     res.json(data[0] || { message: "Course added successfully!" });
   } catch (error) {
-    res.status(500).json({ message: "Error adding course", error: error.message });
+    console.error("Error in addCourse:", error);
+    res.status(500).json({ 
+      message: "Error adding course", 
+      error: error.message,
+      details: error.details || error.hint || null 
+    });
   }
 };
 
@@ -141,8 +191,8 @@ const deleteCourse = async (req, res) => {
 
   try {
     // Make sure we have the composite key values
-    if (!degree || !department) {
-      return res.status(400).json({ message: "Degree and department are required" });
+    if (!degree || !department || !course_name) {
+      return res.status(400).json({ message: "Course name, degree, and department are required" });
     }
 
     const { data, error } = await supabase
@@ -150,13 +200,22 @@ const deleteCourse = async (req, res) => {
       .delete()
       .eq("course_name", course_name)
       .eq("degree", degree)
-      .eq("department", department);
+      .eq("department", department)
+      .select();
 
-    if (error) throw error;
+    if (error) {
+      console.error("Supabase delete error:", error);
+      throw error;
+    }
+
+    if (!data || data.length === 0) {
+      return res.status(404).json({ message: "Course not found" });
+    }
 
     res.json({ message: "Course deleted successfully!", data });
   } catch (error) {
-    res.status(500).json({ message: "Error deleting course", error });
+    console.error("Error deleting course:", error);
+    res.status(500).json({ message: "Error deleting course", error: error.message });
   }
 };
 
@@ -178,14 +237,19 @@ const confirmRegulation = async (req, res) => {
   const departmentWithYear = `${department}-${regulationYear}`;
 
   try {
+    // Fetch existing courses to get common values
     const { data: existingCourses, error: fetchError } = await supabase
       .from("credits")
       .select("course_name, ca_marks, fe_marks, total_marks")
       .eq("degree", degree)
       .eq("department", department);
 
-    if (fetchError) throw fetchError;
+    if (fetchError) {
+      console.error("Error fetching existing courses:", fetchError);
+      throw fetchError;
+    }
 
+    // Create a map of course names to their common values
     const courseCommonValuesMap = {};
     if (existingCourses && existingCourses.length > 0) {
       existingCourses.forEach(course => {
@@ -197,6 +261,7 @@ const confirmRegulation = async (req, res) => {
       });
     }
 
+    // Prepare courses for insertion with the new department suffix
     const coursesToInsert = courses.map(course => {
       const commonValues = courseCommonValuesMap[course.course_name] || {
         ca_marks: null,
@@ -205,11 +270,11 @@ const confirmRegulation = async (req, res) => {
       };
 
       return {
-        course_code: course.course_code,
+        course_code: course.course_code || '',
         course_name: course.course_name || "",
-        sem_no: course.sem_no,
+        sem_no: course.sem_no || 1,
         degree,
-        department: departmentWithYear, // Use the department with year suffix
+        department: departmentWithYear,
         lecture: course.lecture || 0,
         tutorial: course.tutorial || 0,
         practical: course.practical || 0,
@@ -218,7 +283,6 @@ const confirmRegulation = async (req, res) => {
         faculty: course.faculty || "",
         category: course.category || "",
         serial_no: course.serial_no || 0,
-        // Use course-specific common values
         ca_marks: commonValues.ca_marks,
         fe_marks: commonValues.fe_marks,
         total_marks: commonValues.total_marks
@@ -228,7 +292,8 @@ const confirmRegulation = async (req, res) => {
     // Insert the courses
     const { data, error } = await supabase
       .from("credits")
-      .insert(coursesToInsert);
+      .insert(coursesToInsert)
+      .select();
     
     if (error) {
       console.error("Supabase insert error:", error);
@@ -237,12 +302,24 @@ const confirmRegulation = async (req, res) => {
 
     res.json({ 
       message: "New regulation confirmed successfully!",
-      department: departmentWithYear
+      department: departmentWithYear,
+      coursesAdded: data ? data.length : 0
     });
   } catch (error) {
     console.error("Error confirming regulation:", error);
-    res.status(500).json({ message: "Error confirming regulation", error: error.message });
+    res.status(500).json({ 
+      message: "Error confirming regulation", 
+      error: error.message,
+      details: error.details || error.hint || null
+    });
   }
 };
 
-module.exports = { getAllCourses, updateCourse, deleteMoveCourse, addCourse, deleteCourse, confirmRegulation };
+module.exports = { 
+  getAllCourses, 
+  updateCourse, 
+  deleteMoveCourse, 
+  addCourse, 
+  deleteCourse, 
+  confirmRegulation 
+};

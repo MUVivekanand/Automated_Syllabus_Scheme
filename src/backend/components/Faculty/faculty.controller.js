@@ -1,38 +1,5 @@
 const supabase = require("../../supabaseClient");
 
-const facultyLogin = async (req, res) => {
-  const { username, password } = req.body;
-
-  try {
-    // Fetch faculty details from Supabase
-    const { data, error } = await supabase
-      .from("credits") // Assuming "credits" table contains faculty details
-      .select("faculty")
-      .eq("faculty", username);
-
-    console.log(data[0].faculty);
-
-    if (error || !data) {
-      return res
-        .status(401)
-        .json({ success: false, message: "Invalid username!" });
-    }
-
-    // Check if the password is "faculty"
-    if (password !== "faculty") {
-      return res
-        .status(401)
-        .json({ success: false, message: "Incorrect password!" });
-    }
-
-    // Login successful
-    res.json({ success: true, facultyName: data[0].faculty });
-  } catch (err) {
-    console.error("Login error:", err);
-    res.status(500).json({ success: false, message: "Internal server error" });
-  }
-};
-
 const updateCourseDetails = async (req, res) => {
   try {
     const {
@@ -466,7 +433,6 @@ const getAllMappings = async (req, res) => {
 };
 
 module.exports = {
-  facultyLogin,
   updateCourseDetails,
   getCourse,
   getCourseDetails,

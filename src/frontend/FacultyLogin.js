@@ -70,7 +70,22 @@ function FacultyLogin() {
           >
             Admin Login
           </button>
-        </div>
+          <button
+              type="button"
+              className="faculty-link"
+              onClick={() => navigate("/facultyRegister")}
+            >
+              Create New Account
+            </button>
+            <button
+                type="button"
+                className="faculty-link"
+                onClick={() => navigate("/facultyForgotPassword")}
+              >
+                Forgot Password?
+              </button>
+
+          </div>
       </form>
     </div>
   );

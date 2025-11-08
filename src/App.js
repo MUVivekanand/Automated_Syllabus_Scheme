@@ -15,6 +15,8 @@ import CourseMe from "./frontend/CourseMe.js";
 import CourseMePDF from "./frontend/CourseMePDF.js";
 import ProfessionalBe from "./frontend/ProfessionalBe.js";
 import CoPo from "./frontend/CoPo.js";
+import RegisterFaculty from "./frontend/RegisterFacultyLogin.js";
+import FacultyForgotPassword from "./frontend/FacultyForgotPassword.js";
 
 function App() {
   return (
@@ -36,6 +38,8 @@ function App() {
         <Route path="/courseME" element={<CourseMe />} />
         <Route path="/MeWordPage" element={<CourseMePDF />} />
         <Route path="/CoPo" element={<CoPo />} />
+        <Route path= "/facultyRegister" element={<RegisterFaculty/>} />
+        <Route path="/facultyForgotPassword" element={<FacultyForgotPassword/>} />
       </Routes>
     </div>
   );
