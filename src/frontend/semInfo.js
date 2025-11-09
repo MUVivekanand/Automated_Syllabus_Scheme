@@ -224,7 +224,7 @@ function SemInfo() {
       setLoading(true);
       console.log(process.env.REACT_APP_API_URL);
       const response = await axios.get(
-        `${process.env.REACT_APP_API_URL}/api/seminfo/getSemInfo?degree=${degree}&department=${department}`
+        `https://automated-syllabus-scheme-backend.vercel.app/api/seminfo/getSemInfo?degree=${degree}&department=${department}`
       );
   
       // Generate default semester data based on degree
@@ -399,7 +399,7 @@ function SemInfo() {
 
         // API calls
         const semInfoResponse = await axios.post(
-            `${process.env.REACT_APP_API_URL}/api/seminfo/updateSemInfo`,
+            `https://automated-syllabus-scheme-backend.vercel.app/api/seminfo/updateSemInfo`,
             { semData: semInfoPayload }
         );
 
