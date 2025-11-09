@@ -43,7 +43,7 @@ useEffect(() => {
         const semData = await fetchAllSemestersData(degree, department);
         
         // Fetch course details
-        const response = await axios.get("http://localhost:4000/api/course/courseDetailsInfo", {
+        const response = await axios.get(`${process.env.REACT_APP_API_URL}/api/course/courseDetailsInfo`, {
           params: { degree, department }
         });
         const courseDetailsData = response.data;
@@ -69,10 +69,10 @@ useEffect(() => {
         
         // Fetch credit summary data
         const [creditsSummaryResponse, totalCreditsResponse] = await Promise.all([
-          axios.get("http://localhost:4000/api/summary/creditsSummary", {
+          axios.get(`${process.env.REACT_APP_API_URL}/api/summary/creditsSummary`, {
             params: { degree, department }
           }),
-          axios.get("http://localhost:4000/api/summary/getTotalCredits", {
+          axios.get(`${process.env.REACT_APP_API_URL}/api/summary/getTotalCredits`, {
             params: { degree, department }
           })
         ]);
@@ -123,7 +123,7 @@ useEffect(() => {
 const fetchElectiveCourses = async (degree, department) => {
   try {
     const electivesResponse = await axios.get(
-      `http://localhost:4000/api/proelective/courses?degree=${encodeURIComponent(degree)}&department=${encodeURIComponent(department)}`
+      `${process.env.REACT_APP_API_URL}/api/proelective/courses?degree=${encodeURIComponent(degree)}&department=${encodeURIComponent(department)}`
     );
     const electivesData = electivesResponse.data;
     
@@ -191,12 +191,12 @@ const sectionTypes = {
       // Fetch data for all 8 semesters
       for (let semNo = 1; semNo <= 8; semNo++) {
         const semInfoResponse = await axios.get(
-          `http://localhost:4000/api/course/seminfo/${semNo}`, 
+          `${process.env.REACT_APP_API_URL}/api/course/seminfo/${semNo}`, 
           { params: { degree, department } }
         );
         
         const coursesResponse = await axios.get(
-          `http://localhost:4000/api/course/courses/${semNo}`, 
+          `${process.env.REACT_APP_API_URL}/api/course/courses/${semNo}`, 
           { params: { degree, department } }
         );
         
@@ -217,7 +217,7 @@ const sectionTypes = {
 
   const fetchCourseDetailsForAllSemesters = async () => {
     try {
-      const response = await axios.get("http://localhost:4000/api/course/courseDetailsInfo");
+      const response = await axios.get(`${process.env.REACT_APP_API_URL}/api/course/courseDetailsInfo`);
       return response.data;
     } catch (error) {
       console.error("Error fetching course details:", error);
@@ -284,8 +284,8 @@ const sectionTypes = {
       
       // Fetch data for all 8 semesters
       for (let semNo = 1; semNo <= 8; semNo++) {
-        const semInfoResponse = await axios.get(`http://localhost:4000/api/course/seminfo/${semNo}`);
-        const coursesResponse = await axios.get(`http://localhost:4000/api/course/courses/${semNo}`);
+        const semInfoResponse = await axios.get(`${process.env.REACT_APP_API_URL}/api/course/seminfo/${semNo}`);
+        const coursesResponse = await axios.get(`${process.env.REACT_APP_API_URL}/api/course/courses/${semNo}`);
         
         semestersData.push({
           semNo,
@@ -296,8 +296,8 @@ const sectionTypes = {
       
       // Fetch credit summary data
       const [creditsSummaryResponse, totalCreditsResponse] = await Promise.all([
-        axios.get("http://localhost:4000/api/summary/creditsSummary"),
-        axios.get("http://localhost:4000/api/summary/getTotalCredits")
+        axios.get(`${process.env.REACT_APP_API_URL}/api/summary/creditsSummary`),
+        axios.get(`${process.env.REACT_APP_API_URL}/api/summary/getTotalCredits`)
       ]);
   
       const backendSummaryData = creditsSummaryResponse.data;

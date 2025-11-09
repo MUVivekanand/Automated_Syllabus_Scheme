@@ -64,7 +64,7 @@ const fetchData = async () => {
       setTotalRow({ lecture: 0, tutorial: 0, practical: 0, credits: 0 });
   
       // Pass degree and department as query parameters
-      const semResponse = await axios.get(`http://localhost:4000/api/course/seminfo/${currentSem}`, {
+      const semResponse = await axios.get(`${process.env.REACT_APP_API_URL}/api/course/seminfo/${currentSem}`, {
         params: { degree, department }
       });
       const semInfo = semResponse.data;
@@ -88,7 +88,7 @@ const fetchData = async () => {
       }));
   
       // Fetch existing courses with degree parameter
-      const coursesResponse = await axios.get(`http://localhost:4000/api/course/courses/${currentSem}`, {
+      const coursesResponse = await axios.get(`${process.env.REACT_APP_API_URL}/api/course/courses/${currentSem}`, {
         params: { degree, department }
       });
       const existingCoursesData = coursesResponse.data;
@@ -192,7 +192,7 @@ const fetchData = async () => {
   // Fetch table data
   const fetchTableData = async () => {
     try {
-      const response = await axios.get('http://localhost:4000/api/course/getTableData');
+      const response = await axios.get(`${process.env.REACT_APP_API_URL}/api/course/getTableData`);
       if (response.data.success) {
         setTableData(response.data.data);
       }
@@ -298,19 +298,19 @@ const fetchData = async () => {
 //           // This is an existing course
 //           if (originalName !== course.courseTitle) {
 //             // Course name changed - delete old record first
-//             await axios.delete(`http://localhost:4000/api/course/credits/${encodeURIComponent(originalName)}`);
+//             await axios.delete(`${process.env.REACT_APP_API_URL}api/course/credits/${encodeURIComponent(originalName)}`);
 //             // Then create new record
-//             await axios.post(`http://localhost:4000/api/course/credits`, {
+//             await axios.post(`${process.env.REACT_APP_API_URL}api/course/credits`, {
 //               ...courseData,
 //               course_name: course.courseTitle
 //             });
 //           } else {
 //             // Update existing course
-//             await axios.patch(`http://localhost:4000/api/course/credits/${encodeURIComponent(course.courseTitle)}`, courseData);
+//             await axios.patch(`${process.env.REACT_APP_API_URL}api/course/credits/${encodeURIComponent(course.courseTitle)}`, courseData);
 //           }
 //         } else {
 //           // This is a new course - use POST instead of PATCH
-//           await axios.post(`http://localhost:4000/api/course/credits`, {
+//           await axios.post(`${process.env.REACT_APP_API_URL}api/course/credits`, {
 //             ...courseData,
 //             course_name: course.courseTitle
 //           });
@@ -339,7 +339,7 @@ const handleSubmit = useCallback(async () => {
         if (originalName && originalName !== course.courseTitle) {
           try {
             // First delete the old record - the backend will handle related records
-            await axios.delete(`http://localhost:4000/api/course/credits/${encodeURIComponent(originalName)}`);
+            await axios.delete(`${process.env.REACT_APP_API_URL}/api/course/credits/${encodeURIComponent(originalName)}`);
           } catch (deleteError) {
             console.error("Error deleting old course record:", deleteError);
             // Continue with update attempt even if delete fails
@@ -348,7 +348,7 @@ const handleSubmit = useCallback(async () => {
         
         try {
           // Create or update with new course data
-          await axios.patch(`http://localhost:4000/api/course/credits/${encodeURIComponent(course.courseTitle)}`, {
+          await axios.patch(`${process.env.REACT_APP_API_URL}/api/course/credits/${encodeURIComponent(course.courseTitle)}`, {
             serial_no: course.serial_no || 0,
             course_code: course.courseCode || '',
             lecture: course.lecture || 0,

@@ -30,7 +30,7 @@ const Regulations = () => {
 
   const fetchCourses = async () => {
     try {
-      const response = await axios.get("http://localhost:4000/api/regulations/allcourses", {
+      const response = await axios.get(`${process.env.REACT_APP_API_URL}/api/regulations/allcourses`, {
         params: { degree, department }
       });
   
@@ -134,7 +134,7 @@ const Regulations = () => {
     }
     
     try {
-      const response = await axios.post("http://localhost:4000/api/regulations/addcourse", newCourse);
+      const response = await axios.post(`${process.env.REACT_APP_API_URL}/api/regulations/addcourse`, newCourse);
       setCourses(prev => [...prev, response.data]);
       
       // Remove the new row after successful save
@@ -162,7 +162,7 @@ const Regulations = () => {
     }
   
     try {
-      await axios.put(`http://localhost:4000/api/regulations/updatecourse/${courseName}`, {
+      await axios.put(`${process.env.REACT_APP_API_URL}/api/regulations/updatecourse/${courseName}`, {
         ...updatedCourse,
         degree,
         department
@@ -190,13 +190,13 @@ const Regulations = () => {
   
     try {
       // Delete the old course
-      await axios.delete(`http://localhost:4000/api/regulations/deletemovecourse/${fromCourseName}`, {
+      await axios.delete(`${process.env.REACT_APP_API_URL}/api/regulations/deletemovecourse/${fromCourseName}`, {
         data: { degree, department }
       });
       
       // Add the course with new semester
       const updatedCourse = { ...courseToMove, sem_no: parseInt(toSemester, 10) };
-      await axios.post("http://localhost:4000/api/regulations/addcourse", updatedCourse);
+      await axios.post(`${process.env.REACT_APP_API_URL}/api/regulations/addcourse`, updatedCourse);
       
       setCourses((prevCourses) =>
         prevCourses
@@ -219,7 +219,7 @@ const Regulations = () => {
     if (!confirmDelete) return;
 
     try {
-      const response = await axios.delete(`http://localhost:4000/api/regulations/delete-course/${courseName}`, {
+      const response = await axios.delete(`${process.env.REACT_APP_API_URL}/api/regulations/delete-course/${courseName}`, {
         data: { degree, department }
       });
 
@@ -293,7 +293,7 @@ const Regulations = () => {
         }
       });
   
-      const response = await axios.post('http://localhost:4000/api/regulations/confirm-regulation', {
+      const response = await axios.post(`${process.env.REACT_APP_API_URL}/api/regulations/confirm-regulation`, {
         courses: coursesToSubmit,
         degree,
         department,

@@ -9,9 +9,6 @@ import { saveAs } from "file-saver";
 
 function CourseMePDF() {
 
-  // Add this at the top of your state declarations in CourseMe.js
-  const API_BASE_URL = "http://localhost:4000/api/proelective";
-
   const [semestersData, setSemestersData] = useState([]);
   const [coursesData, setCoursesData] = useState({}); // Added missing state
   const [loading, setLoading] = useState(true);
@@ -44,7 +41,7 @@ useEffect(() => {
         const semData = await fetchAllSemestersData(degree, department);
         
         // Fetch course details
-        const response = await axios.get("http://localhost:4000/api/course/courseDetailsInfo", {
+        const response = await axios.get(`${process.env.REACT_APP_API_URL}/api/course/courseDetailsInfo`, {
           params: { degree, department }
         });
         const courseDetailsData = response.data;
@@ -64,10 +61,10 @@ useEffect(() => {
         
         // Fetch credit summary data
         const [creditsSummaryResponse, totalCreditsResponse] = await Promise.all([
-          axios.get("http://localhost:4000/api/summary/creditsSummary", {
+          axios.get(`${process.env.REACT_APP_API_URL}/api/summary/creditsSummary`, {
             params: { degree, department }
           }),
-          axios.get("http://localhost:4000/api/summary/getTotalCredits", {
+          axios.get(`${process.env.REACT_APP_API_URL}/api/summary/getTotalCredits`, {
             params: { degree, department }
           })
         ]);
@@ -117,7 +114,7 @@ useEffect(() => {
 
 const fetchProfessionalElectives = async () => {
   try {
-    const response = await axios.get(`${API_BASE_URL}/getproelective`, {
+    const response = await axios.get(`${process.env.REACT_APP_API_URL}/api/proelective/getproelective`, {
       params: { degree, department }
     });
     setProfessionalElectives(response.data);
@@ -134,12 +131,12 @@ const fetchProfessionalElectives = async () => {
       // Fetch data for all 8 semesters
       for (let semNo = 1; semNo <= 4; semNo++) {
         const semInfoResponse = await axios.get(
-          `http://localhost:4000/api/course/seminfo/${semNo}`, 
+          `${process.env.REACT_APP_API_URL}/api/course/seminfo/${semNo}`, 
           { params: { degree, department } }
         );
         
         const coursesResponse = await axios.get(
-          `http://localhost:4000/api/course/courses/${semNo}`, 
+          `${process.env.REACT_APP_API_URL}/api/course/courses/${semNo}`, 
           { params: { degree, department } }
         );
         
@@ -160,7 +157,7 @@ const fetchProfessionalElectives = async () => {
 
   const fetchCourseDetailsForAllSemesters = async () => {
     try {
-      const response = await axios.get("http://localhost:4000/api/course/courseDetailsInfo");
+      const response = await axios.get(`${process.env.REACT_APP_API_URL}/api/course/courseDetailsInfo`);
       return response.data;
     } catch (error) {
       console.error("Error fetching course details:", error);
@@ -227,8 +224,8 @@ const fetchProfessionalElectives = async () => {
       
       // Fetch data for all 8 semesters
       for (let semNo = 1; semNo <= 8; semNo++) {
-        const semInfoResponse = await axios.get(`http://localhost:4000/api/course/seminfo/${semNo}`);
-        const coursesResponse = await axios.get(`http://localhost:4000/api/course/courses/${semNo}`);
+        const semInfoResponse = await axios.get(`${process.env.REACT_APP_API_URL}/api/course/seminfo/${semNo}`);
+        const coursesResponse = await axios.get(`${process.env.REACT_APP_API_URL}/api/course/courses/${semNo}`);
         
         semestersData.push({
           semNo,
@@ -239,8 +236,8 @@ const fetchProfessionalElectives = async () => {
       
       // Fetch credit summary data
       const [creditsSummaryResponse, totalCreditsResponse] = await Promise.all([
-        axios.get("http://localhost:4000/api/summary/creditsSummary"),
-        axios.get("http://localhost:4000/api/summary/getTotalCredits")
+        axios.get(`${process.env.REACT_APP_API_URL}/api/summary/creditsSummary`),
+        axios.get(`${process.env.REACT_APP_API_URL}/api/summary/getTotalCredits`)
       ]);
   
       const backendSummaryData = creditsSummaryResponse.data;
