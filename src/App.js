@@ -1,7 +1,6 @@
 import React from "react";
 import { Routes, Route } from "react-router-dom"; // To handle routing
 import Home from "./frontend/Home.js";
-import Syllabus from "./frontend/Syllabus.js";
 import Faculty from "./frontend/Faculty.js";
 import SemInfo from "./frontend/semInfo.js";
 import Course from "./frontend/Course.js";
