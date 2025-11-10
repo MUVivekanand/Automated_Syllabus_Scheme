@@ -286,16 +286,16 @@ const handleSubmit = useCallback(async () => {
       if (course.courseTitle) {
         if (originalName && originalName !== course.courseTitle) {
           try {
-            // First delete the old record - the backend will handle related records
             await axios.delete(`${process.env.REACT_APP_API_URL}/api/course/credits/${encodeURIComponent(originalName)}`);
           } catch (deleteError) {
             console.error("Error deleting old course record:", deleteError);
-            // Continue with update attempt even if delete fails
           }
         }
         
         try {
-          // Create or update with new course data
+          // Calculate total marks as sum of CA and FE marks
+          const totalMarks = Number(course.ca_marks || 0) + Number(course.fe_marks || 0);
+          
           await axios.patch(`${process.env.REACT_APP_API_URL}/api/course/credits/${encodeURIComponent(course.courseTitle)}`, {
             serial_no: course.serial_no || 0,
             course_code: course.courseCode,
@@ -305,7 +305,7 @@ const handleSubmit = useCallback(async () => {
             credits: course.credits || 0,
             ca_marks: course.ca_marks || 0,
             fe_marks: course.fe_marks || 0,
-            total_marks: commonInfo.totalMarks || 0,
+            total_marks: totalMarks, // Using calculated total marks
             type: course.type || '',
             faculty: course.faculty || '',
             department: commonInfo.department || '',
@@ -315,14 +315,13 @@ const handleSubmit = useCallback(async () => {
           });
         } catch (updateError) {
           console.error(`Error updating course ${course.courseTitle}:`, updateError.response?.data || updateError.message);
-          // Alert about specific course update failure but continue with others
           alert(`Failed to update course ${course.courseTitle}: ${updateError.response?.data?.message || updateError.message}`);
         }
       }
     }
     
     alert("Data updated successfully!");
-    fetchData(); // Refresh data to get updated records
+    fetchData();
   } catch (error) {
     console.error("Error in submission process:", error);
     alert("Failed to update data: " + (error.response?.data?.message || error.message));
@@ -510,15 +509,6 @@ const handleSubmit = useCallback(async () => {
         <div>
           <label>Total Mandatory:</label>
           <input type="number" value={commonInfo.mandatoryCourses} readOnly />
-        </div>
-        <div>
-          <label>Total Marks:</label>
-          <input
-            type="number"
-            name="totalMarks"
-            value={commonInfo.totalMarks}
-            onChange={handleCommonInfoChange}
-          />
         </div>
         <div>
           <label>Department:</label>
@@ -833,7 +823,7 @@ const handleSubmit = useCallback(async () => {
                     <td>{course.credits}</td>
                     <td>{course.ca_marks}</td>
                     <td>{course.fe_marks}</td>
-                    <td>{course.total_marks}</td>
+                    <td>{course.ca_marks + course.fe_marks}</td>
                     <td>{course.type}</td>
                   </tr>
                 ))}
@@ -870,7 +860,7 @@ const handleSubmit = useCallback(async () => {
                     <td>{course.credits}</td>
                     <td>{course.ca_marks}</td>
                     <td>{course.fe_marks}</td>
-                    <td>{course.total_marks}</td>
+                    <td>{course.ca_marks + course.fe_marks}</td>
                     <td>{course.type}</td>
                   </tr>
                 ))}
@@ -908,7 +898,7 @@ const handleSubmit = useCallback(async () => {
                     <td>{course.credits}</td>
                     <td>{course.ca_marks}</td>
                     <td>{course.fe_marks}</td>
-                    <td>{course.total_marks}</td>
+                    <td>{course.ca_marks + course.fe_marks}</td>
                     <td>{course.type}</td>
                   </tr>
                 ))}
@@ -922,7 +912,7 @@ const handleSubmit = useCallback(async () => {
                 <td>{existingCourses.reduce((sum, course) => sum + course.credits, 0)}</td>
                 <td>{existingCourses.reduce((sum, course) => sum + course.ca_marks, 0)}</td>
                 <td>{existingCourses.reduce((sum, course) => sum + course.fe_marks, 0)}</td>
-                <td>{existingCourses.reduce((sum, course) => sum + course.total_marks, 0)}</td>
+                <td>{existingCourses.reduce((sum, course) => sum + (course.ca_marks + course.fe_marks), 0)}</td>
                 <td></td>
               </tr>
             </tbody>
