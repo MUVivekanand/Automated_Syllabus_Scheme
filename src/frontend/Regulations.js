@@ -57,14 +57,32 @@ const Regulations = () => {
     }));
   };
 
-  // FIXED: Now uses course_name (part of composite PK) instead of course_code
-  const handleChange = (courseName, field, value) => {
+  // Updated to track both old and new course names for proper updates
+  const handleChange = (courseName, field, value, currentDegree, currentDepartment) => {
     setCourses(prevCourses => 
-      prevCourses.map(course => 
-        course.course_name === courseName
-          ? { ...course, [field]: field === "serial_no" ? parseInt(value) || 0 : value }
-          : course
-      )
+      prevCourses.map(course => {
+        // Match using composite key
+        if (course.course_name === courseName && 
+            course.degree === currentDegree && 
+            course.department === currentDepartment) {
+          const updatedCourse = { 
+            ...course, 
+            [field]: field === "serial_no" ? parseInt(value) || 0 : value 
+          };
+          
+          // Store original composite key for updates
+          if (!updatedCourse._originalKey) {
+            updatedCourse._originalKey = {
+              course_name: courseName,
+              degree: currentDegree,
+              department: currentDepartment
+            };
+          }
+          
+          return updatedCourse;
+        }
+        return course;
+      })
     );
   };
 
@@ -152,31 +170,74 @@ const Regulations = () => {
     }
   };
 
-  const handleSubmit = async (courseName) => {
-    const updatedCourse = courses.find((course) => course.course_name === courseName);
-    console.log("Course Name Frontend:", courseName);
+  const handleSubmit = async (course) => {
+    console.log("Submitting course update:", course);
 
-    if (!updatedCourse) {
+    if (!course) {
       alert("Course not found!");
       return;
     }
-  
-    try {
-      await axios.put(`${process.env.REACT_APP_API_URL}/api/regulations/updatecourse/${courseName}`, {
-        ...updatedCourse,
-        degree,
-        department
-      });
-      alert("Course updated successfully!");
-      setRefresh((prev) => !prev);
-    } catch (error) {
-      console.error("Error updating course:", error);
-      alert("Failed to update course: " + (error.response?.data?.message || error.message));
+
+    // Get the original key if course name was changed
+    const originalKey = course._originalKey || {
+      course_name: course.course_name,
+      degree: course.degree,
+      department: course.department
+    };
+
+    // If course_name changed, we need to delete old and insert new
+    if (originalKey.course_name !== course.course_name) {
+      try {
+        // Delete the old record using original composite key
+        await axios.delete(
+          `${process.env.REACT_APP_API_URL}/api/regulations/delete-course/${encodeURIComponent(originalKey.course_name)}`,
+          {
+            data: { 
+              degree: originalKey.degree, 
+              department: originalKey.department 
+            }
+          }
+        );
+
+        // Insert new record with updated course name
+        await axios.post(`${process.env.REACT_APP_API_URL}/api/regulations/addcourse`, {
+          ...course,
+          degree,
+          department
+        });
+
+        alert("Course updated successfully!");
+        setRefresh((prev) => !prev);
+      } catch (error) {
+        console.error("Error updating course with name change:", error);
+        alert("Failed to update course: " + (error.response?.data?.message || error.message));
+      }
+    } else {
+      // Normal update without course_name change
+      try {
+        await axios.put(
+          `${process.env.REACT_APP_API_URL}/api/regulations/updatecourse/${encodeURIComponent(course.course_name)}`,
+          {
+            ...course,
+            degree,
+            department
+          }
+        );
+        alert("Course updated successfully!");
+        setRefresh((prev) => !prev);
+      } catch (error) {
+        console.error("Error updating course:", error);
+        alert("Failed to update course: " + (error.response?.data?.message || error.message));
+      }
     }
   };
 
   const handleMoveCourse = async () => {
-    const courseToMove = courses.find((course) => course.course_name === fromCourseName);
+    const courseToMove = courses.find((course) => 
+      course.course_name === fromCourseName && 
+      course.degree === degree && 
+      course.department === department
+    );
   
     if (!courseToMove) {
       alert("Invalid Course Name. Please enter a valid one.");
@@ -189,18 +250,30 @@ const Regulations = () => {
     }
   
     try {
-      // Delete the old course
-      await axios.delete(`${process.env.REACT_APP_API_URL}/api/regulations/deletemovecourse/${fromCourseName}`, {
-        data: { degree, department }
-      });
+      // Delete the old course with composite key
+      await axios.delete(
+        `${process.env.REACT_APP_API_URL}/api/regulations/deletemovecourse/${encodeURIComponent(fromCourseName)}`,
+        {
+          data: { degree, department }
+        }
+      );
       
       // Add the course with new semester
-      const updatedCourse = { ...courseToMove, sem_no: parseInt(toSemester, 10) };
+      const updatedCourse = { 
+        ...courseToMove, 
+        sem_no: parseInt(toSemester, 10),
+        degree,
+        department
+      };
       await axios.post(`${process.env.REACT_APP_API_URL}/api/regulations/addcourse`, updatedCourse);
       
       setCourses((prevCourses) =>
         prevCourses
-          .filter((course) => course.course_name !== fromCourseName)
+          .filter((course) => !(
+            course.course_name === fromCourseName && 
+            course.degree === degree && 
+            course.department === department
+          ))
           .concat(updatedCourse)
       );
   
@@ -214,17 +287,30 @@ const Regulations = () => {
     }
   };
 
-  const handleDelete = async (courseName) => {
-    const confirmDelete = window.confirm(`Are you sure you want to delete course ${courseName}?`);
+  const handleDelete = async (course) => {
+    const confirmDelete = window.confirm(`Are you sure you want to delete course ${course.course_name}?`);
     if (!confirmDelete) return;
 
     try {
-      const response = await axios.delete(`${process.env.REACT_APP_API_URL}/api/regulations/delete-course/${courseName}`, {
-        data: { degree, department }
-      });
+      // Send composite key in request body
+      const response = await axios.delete(
+        `${process.env.REACT_APP_API_URL}/api/regulations/delete-course/${encodeURIComponent(course.course_name)}`,
+        {
+          data: { 
+            degree: course.degree, 
+            department: course.department 
+          }
+        }
+      );
 
       if (response.status === 200) {
-        setCourses((prevCourses) => prevCourses.filter((course) => course.course_name !== courseName));
+        setCourses((prevCourses) => 
+          prevCourses.filter((c) => !(
+            c.course_name === course.course_name && 
+            c.degree === course.degree && 
+            c.department === course.department
+          ))
+        );
         alert(response.data.message);
       }
     } catch (error) {
@@ -383,14 +469,13 @@ const Regulations = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {/* FIXED: Using composite key for React key */}
                     {semesterCourses.map((course) => (
                       <tr key={`${course.degree}-${course.department}-${course.course_name}`}>
                         <td>
                           <input 
                             type="number"
                             value={course.serial_no || 0}
-                            onChange={(e) => handleChange(course.course_name, "serial_no", e.target.value)}
+                            onChange={(e) => handleChange(course.course_name, "serial_no", e.target.value, course.degree, course.department)}
                           />
                         </td>
                         <td>
@@ -400,64 +485,64 @@ const Regulations = () => {
                                 ? `${regulationYear}${course.course_code.slice(2)}` 
                                 : course.course_code
                             }
-                            onChange={(e) => handleChange(course.course_name, "course_code", e.target.value)} 
+                            onChange={(e) => handleChange(course.course_name, "course_code", e.target.value, course.degree, course.department)} 
                           />
                         </td>
                         <td>
                           <input 
                             value={course.course_name || ""} 
-                            onChange={(e) => handleChange(course.course_name, "course_name", e.target.value)} 
+                            onChange={(e) => handleChange(course.course_name, "course_name", e.target.value, course.degree, course.department)} 
                           />
                         </td>
                         <td>
                           <input 
                             type="number" 
                             value={course.lecture || 0} 
-                            onChange={(e) => handleChange(course.course_name, "lecture", e.target.value)} 
+                            onChange={(e) => handleChange(course.course_name, "lecture", e.target.value, course.degree, course.department)} 
                           />
                         </td>
                         <td>
                           <input 
                             type="number" 
                             value={course.tutorial || 0} 
-                            onChange={(e) => handleChange(course.course_name, "tutorial", e.target.value)} 
+                            onChange={(e) => handleChange(course.course_name, "tutorial", e.target.value, course.degree, course.department)} 
                           />
                         </td>
                         <td>
                           <input 
                             type="number" 
                             value={course.practical || 0} 
-                            onChange={(e) => handleChange(course.course_name, "practical", e.target.value)} 
+                            onChange={(e) => handleChange(course.course_name, "practical", e.target.value, course.degree, course.department)} 
                           />
                         </td>
                         <td>
                           <input 
                             type="number" 
                             value={course.credits || 0} 
-                            onChange={(e) => handleChange(course.course_name, "credits", e.target.value)} 
+                            onChange={(e) => handleChange(course.course_name, "credits", e.target.value, course.degree, course.department)} 
                           />
                         </td>
                         <td>
                           <input 
                             value={course.type || ""} 
-                            onChange={(e) => handleChange(course.course_name, "type", e.target.value)} 
+                            onChange={(e) => handleChange(course.course_name, "type", e.target.value, course.degree, course.department)} 
                           />
                         </td>
                         <td>
                           <input 
                             value={course.faculty || ""} 
-                            onChange={(e) => handleChange(course.course_name, "faculty", e.target.value)} 
+                            onChange={(e) => handleChange(course.course_name, "faculty", e.target.value, course.degree, course.department)} 
                           />
                         </td>
                         <td>
                           <input 
                             value={course.category || ""} 
-                            onChange={(e) => handleChange(course.course_name, "category", e.target.value)} 
+                            onChange={(e) => handleChange(course.course_name, "category", e.target.value, course.degree, course.department)} 
                           />
                         </td>
                         <td>
-                          <button onClick={() => handleSubmit(course.course_name)}>Update</button>
-                          <button onClick={() => handleDelete(course.course_name)}>Delete</button>
+                          <button onClick={() => handleSubmit(course)}>Update</button>
+                          <button onClick={() => handleDelete(course)}>Delete</button>
                         </td>
                       </tr>
                     ))}
