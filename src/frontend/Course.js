@@ -40,6 +40,8 @@ function Course() {
   const [theoryDefaultMarks, setTheoryDefaultMarks] = useState({ CA_Marks: "", FE_Marks: "" });
   const [practicalDefaultMarks, setPracticalDefaultMarks] = useState({ CA_Marks: "", FE_Marks: "" });
 
+  const [departments, setDepartments] = useState([]);
+
   const navigate = useNavigate();
 
   const navigateSummary = () => {
@@ -153,6 +155,17 @@ function Course() {
     } catch (error) {
       console.error("Error fetching data:", error);
       resetStates();
+    }
+  };
+
+  const fetchDepartments = async () => {
+    try {
+      const response = await axios.get(`${process.env.REACT_APP_API_URL}/api/course/departments`);
+      if (response.data.success) {
+        setDepartments(response.data.data);
+      }
+    } catch (error) {
+      console.error("Error fetching departments:", error);
     }
   };
 
@@ -463,6 +476,11 @@ const handleSubmit = useCallback(async () => {
     fetchData();
   }, [currentSem, degree, department]);
 
+  useEffect(() => {
+  fetchDepartments();
+  }, []);
+
+
   // Rest of the component remains the same as in the original code...
 
   return (
@@ -484,17 +502,14 @@ const handleSubmit = useCallback(async () => {
         <select
           value={department}
           onChange={handleDepartmentChange}
-          disabled={degree === "M.E"} // Disable if M.E is selected
+          disabled={degree === "M.E"} // still disable for M.E if you want
         >
           <option value="">Select Department</option>
-          {degree === "M.E" ? (
-            <option value="CSE">CSE</option>
-          ) : (
-            <>
-              <option value="CSE">CSE</option>
-              <option value="CSE AI-ML">CSE AI-ML</option>
-            </>
-          )}
+          {departments.map((dep, index) => (
+            <option key={index} value={dep}>
+              {dep}
+            </option>
+          ))}
         </select>
       </div>
     </div>
