@@ -41,11 +41,11 @@ function Course() {
   //   const fetchData = async () => {
   //     try {
   //       // Fetch semester info
-  //       const semResponse = await axios.get(`http://localhost:4000/api/seminfo/${currentSem}`);
+  //       const semResponse = await axios.get(`${process.env.REACT_APP_API_URL}/api/seminfo/${currentSem}`);
   //       const semInfo = semResponse.data;
 
   //       // Fetch courses for the current semester
-  //       const coursesResponse = await axios.get(`http://localhost:4000/api/courses/${currentSem}`);
+  //       const coursesResponse = await axios.get(`${process.env.REACT_APP_API_URL}/api/courses/${currentSem}`);
   //       const existingCoursesData = coursesResponse.data;
 
   //       // Update common info
@@ -111,10 +111,10 @@ function Course() {
       setTotalRow({ lecture: 0, tutorial: 0, practical: 0, credits: 0 });
 
 
-      const semResponse = await axios.get(`http://localhost:4000/api/seminfo/${currentSem}`);
+      const semResponse = await axios.get(`${process.env.REACT_APP_API_URL}/api/seminfo/${currentSem}`);
       const semInfo = semResponse.data;
 
-      const coursesResponse = await axios.get(`http://localhost:4000/api/courses/${currentSem}`);
+      const coursesResponse = await axios.get(`${process.env.REACT_APP_API_URL}/api/courses/${currentSem}`);
       const existingCoursesData = coursesResponse.data;
 
       setCommonInfo(prev => ({
@@ -187,7 +187,7 @@ function Course() {
   // Fetch table data
   const fetchTableData = async () => {
     try {
-      const response = await axios.get('http://localhost:4000/getTableData');
+      const response = await axios.get(`${process.env.REACT_APP_API_URL}/getTableData`);
       if (response.data.success) {
         setTableData(response.data.data);
       }
@@ -204,7 +204,7 @@ function Course() {
     };
 
     try {
-      const response = await axios.post('http://localhost:4000/filtertable', filterData);
+      const response = await axios.post(`${process.env.REACT_APP_API_URL}/filtertable`, filterData);
       if (response.data.success) {
         setIsFiltered(true);
         await fetchTableData();
@@ -219,7 +219,7 @@ function Course() {
   // Clear filters
   const clearFilters = async () => {
     try {
-      const response = await axios.post('http://localhost:4000/clearFilters');
+      const response = await axios.post(`${process.env.REACT_APP_API_URL}/clearFilters`);
       if (response.data.success) {
         setIsFiltered(false);
         setFilterForm({
@@ -297,7 +297,7 @@ function Course() {
     try {
       // Map the serial_no to update the existing rows
       for (const course of courses) {
-        await axios.patch(`http://localhost:4000/api/credits/${course.serial_no}`, {
+        await axios.patch(`${process.env.REACT_APP_API_URL}/api/credits/${course.serial_no}`, {
           course_code: course.courseCode,
           course_name: course.courseTitle,
           lecture: course.lecture,

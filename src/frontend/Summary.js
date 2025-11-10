@@ -36,10 +36,10 @@ function Summary() {
     try {
       // Fetch both credits summary and total credits with filtering
       const [creditsSummaryResponse, totalCreditsResponse] = await Promise.all([
-        axios.get("http://localhost:4000/api/summary/creditsSummary", {
+        axios.get(`${process.env.REACT_APP_API_URL}/api/summary/creditsSummary`, {
           params: { degree, department }
         }),
-        axios.get("http://localhost:4000/api/summary/getTotalCredits", {
+        axios.get(`${process.env.REACT_APP_API_URL}/api/summary/getTotalCredits`, {
           params: { degree, department }
         })
       ]);

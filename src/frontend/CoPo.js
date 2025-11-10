@@ -29,7 +29,7 @@ function CoPo() {
   const generateAllMappingsExcel = async () => {
     try {
       const response = await axios.get(
-        "http://localhost:4000/api/faculty/getAllMappings"
+        `${process.env.REACT_APP_API_URL}/api/faculty/getAllMappings`
       );
 
       if (!response.data.success) {
@@ -158,7 +158,7 @@ function CoPo() {
 
     try {
       const response = await axios.post(
-        "http://localhost:4000/api/faculty/addMapping",
+        `${process.env.REACT_APP_API_URL}/api/faculty/addMapping`,
         {
           course_code,
           course_name,
