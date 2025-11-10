@@ -10,6 +10,8 @@ function Faculty() {
   const [courses, setCourses] = useState([]);
   const [errorMessage, setErrorMessage] = useState("");
   const [selectedCourse, setSelectedCourse] = useState(""); // Selected course code
+  const [selectedDegree, setSelectedDegree] = useState("");
+  const [selectedDepartment, setSelectedDepartment] = useState("");
   const [courseDetails, setCourseDetails] = useState({
     co: Array(5).fill({ name: "", desc: "" }),
     hours: Array(5).fill({ hour1: "", hour2: "" }),
@@ -65,22 +67,21 @@ function Faculty() {
   };
 
   const getCourseDetails = async () => {
-    if (!selectedCourse) {
+    if (!selectedCourse || !selectedDegree || !selectedDepartment) {
       alert("Please select a course first.");
       return;
     }
-    const degree = courses.find(
-      (course) => course.course_code === selectedCourse.split(" - ")[0]
-    ).degree;
-    const department = courses.find(
-      (course) => course.course_code === selectedCourse.split(" - ")[0]
-    ).department;
+
     const [, courseName] = selectedCourse.split(" - "); // ✅ Extract courseName
     try {
       const response = await axios.get(
         `${process.env.REACT_APP_API_URL}/api/faculty/getCourseDetails`,
         {
-          params: { courseName, degree, department }, // ✅ Send courseName instead of courseCode
+          params: { 
+            courseName, 
+            degree: selectedDegree, 
+            department: selectedDepartment 
+          }, // ✅ Send all composite key parts
         }
       );
 
@@ -103,14 +104,20 @@ function Faculty() {
       (course) => course.course_code === selectedCourseCode
     );
 
-    const maxCO = selectedCourseObj?.degree === "B.E" ? 5 : 4;
-    setCourseDetails({
-      co: Array(maxCO).fill({ name: "", desc: "" }),
-      hours: Array(maxCO).fill({ hour1: "", hour2: "" }),
-      textbooks: [],
-      references: [],
-      outcomes: Array(5).fill(""),
-    });
+    // ✅ Store degree and department for composite key
+    if (selectedCourseObj) {
+      setSelectedDegree(selectedCourseObj.degree);
+      setSelectedDepartment(selectedCourseObj.department);
+
+      const maxCO = selectedCourseObj?.degree === "B.E" ? 5 : 4;
+      setCourseDetails({
+        co: Array(maxCO).fill({ name: "", desc: "" }),
+        hours: Array(maxCO).fill({ hour1: "", hour2: "" }),
+        textbooks: [],
+        references: [],
+        outcomes: Array(5).fill(""),
+      });
+    }
   };
 
   // Handles input changes dynamically
@@ -130,43 +137,36 @@ function Faculty() {
   const navigate = useNavigate();
 
   const handleTable = async () => {
-    const degree = courses.find(
-      (course) => course.course_code === selectedCourse.split(" - ")[0]
-    ).degree;
-    const department = courses.find(
-      (course) => course.course_code === selectedCourse.split(" - ")[0]
-    ).department;
     navigate("/CoPo", {
       state: {
-        degree: degree,
-        department: department,
+        degree: selectedDegree,
+        department: selectedDepartment,
         facultyName: facultyName,
         selectedCourse: selectedCourse,
         outcomes: courseDetails.outcomes,
       },
     });
   };
+
   const handleSave = async () => {
-    if (!selectedCourse) {
+    if (!selectedCourse || !selectedDegree || !selectedDepartment) {
       alert("Please select a course first.");
       return;
     }
 
     const [courseCode, courseName] = selectedCourse.split(" - ");
     const selectedCourseDetails = courses.find(
-      (course) => course.course_code === courseCode
+      (course) => 
+        course.course_code === courseCode && 
+        course.degree === selectedDegree && 
+        course.department === selectedDepartment
     );
 
     if (!selectedCourseDetails) {
       alert("Course not found.");
       return;
     }
-    const degree = courses.find(
-      (course) => course.course_code === selectedCourse.split(" - ")[0]
-    ).degree;
-    const department = courses.find(
-      (course) => course.course_code === selectedCourse.split(" - ")[0]
-    ).department;
+
     const { credits } = selectedCourseDetails;
     const totalHours = courseDetails.hours.reduce(
       (total, hour) =>
@@ -188,10 +188,10 @@ function Faculty() {
         `${process.env.REACT_APP_API_URL}/api/faculty/updateCourseDetails`,
         {
           courseCode,
-          courseName, // ✅ Send courseName instead of courseCode
+          courseName, // ✅ Send courseName
           facultyName,
-          degree,
-          department,
+          degree: selectedDegree, // ✅ Send degree from state
+          department: selectedDepartment, // ✅ Send department from state
           coDetails: courseDetails.co,
           hours: courseDetails.hours,
           textbooks: courseDetails.textbooks,
@@ -276,10 +276,10 @@ function Faculty() {
           <option value="">-- Select a Course --</option>
           {courses.map((course) => (
             <option
-              key={course.course_code}
+              key={`${course.course_code}-${course.degree}-${course.department}`}
               value={`${course.course_code} - ${course.course_name}`}
             >
-              {course.course_code} - {course.course_name}
+              {course.course_code} - {course.course_name} ({course.degree} - {course.department})
             </option>
           ))}
         </select>
@@ -375,9 +375,7 @@ function Faculty() {
           )}
 
           {/* Textbooks Section */}
-          {courses.find(
-            (course) => course.course_code === selectedCourse.split(" - ")[0]
-          ).degree === ("B.E" || null) && (
+          {selectedDegree === "B.E" && (
             <>
               <button
                 className="toggle-btn"
@@ -484,12 +482,7 @@ function Faculty() {
                 }
                 disabled={
                   courseDetails.references.length >=
-                  (courses.find(
-                    (course) =>
-                      course.course_code === selectedCourse.split(" - ")[0]
-                  ).degree === "B.E"
-                    ? 4
-                    : 5)
+                  (selectedDegree === "B.E" ? 4 : 5)
                 } // Disable when 4 references added
               >
                 + Add Reference
