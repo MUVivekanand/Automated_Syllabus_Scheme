@@ -42,7 +42,7 @@ function Syllabus() {
 
   const fetchTableData = async () => {
     try {
-      const response = await axios.get('http://localhost:4000/getTableData');
+      const response = await axios.get(`${process.env.REACT_APP_API_URL}/api/getTableData`);
       if (response.data.success) {
         setTableData(response.data.data);
         setRowCount(response.data.data.length);
@@ -64,7 +64,7 @@ function Syllabus() {
   const handleTickClick = async (rowIndex) => {
     try {
       const updatedRow = editedData;
-      await axios.put('http://localhost:4000/updateTableData', updatedRow);
+      await axios.put(`getTableData/api/updateTableData`, updatedRow);
       setTableData((prevData) =>
         prevData.map((row, index) =>
           index === rowIndex ? { ...row, ...updatedRow } : row
@@ -98,7 +98,7 @@ function Syllabus() {
     };
 
     try {
-      const response = await axios.post('http://localhost:4000/addRow', rowData);
+      const response = await axios.post(`${process.env.REACT_APP_API_URL}/api/addRow`, rowData);
       if (response.data.success) {
         setFormData({
           ...formData,
@@ -126,7 +126,7 @@ function Syllabus() {
     };
 
     try {
-      const response = await axios.post('http://localhost:4000/filtertable', filterData);
+      const response = await axios.post(`${process.env.REACT_APP_API_URL}/api/filtertable`, filterData);
       if (response.data.success) {
         setfilterForm({
           filterSem: "",
@@ -144,7 +144,7 @@ function Syllabus() {
 
   const clearFilters = async () => {
     try {
-      const response = await axios.post('http://localhost:4000/clearFilters');
+      const response = await axios.post(`${process.env.REACT_APP_API_URL}/api/clearFilters`);
       if (response.data.success) {
         setIsFiltered(false);
         fetchTableData();

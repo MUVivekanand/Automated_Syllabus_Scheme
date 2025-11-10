@@ -42,7 +42,7 @@ function Faculty() {
   const getCourses = async () => {
     try {
       const response = await axios.get(
-        "http://localhost:4000/api/faculty/getCourse",
+        `${process.env.REACT_APP_API_URL}/api/faculty/getCourse`,
         {
           params: { facultyName },
         }
@@ -78,7 +78,7 @@ function Faculty() {
     const [, courseName] = selectedCourse.split(" - "); // ✅ Extract courseName
     try {
       const response = await axios.get(
-        "http://localhost:4000/api/faculty/getCourseDetails",
+        `${process.env.REACT_APP_API_URL}/api/faculty/getCourseDetails`,
         {
           params: { courseName, degree, department }, // ✅ Send courseName instead of courseCode
         }
@@ -185,7 +185,7 @@ function Faculty() {
 
     try {
       const response = await axios.post(
-        "http://localhost:4000/api/faculty/updateCourseDetails",
+        `${process.env.REACT_APP_API_URL}/api/faculty/updateCourseDetails`,
         {
           courseCode,
           courseName, // ✅ Send courseName instead of courseCode

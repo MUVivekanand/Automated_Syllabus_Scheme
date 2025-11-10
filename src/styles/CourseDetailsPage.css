@@ -248,3 +248,62 @@ button.toggle-btn:active {
   white-space: nowrap; /* Prevents line breaks */
   font-weight: bold; /* Makes hours bold for better visibility */
 }
+
+
+
+
+/* ========================================
+   UNIVERSAL TEXT BOX FIX 
+   Add this at the end of every CSS file
+   ======================================== */
+
+/* Fix all input fields inside tables */
+table input[type="text"],
+table input[type="email"],
+table input[type="password"],
+table input[type="number"],
+table input[type="tel"],
+table input[type="url"],
+table input[type="date"],
+table input[type="time"],
+table textarea,
+table select {
+  width: 96% !important; /* Slightly reduced to fit inside table cells */
+  max-width: 96% !important;
+  box-sizing: border-box !important; /* Include padding in width calculation */
+}
+
+/* Fix for table cells containing inputs */
+table td,
+table th {
+  padding: 8px;
+  overflow: hidden; /* Prevent content from spilling out */
+}
+
+/* Ensure input fields respect their containers */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+input[type="tel"],
+input[type="url"],
+input[type="date"],
+input[type="time"],
+textarea,
+select {
+  box-sizing: border-box !important;
+  max-width: 100% !important;
+}
+
+/* Specific fix for .input-field class if used */
+.input-field {
+  width: 96% !important;
+  max-width: 96% !important;
+  box-sizing: border-box !important;
+}
+
+.textarea-field {
+  width: 96% !important;
+  max-width: 96% !important;
+  box-sizing: border-box !important;
+}

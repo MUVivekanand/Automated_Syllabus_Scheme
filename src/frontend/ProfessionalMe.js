@@ -18,7 +18,7 @@ function ProfessionalMe() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  const API_BASE_URL = "http://localhost:4000/api/proelective";
+  const API_BASE_URL = `${process.env.REACT_APP_API_URL}/api/proelective`;
 
   // Fetch data on initial load
   useEffect(() => {

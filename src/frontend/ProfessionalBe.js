@@ -59,13 +59,13 @@ function ProfessionalBe() {
       };
       
       if (editing) {
-        const response = await axios.put(`http://localhost:4000/api/proelective/courses/${currentCourse.course_code}`, courseData);
+        const response = await axios.put(`${process.env.REACT_APP_API_URL}/api/proelective/courses/${currentCourse.course_code}`, courseData);
         if (response.status === 200) {
           alert('Course updated successfully');
         }
       } else {
         console.log(courseData);
-        const response = await axios.post('http://localhost:4000/api/proelective/courses', courseData);
+        const response = await axios.post('${process.env.REACT_APP_API_URL}/api/proelective/courses', courseData);
         if (response.status === 201) {
           alert('Course added successfully');
         }
@@ -81,7 +81,7 @@ function ProfessionalBe() {
 
   const fetchCourses = async () => {
     try {
-      const response = await axios.get(`http://localhost:4000/api/proelective/courses?degree=${encodeURIComponent(degree)}&department=${encodeURIComponent(department)}`);
+      const response = await axios.get(`${process.env.REACT_APP_API_URL}/api/proelective/courses?degree=${encodeURIComponent(degree)}&department=${encodeURIComponent(department)}`);
       setCourses(response.data);
     } catch (error) {
       console.error('Error fetching courses:', error);
@@ -91,7 +91,7 @@ function ProfessionalBe() {
 
   const fetchVerticals = async () => {
     try {
-      const response = await axios.get(`http://localhost:4000/api/proelective/verticals?degree=${encodeURIComponent(degree)}&department=${encodeURIComponent(department)}`);
+      const response = await axios.get(`${process.env.REACT_APP_API_URL}/api/proelective/verticals?degree=${encodeURIComponent(degree)}&department=${encodeURIComponent(department)}`);
       const verticalsData = {};
       response.data.forEach(vertical => {
         verticalsData[vertical.id] = vertical.name;
@@ -113,7 +113,7 @@ function ProfessionalBe() {
   const deleteCourse = async (course_code) => {
     if (window.confirm('Are you sure you want to delete this course?')) {
       try {
-        const response = await axios.delete(`http://localhost:4000/api/proelective/courses/${course_code}`);
+        const response = await axios.delete(`${process.env.REACT_APP_API_URL}/api/proelective/courses/${course_code}`);
         if (response.status === 200) {
           alert('Course deleted successfully');
         }
@@ -143,7 +143,7 @@ function ProfessionalBe() {
         department: department
       };
 
-      const response = await axios.post('http://localhost:4000/api/proelective/verticals', verticalData);
+      const response = await axios.post('${process.env.REACT_APP_API_URL}/api/proelective/verticals', verticalData);
       if (response.status === 201) {
         alert('Vertical added successfully');
         setNewVerticalName('');
@@ -158,7 +158,7 @@ function ProfessionalBe() {
 
   const updateVerticalName = async (id, newName) => {
     try {
-      const response = await axios.put(`http://localhost:4000/api/proelective/verticals/${id}`, {
+      const response = await axios.put(`${process.env.REACT_APP_API_URL}/api/proelective/verticals/${id}`, {
         name: newName,
         degree: degree,
         department: department
@@ -176,7 +176,7 @@ function ProfessionalBe() {
   const deleteVertical = async (id) => {
     if (window.confirm('Are you sure you want to delete this vertical? All associated courses will be deleted.')) {
       try {
-        const response = await axios.delete(`http://localhost:4000/api/proelective/verticals/${id}`);
+        const response = await axios.delete(`${process.env.REACT_APP_API_URL}/api/proelective/verticals/${id}`);
         if (response.status === 200) {
           alert('Vertical deleted successfully');
           fetchVerticals();

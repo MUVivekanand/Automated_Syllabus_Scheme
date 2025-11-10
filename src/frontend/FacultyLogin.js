@@ -14,7 +14,7 @@ function FacultyLogin() {
 
     try {
       const response = await axios.post(
-        "http://localhost:4000/api/faculty/facultyLogin",
+        `${process.env.REACT_APP_API_URL}/api/faculty/facultyLogin`,
         {
           username: username.trim(),
           password: password.trim(), // Include password in the request
