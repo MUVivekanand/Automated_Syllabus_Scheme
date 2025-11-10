@@ -285,9 +285,18 @@ const handleSubmit = useCallback(async () => {
       
       if (course.courseTitle) {
         if (originalName && originalName !== course.courseTitle) {
-          try {
-            await axios.delete(`${process.env.REACT_APP_API_URL}/api/course/credits/${encodeURIComponent(originalName)}`);
-          } catch (deleteError) {
+           try {
+            // Delete with all three PK fields as query parameters
+            await axios.delete(
+              `${process.env.REACT_APP_API_URL}/api/course/credits/${encodeURIComponent(originalName)}`,
+              {
+                params: {
+                  degree: commonInfo.degree,
+                  department: commonInfo.department
+                }
+              }
+            );
+        } catch (deleteError) {
             console.error("Error deleting old course record:", deleteError);
           }
         }
