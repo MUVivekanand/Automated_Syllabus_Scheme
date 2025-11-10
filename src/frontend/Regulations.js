@@ -12,6 +12,10 @@ const Regulations = () => {
   const [newRows, setNewRows] = useState({});
   const [refresh, setRefresh] = useState(false);
   
+  // Store degree and department in state instead of reading from URL only
+  const [degreeState, setDegreeState] = useState("");
+  const [departmentState, setDepartmentState] = useState("");
+  
   // Common information
   const [commonInfo, setCommonInfo] = useState({
     ca_marks: "",
@@ -20,18 +24,32 @@ const Regulations = () => {
   });
 
   const location = useLocation();
-  const searchParams = new URLSearchParams(location.search);
-  const degree = searchParams.get('degree');
-  const department = searchParams.get('department');
+  
+  // Initialize degree and department from URL on component mount
+  useEffect(() => {
+    const searchParams = new URLSearchParams(location.search);
+    const degreeFromUrl = searchParams.get('degree');
+    const departmentFromUrl = searchParams.get('department');
+    
+    if (degreeFromUrl) setDegreeState(degreeFromUrl);
+    if (departmentFromUrl) setDepartmentState(departmentFromUrl);
+  }, [location.search]);
 
   useEffect(() => {
-    fetchCourses();
-  }, [refresh]);
+    if (degreeState && departmentState) {
+      fetchCourses();
+    }
+  }, [refresh, degreeState, departmentState]);
 
   const fetchCourses = async () => {
+    if (!degreeState || !departmentState) {
+      setLoading(false);
+      return;
+    }
+    
     try {
       const response = await axios.get(`${process.env.REACT_APP_API_URL}/api/regulations/allcourses`, {
-        params: { degree, department }
+        params: { degree: degreeState, department: departmentState }
       });
   
       setCourses(response.data);
@@ -125,8 +143,8 @@ const Regulations = () => {
           category: '',
           sem_no: semesterNumber,
           serial_no: nextSerialNo,
-          degree: degree,
-          department: department,
+          degree: degreeState,
+          department: departmentState,
           ca_marks: commonInfo.ca_marks || 0,
           fe_marks: commonInfo.fe_marks || 0,
           total_marks: commonInfo.total_marks || 0
@@ -138,8 +156,8 @@ const Regulations = () => {
   const handleSaveNewCourse = async (semesterNumber, rowIndex) => {
     const newCourse = {
       ...newRows[semesterNumber][rowIndex],
-      degree: degree,
-      department: department,
+      degree: degreeState,
+      department: departmentState,
       ca_marks: parseFloat(commonInfo.ca_marks) || 0,
       fe_marks: parseFloat(commonInfo.fe_marks) || 0,
       total_marks: parseFloat(commonInfo.total_marks) || 0
@@ -148,6 +166,11 @@ const Regulations = () => {
     // Validate course name
     if (!newCourse.course_name || newCourse.course_name.trim() === '') {
       alert("Course name is required!");
+      return;
+    }
+    
+    if (!degreeState || !departmentState) {
+      alert("Please enter Degree and Department before adding courses!");
       return;
     }
     
@@ -178,6 +201,11 @@ const Regulations = () => {
       return;
     }
 
+    if (!degreeState || !departmentState) {
+      alert("Please enter Degree and Department before updating courses!");
+      return;
+    }
+
     // Get the original key if course name was changed
     const originalKey = course._originalKey || {
       course_name: course.course_name,
@@ -202,8 +230,8 @@ const Regulations = () => {
         // Insert new record with updated course name
         await axios.post(`${process.env.REACT_APP_API_URL}/api/regulations/addcourse`, {
           ...course,
-          degree,
-          department
+          degree: degreeState,
+          department: departmentState
         });
 
         alert("Course updated successfully!");
@@ -219,8 +247,8 @@ const Regulations = () => {
           `${process.env.REACT_APP_API_URL}/api/regulations/updatecourse/${encodeURIComponent(course.course_name)}`,
           {
             ...course,
-            degree,
-            department
+            degree: degreeState,
+            department: departmentState
           }
         );
         alert("Course updated successfully!");
@@ -233,10 +261,15 @@ const Regulations = () => {
   };
 
   const handleMoveCourse = async () => {
+    if (!degreeState || !departmentState) {
+      alert("Please enter Degree and Department before moving courses!");
+      return;
+    }
+    
     const courseToMove = courses.find((course) => 
       course.course_name === fromCourseName && 
-      course.degree === degree && 
-      course.department === department
+      course.degree === degreeState && 
+      course.department === departmentState
     );
   
     if (!courseToMove) {
@@ -254,7 +287,7 @@ const Regulations = () => {
       await axios.delete(
         `${process.env.REACT_APP_API_URL}/api/regulations/deletemovecourse/${encodeURIComponent(fromCourseName)}`,
         {
-          data: { degree, department }
+          data: { degree: degreeState, department: departmentState }
         }
       );
       
@@ -262,8 +295,8 @@ const Regulations = () => {
       const updatedCourse = { 
         ...courseToMove, 
         sem_no: parseInt(toSemester, 10),
-        degree,
-        department
+        degree: degreeState,
+        department: departmentState
       };
       await axios.post(`${process.env.REACT_APP_API_URL}/api/regulations/addcourse`, updatedCourse);
       
@@ -271,8 +304,8 @@ const Regulations = () => {
         prevCourses
           .filter((course) => !(
             course.course_name === fromCourseName && 
-            course.degree === degree && 
-            course.department === department
+            course.degree === degreeState && 
+            course.department === departmentState
           ))
           .concat(updatedCourse)
       );
@@ -290,6 +323,11 @@ const Regulations = () => {
   const handleDelete = async (course) => {
     const confirmDelete = window.confirm(`Are you sure you want to delete course ${course.course_name}?`);
     if (!confirmDelete) return;
+
+    if (!degreeState || !departmentState) {
+      alert("Please enter Degree and Department before deleting courses!");
+      return;
+    }
 
     try {
       // Send composite key in request body
@@ -320,7 +358,7 @@ const Regulations = () => {
   };
 
   const handleConfirmRegulation = async () => {
-    if (!degree || !department) {
+    if (!degreeState || !departmentState) {
       alert("Degree and department information is required!");
       return;
     }
@@ -341,8 +379,8 @@ const Regulations = () => {
             : course.course_code,
           course_name: course.course_name,
           sem_no: course.sem_no,
-          degree,
-          department,
+          degree: degreeState,
+          department: departmentState,
           lecture: course.lecture || 0,
           tutorial: course.tutorial || 0,
           practical: course.practical || 0,
@@ -363,8 +401,8 @@ const Regulations = () => {
                 course_code: row.course_code,
                 course_name: row.course_name,
                 sem_no: parseInt(sem),
-                degree,
-                department,
+                degree: degreeState,
+                department: departmentState,
                 lecture: row.lecture || 0,
                 tutorial: row.tutorial || 0,
                 practical: row.practical || 0,
@@ -381,13 +419,17 @@ const Regulations = () => {
   
       const response = await axios.post(`${process.env.REACT_APP_API_URL}/api/regulations/confirm-regulation`, {
         courses: coursesToSubmit,
-        degree,
-        department,
+        degree: degreeState,
+        department: departmentState,
         regulationYear
       });
       
       console.log("Regulation confirmed successfully:", response.data);
-      alert(`Regulation confirmed successfully! Saved with department: ${response.data.department}`);
+      
+      // Update the department state to the new department with year suffix
+      setDepartmentState(response.data.department);
+      
+      alert(`Regulation confirmed successfully! Department updated to: ${response.data.department}`);
       setRefresh((prev) => !prev);
       
     } catch (error) {
@@ -403,19 +445,43 @@ const Regulations = () => {
     <div>
       <h2>New Regulations</h2>
 
-      {/* Common Information Section */}
+      {/* Common Information Section - Now Editable */}
       <div className="common-info-reg-section">
         <h3>Common Information</h3>
         <div className="common-info-reg-grid">
           <div>
             <label>Degree:</label>
-            <input type="text" value={degree || ""} readOnly />
+            <input 
+              type="text" 
+              value={degreeState || ""} 
+              onChange={(e) => setDegreeState(e.target.value)}
+              placeholder="Enter degree (e.g., B.E.)"
+            />
           </div>
           <div>
             <label>Department:</label>
-            <input type="text" value={department || ""} readOnly />
+            <input 
+              type="text" 
+              value={departmentState || ""} 
+              onChange={(e) => setDepartmentState(e.target.value)}
+              placeholder="Enter department (e.g., CSE)"
+            />
           </div>
         </div>
+        <button 
+          onClick={fetchCourses}
+          style={{ 
+            marginTop: '10px',
+            padding: '8px 16px',
+            backgroundColor: '#28a745',
+            color: 'white',
+            border: 'none',
+            borderRadius: '4px',
+            cursor: 'pointer'
+          }}
+        >
+          Load Courses
+        </button>
       </div>
 
       <div className="regulation-controls">
@@ -440,6 +506,8 @@ const Regulations = () => {
 
       {loading ? (
         <p>Loading...</p>
+      ) : !degreeState || !departmentState ? (
+        <p>Please enter Degree and Department to load courses.</p>
       ) : (
         <div className="table-container">
           {[...Array(8)].map((_, semesterIndex) => {
