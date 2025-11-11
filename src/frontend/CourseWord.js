@@ -6,6 +6,7 @@ import { Document, Packer, Paragraph, Table, TableRow, TableCell, BorderStyle, W
          AlignmentType, HeadingLevel, TextRun, convertInchesToTwip, PageOrientation, 
          Footer, Header, ShadingType } from "docx";
 import { saveAs } from "file-saver";
+import Navbar from "./Navbar";
 
 function CourseWord() {
   const [semestersData, setSemestersData] = useState([]);
@@ -1108,6 +1109,7 @@ for (let i = 2; i < semestersData.length; i += 2) {
 
 return (
   <div className="course-word-container">
+    <Navbar/>
     <h1>BE COMPUTER SCIENCE AND ENGINEERING</h1>
     <h2>Courses of Study and Scheme of Assessment</h2>
     <div className="action-buttons">

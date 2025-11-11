@@ -158,6 +158,7 @@ import React, { useState, useEffect } from "react";
 import "../styles/SemInfo.css";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import Navbar from './Navbar';
 
 function SemInfo() {
   const [semData, setSemData] = useState([]);
@@ -429,6 +430,7 @@ function SemInfo() {
 
   return (
     <div className="container-seminfo">
+      <Navbar/>
       <h1 className="page-title">Semester Information</h1>
       <div className="dropdown-container">
         <div>

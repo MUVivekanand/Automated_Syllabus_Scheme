@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import axios from 'axios';
 import "../styles/Regulations.css";
+import Navbar from './Navbar';
 
 const Regulations = () => {
   const [courses, setCourses] = useState([]);
@@ -443,6 +444,7 @@ const Regulations = () => {
 
   return (
     <div>
+      <Navbar/>
       <h2>New Regulations</h2>
 
       {/* Common Information Section - Now Editable */}

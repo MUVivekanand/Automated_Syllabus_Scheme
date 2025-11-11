@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import axios from "axios";
 import "../styles/Course.css";
 import { useNavigate } from "react-router-dom";
+import Navbar from './Navbar';
 
 function Course() {
   const [currentSem, setCurrentSem] = useState(1);
@@ -485,6 +486,7 @@ const handleSubmit = useCallback(async () => {
 
   return (
     <div className="container-course">
+      <Navbar/>
     <h1>Course Details - Semester {currentSem}</h1>
 
     <div className="dropdown-container">
