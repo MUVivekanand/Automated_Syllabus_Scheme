@@ -500,7 +500,7 @@ const handleSubmit = useCallback(async () => {
       </div>
 
       <div>
-        <label>Department: </label>
+        <label>Programme: </label>
         <select
           value={department}
           onChange={handleDepartmentChange}
@@ -638,7 +638,13 @@ const handleSubmit = useCallback(async () => {
                   .map((field) => (
                     <td key={field}>
                       {field === "credits" ? (
-                        <span>{course[field]}</span>
+                        // show credits as a readonly centered number input to match other number boxes
+                        <input
+                          type="number"
+                          value={course[field] || ""}
+                          readOnly
+                          style={{ width: 60, textAlign: "center", padding: '4px' }}
+                        />
                       ) : field === "CA_Marks" || field === "FE_Marks" ? (
                         <span>{course[field]}</span>
                       ) : (
@@ -733,7 +739,12 @@ const handleSubmit = useCallback(async () => {
                   .map((field) => (
                     <td key={field}>
                       {field === "credits" ? (
-                        <span>{course[field]}</span>
+                        <input
+                          type="number"
+                          value={course[field] || ""}
+                          readOnly
+                          style={{ width: 60, textAlign: "center", padding: '4px' }}
+                        />
                       ) : field === "CA_Marks" || field === "FE_Marks" ? (
                         <span>{course[field]}</span>
                       ) : (
@@ -786,7 +797,12 @@ const handleSubmit = useCallback(async () => {
                   .map((field) => (
                     <td key={field}>
                       {field === "credits" ? (
-                        <span>{course[field]}</span>
+                        <input
+                          type="number"
+                          value={course[field] || ""}
+                          readOnly
+                          style={{ width: 60, textAlign: "center", padding: '4px' }}
+                        />
                       ) : (
                         <input
                           type={["lecture", "tutorial", "practical"].includes(field) ? "number" : "text"}

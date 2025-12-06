@@ -284,8 +284,25 @@ function SemInfo() {
   
 
   const handleInputChange = (index, field, value) => {
+    // Allow empty value (user clearing input)
+    if (value === "") {
+      const updatedData = [...semData];
+      updatedData[index] = { ...updatedData[index], [field]: "" };
+      setSemData(updatedData);
+      return;
+    }
+
+    // Remove leading plus sign if present
+    if (typeof value === "string" && value.startsWith("+")) {
+      value = value.slice(1);
+    }
+
+    // Parse integer and clamp to zero if negative or invalid
+    const parsed = parseInt(value, 10);
+    const safeNumber = isNaN(parsed) ? 0 : Math.max(0, parsed);
+
     const updatedData = [...semData];
-    updatedData[index] = { ...updatedData[index], [field]: value };
+    updatedData[index] = { ...updatedData[index], [field]: safeNumber };
     setSemData(updatedData);
   };
 
@@ -294,7 +311,14 @@ function SemInfo() {
   };  
 
   const handleTotalCreditsChange = (e) => {
-    setTotalCredits(e.target.value);
+    const v = e.target.value;
+    if (v === "") {
+      setTotalCredits("");
+      return;
+    }
+    const parsed = parseInt(v, 10);
+    const safeNumber = isNaN(parsed) ? 0 : Math.max(0, parsed);
+    setTotalCredits(safeNumber);
   };
 
   const hasDataChanged = () => {
@@ -443,7 +467,7 @@ function SemInfo() {
         </div>
 
         <div>
-          <label>Department: </label>
+          <label>Programme: </label>
           <select
             value={department}
             onChange={(e) => setDepartment(e.target.value)}
@@ -487,6 +511,11 @@ function SemInfo() {
                         className="input-sem"
                         placeholder="Enter theory courses"
                         value={row.theory_courses}
+                        min="0"
+                        step="1"
+                        onKeyDown={(e) => {
+                          if (e.key === "-" || e.key === "e" || e.key === "E" || e.key === "+") e.preventDefault();
+                        }}
                         onChange={(e) =>
                           handleInputChange(index, "theory_courses", e.target.value)
                         }
@@ -499,6 +528,11 @@ function SemInfo() {
                         className="input-sem"
                         placeholder="Enter practical courses"
                         value={row.practical_courses}
+                        min="0"
+                        step="1"
+                        onKeyDown={(e) => {
+                          if (e.key === "-" || e.key === "e" || e.key === "E" || e.key === "+") e.preventDefault();
+                        }}
                         onChange={(e) =>
                           handleInputChange(
                             index,
@@ -515,6 +549,11 @@ function SemInfo() {
                         className="input-sem"
                         placeholder="Enter mandatory courses"
                         value={row.mandatory_courses}
+                        min="0"
+                        step="1"
+                        onKeyDown={(e) => {
+                          if (e.key === "-" || e.key === "e" || e.key === "E" || e.key === "+") e.preventDefault();
+                        }}
                         onChange={(e) =>
                           handleInputChange(
                             index,
@@ -537,6 +576,11 @@ function SemInfo() {
               id="totalCredits"
               placeholder="Enter total credits"
               value={totalCredits}
+              min="0"
+              step="1"
+              onKeyDown={(e) => {
+                if (e.key === "-" || e.key === "e" || e.key === "E" || e.key === "+") e.preventDefault();
+              }}
               onChange={handleTotalCreditsChange}
             />
           </div>

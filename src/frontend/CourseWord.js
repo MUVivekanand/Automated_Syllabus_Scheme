@@ -363,6 +363,27 @@ const sectionTypes = {
     return summaryData.reduce((sum, row) => sum + (row.credits[semesterNum] || 0), 0);
   };
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
   const exportToPDF = async () => {
     try {
       setExportLoading(true);
@@ -593,16 +614,15 @@ for (let i = 2; i < semestersData.length; i += 2) {
   doc.text('Course Code        Course Title', pageMargin, 35);
   
   doc.setFont('arial', 'normal');
-  let yPosition = 42; // Reduced from 45 to decrease spacing
+  let yPosition = 42;
   
   groupedElectives[sectionTypes.BE].forEach((course) => {
     doc.text(`${course.course_code}            ${course.course_title}`, pageMargin, yPosition);
-    yPosition += 7; // Reduced from 10 to decrease line spacing
+    yPosition += 5; // Reduced spacing between courses
   });
   
   // Professional Electives for BE Honours
   if (Object.keys(honoursCoursesByVertical).length > 0) {
-    // Don't force a new page if there's space
     if (yPosition > doc.internal.pageSize.height - 60) {
       doc.addPage();
       yPosition = 20;
@@ -610,13 +630,12 @@ for (let i = 2; i < semestersData.length; i += 2) {
   
     doc.setFontSize(12);
     doc.text('Professional Electives for BE Honours / BE Honours with specialization', doc.internal.pageSize.width / 2, yPosition, { align: 'center' });
-    doc.text('in same discipline and BE Minor degree programmes', doc.internal.pageSize.width / 2, yPosition + 8, { align: 'center' }); // Reduced from 10
+    doc.text('in same discipline and BE Minor degree programmes', doc.internal.pageSize.width / 2, yPosition + 8, { align: 'center' });
   
-    yPosition += 20; // Reduced from 25
+    yPosition += 16;
     
-    // Iterate through ALL verticals using Object.entries to ensure full access
+    // Iterate through ALL verticals
     for (const [vertical, courses] of Object.entries(honoursCoursesByVertical)) {
-      // Ensure courses exist for this vertical
       if (courses && courses.length > 0) {
         if (yPosition > doc.internal.pageSize.height - 60) {
           doc.addPage();
@@ -626,34 +645,32 @@ for (let i = 2; i < semestersData.length; i += 2) {
         doc.setFontSize(11);
         doc.setFont('arial', 'bold');
         doc.text(getVerticalName(vertical), pageMargin, yPosition);
-        yPosition += 7; // Reduced from 10
+        yPosition += 6;
         
         // Add Course Code and Course Title header in bold
         doc.setFontSize(10);
         doc.setFont('arial', 'bold');
         doc.text('Course Code        Course Title', pageMargin, yPosition);
-        yPosition += 7; // Reduced from 10
+        yPosition += 6;
         
         doc.setFont('arial', 'normal');
         courses.forEach((course) => {
           doc.text(`${course.course_code}            ${course.course_title}`, pageMargin, yPosition);
-          yPosition += 7; // Reduced from 10
+          yPosition += 5; // Reduced spacing between courses
         });
         
-        yPosition += 4; // Reduced from 5
+        yPosition += 2; // Minimal padding between verticals
       }
     }
   
-    // If the page is not filled, add some padding
     while (yPosition < doc.internal.pageSize.height - 30) {
       doc.text('', pageMargin, yPosition);
-      yPosition += 7; // Reduced from 10
+      yPosition += 5;
     }
   }
   
   // Open Electives
   if (groupedElectives[sectionTypes.OPEN] && groupedElectives[sectionTypes.OPEN].length > 0) {
-    // Don't force a new page if there's space
     if (yPosition > doc.internal.pageSize.height - 60) {
       doc.addPage();
       yPosition = 20;
@@ -662,24 +679,23 @@ for (let i = 2; i < semestersData.length; i += 2) {
     doc.setFontSize(12);
     doc.text('Open Electives', doc.internal.pageSize.width / 2, yPosition, { align: 'center' });
   
-    yPosition += 12; // Reduced from 15
+    yPosition += 10;
     
     // Add Course Code and Course Title header in bold
     doc.setFontSize(10);
     doc.setFont('arial', 'bold');
     doc.text('Course Code        Course Title', pageMargin, yPosition);
-    yPosition += 7; // Reduced from 10
+    yPosition += 6;
   
     doc.setFont('arial', 'normal');
     groupedElectives[sectionTypes.OPEN].forEach((course) => {
       doc.text(`${course.course_code}            ${course.course_title}`, pageMargin, yPosition);
-      yPosition += 7; // Reduced from 10
+      yPosition += 5; // Reduced spacing between courses
     });
   }
   
   // Language Electives
   if (groupedElectives[sectionTypes.LANGUAGE] && groupedElectives[sectionTypes.LANGUAGE].length > 0) {
-    // Don't force a new page if there's space
     if (yPosition > doc.internal.pageSize.height - 60) {
       doc.addPage();
       yPosition = 20;
@@ -688,24 +704,23 @@ for (let i = 2; i < semestersData.length; i += 2) {
     doc.setFontSize(12);
     doc.text('Language Electives', doc.internal.pageSize.width / 2, yPosition, { align: 'center' });
   
-    yPosition += 12; // Reduced from 15
+    yPosition += 10;
     
     // Add Course Code and Course Title header in bold
     doc.setFontSize(10);
     doc.setFont('arial', 'bold');
     doc.text('Course Code        Course Title', pageMargin, yPosition);
-    yPosition += 7; // Reduced from 10
+    yPosition += 6;
   
     doc.setFont('arial', 'normal');
     groupedElectives[sectionTypes.LANGUAGE].forEach((course) => {
       doc.text(`${course.course_code}            ${course.course_title}`, pageMargin, yPosition);
-      yPosition += 7; // Reduced from 10
+      yPosition += 5; // Reduced spacing between courses
     });
   }
   
   // Self Directed Learning Courses
   if (groupedElectives[sectionTypes.SDL] && groupedElectives[sectionTypes.SDL].length > 0) {
-    // Don't force a new page if there's space
     if (yPosition > doc.internal.pageSize.height - 60) {
       doc.addPage();
       yPosition = 20;
@@ -714,18 +729,18 @@ for (let i = 2; i < semestersData.length; i += 2) {
     doc.setFontSize(12);
     doc.text('Self Directed Learning Courses', doc.internal.pageSize.width / 2, yPosition, { align: 'center' });
   
-    yPosition += 12; // Reduced from 15
+    yPosition += 10;
     
     // Add Course Code and Course Title header in bold
     doc.setFontSize(10);
     doc.setFont('arial', 'bold');
     doc.text('Course Code        Course Title', pageMargin, yPosition);
-    yPosition += 7; // Reduced from 10
+    yPosition += 6;
   
     doc.setFont('arial', 'normal');
     groupedElectives[sectionTypes.SDL].forEach((course) => {
       doc.text(`${course.course_code}            ${course.course_title}`, pageMargin, yPosition);
-      yPosition += 7; // Reduced from 10
+      yPosition += 5; // Reduced spacing between courses
     });
   }
       
@@ -868,25 +883,45 @@ for (let i = 2; i < semestersData.length; i += 2) {
               if (course.courseDetails.co && course.courseDetails.co.length > 0) {
                 // Using the first item which contains co1_name, co1_desc format
                 const coData = course.courseDetails.co[0];
-                
+
+                // --- NEW: normalize hours into lectureArray and tutorialArray ---
+                let lectureArray = [];
+                let tutorialArray = [];
+                const hrs = course.courseDetails.hours;
+                if (hrs) {
+                  // Case A: backend shape { lecture: [...], tutorial: [...], total: n }
+                  if (Array.isArray(hrs.lecture) || Array.isArray(hrs.tutorial)) {
+                    lectureArray = Array.isArray(hrs.lecture) ? hrs.lecture.map(n => Number(n || 0)) : [];
+                    tutorialArray = Array.isArray(hrs.tutorial) ? hrs.tutorial.map(n => Number(n || 0)) : [];
+                  }
+                  // Case B: transformed shape [ { hour1, hour2 }, ... ]
+                  else if (Array.isArray(hrs) && hrs.length > 0 && (hrs[0].hour1 !== undefined || hrs[0].hour2 !== undefined)) {
+                    lectureArray = hrs.map(h => Number(h.hour1 || 0));
+                    tutorialArray = hrs.map(h => Number(h.hour2 || 0));
+                  }
+                }
+                // Ensure arrays have at least 5 entries to avoid undefined access
+                while (lectureArray.length < 5) lectureArray.push(0);
+                while (tutorialArray.length < 5) tutorialArray.push(0);
+                // --- END normalize ---
+
                 for (let i = 1; i <= 5; i++) {
                   if (coData[`co${i}_name`]) {
-                    // Get hours info if available
+                    // Get hours info using normalized arrays
                     let hoursText = "";
-                    if (course.courseDetails.hours && 
-                        course.courseDetails.hours.lecture && 
-                        course.courseDetails.hours.tutorial) {
-                      hoursText = `(${course.courseDetails.hours.lecture[i-1] || 0} + ${course.courseDetails.hours.tutorial[i-1] || 0})`;
-                    }
-                    
-                    // Set the CO name part in bold
+                    const lec = Number(lectureArray[i - 1] || 0);
+                    const tut = Number(tutorialArray[i - 1] || 0);
+                    // Only show tutorial part when non-zero or when you want explicit (keeps previous behaviour)
+                    hoursText = `(${lec} + ${tut})`;
+
+                    // Set the CO name part in bold (only the name, not the CO prefix)
                     doc.setFont('arial', 'bold');
-                    const coName = `CO${i}: ${coData[`co${i}_name`]}`;
+                    const coName = `${coData[`co${i}_name`]}`; // Only CO name without "CO1:" prefix
                     doc.text(coName, pageMargin + courseDetailsBorderMargin, yPosition);
-                    
+
                     // Calculate width of the co_name part to position the description properly
                     const coNameWidth = doc.getTextWidth(coName);
-                    
+
                     // Add description in normal font
                     doc.setFont('arial', 'normal');
                     const coDesc = ` ${coData[`co${i}_desc`]}`;
@@ -900,7 +935,7 @@ for (let i = 2; i < semestersData.length; i += 2) {
                     
                     // Position description after the co_name on first line
                     doc.text(firstLineLines[0], pageMargin + courseDetailsBorderMargin + coNameWidth, yPosition);
-                    yPosition += 4; // Decreased line spacing within course outcome
+                    yPosition += 4;
                     
                     // If there's more text that didn't fit on the first line, handle it separately
                     if (firstLineLines.length > 1) {
@@ -914,7 +949,7 @@ for (let i = 2; i < semestersData.length; i += 2) {
                         // Add all remaining lines except the last
                         for (let j = 0; j < remainingLines.length - 1; j++) {
                           doc.text(remainingLines[j], pageMargin + courseDetailsBorderMargin, yPosition);
-                          yPosition += 4; // Decreased line spacing within course outcome
+                          yPosition += 4;
                         }
                         
                         // For the last line, make space for hours text
@@ -926,26 +961,26 @@ for (let i = 2; i < semestersData.length; i += 2) {
                             const hoursX = doc.internal.pageSize.width - pageMargin - courseDetailsBorderMargin - doc.getTextWidth(hoursText);
                             doc.text(hoursText, hoursX, yPosition);
                           }
-                          yPosition += 4; // Decreased line spacing within course outcome
+                          yPosition += 4;
                         }
                       } else {
                         // If no remaining text, add hours on the last line
                         if (hoursText) {
                           const hoursX = doc.internal.pageSize.width - pageMargin - courseDetailsBorderMargin - doc.getTextWidth(hoursText);
-                          doc.text(hoursText, hoursX, yPosition - 4); // Adjust Y position back to last line
+                          doc.text(hoursText, hoursX, yPosition - 4);
                         }
                       }
                     } else {
                       // If first line description fit completely, add hours on same line
                       if (hoursText) {
                         const hoursX = doc.internal.pageSize.width - pageMargin - courseDetailsBorderMargin - doc.getTextWidth(hoursText);
-                        doc.text(hoursText, hoursX, yPosition - 4); // Adjust Y position back to first line
+                        doc.text(hoursText, hoursX, yPosition - 4);
                       }
                     }
-                    
+  
                     // Increased spacing between different course outcomes
                     yPosition += 6;
-                    
+  
                     // Add more space if needed
                     if (yPosition > doc.internal.pageSize.height - 40) {
                       doc.addPage();
@@ -964,11 +999,39 @@ for (let i = 2; i < semestersData.length; i += 2) {
               // Total Hours - Right aligned
               doc.setFont('arial', 'bold');
               
-              // Create the total hours text
-              const totalLectureHours = course.courseDetails.hours?.total || 45;
-              const totalTutorialHours = course.credits === 4 ? 
-                (course.courseDetails.hours?.tutorial?.reduce((a, b) => a + (b || 0), 0) || 15) : 0;
-              const totalHoursText = `L: ${totalLectureHours} ${course.credits === 4 ? `+ T: ${totalTutorialHours} = ${totalLectureHours + totalTutorialHours}` : ""}`;
+              // --- NEW: compute totals from normalized arrays ---
+              // Use previously normalized arrays if available, otherwise re-normalize defensively
+              let lecTotal = 0;
+              let tutTotal = 0;
+              const hrsAll = course.courseDetails.hours;
+              if (hrsAll) {
+                if (Array.isArray(hrsAll.lecture) || Array.isArray(hrsAll.tutorial)) {
+                  const la = Array.isArray(hrsAll.lecture) ? hrsAll.lecture.map(n => Number(n || 0)) : [];
+                  const ta = Array.isArray(hrsAll.tutorial) ? hrsAll.tutorial.map(n => Number(n || 0)) : [];
+                  lecTotal = la.reduce((s, v) => s + v, 0);
+                  tutTotal = ta.reduce((s, v) => s + v, 0);
+                } else if (Array.isArray(hrsAll) && hrsAll.length > 0 && (hrsAll[0].hour1 !== undefined || hrsAll[0].hour2 !== undefined)) {
+                  const la = hrsAll.map(h => Number(h.hour1 || 0));
+                  const ta = hrsAll.map(h => Number(h.hour2 || 0));
+                  lecTotal = la.reduce((s, v) => s + v, 0);
+                  tutTotal = ta.reduce((s, v) => s + v, 0);
+                } else if (typeof hrsAll.total === 'number') {
+                  // fallback to provided total and zero tutorials if structured differently
+                  lecTotal = Number(hrsAll.total || 0);
+                }
+              }
+              // Further fallback: if course.courseDetails.hours?.total provided and lecTotal is zero, use it
+              if ((!lecTotal || lecTotal === 0) && hrsAll && typeof hrsAll.total === 'number') {
+                lecTotal = Number(hrsAll.total || 0);
+              }
+
+              const totalLectureHours = lecTotal || 0;
+              const totalTutorialHours = tutTotal || 0;
+
+              const totalHoursText = course.credits === 4
+                ? `L: ${totalLectureHours} + T: ${totalTutorialHours} = ${totalLectureHours + totalTutorialHours}`
+                : `L: ${totalLectureHours}`;
+
               const totalHoursWidth = doc.getTextWidth(totalHoursText);
               const totalHoursX = doc.internal.pageSize.width - pageMargin - courseDetailsBorderMargin - totalHoursWidth;
               
@@ -1063,6 +1126,21 @@ for (let i = 2; i < semestersData.length; i += 2) {
       setError('Failed to export data to PDF. Please try again later.');
     }
   };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
