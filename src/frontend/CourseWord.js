@@ -532,7 +532,9 @@ const createSemesterTable = (semNo, startY, courses) => {
       fontSize: 8,
       cellPadding: 1,
       lineColor: [0, 0, 0],
-      lineWidth: 0.1
+      lineWidth: 0.1,
+      halign: 'center',    // center-align all cell content
+      valign: 'middle'     // vertically center content
     },
     columnStyles: {
       0: { cellWidth: 10 },      // S.No
@@ -618,8 +620,11 @@ for (let i = 2; i < semestersData.length; i += 2) {
   
   groupedElectives[sectionTypes.BE].forEach((course) => {
     doc.text(`${course.course_code}            ${course.course_title}`, pageMargin, yPosition);
-    yPosition += 5; // Reduced spacing between courses
+    yPosition += 5; // spacing between courses (unchanged)
   });
+
+  // increase gap before next elective section
+  yPosition += 12;
   
   // Professional Electives for BE Honours
   if (Object.keys(honoursCoursesByVertical).length > 0) {
@@ -656,25 +661,28 @@ for (let i = 2; i < semestersData.length; i += 2) {
         doc.setFont('arial', 'normal');
         courses.forEach((course) => {
           doc.text(`${course.course_code}            ${course.course_title}`, pageMargin, yPosition);
-          yPosition += 5; // Reduced spacing between courses
+          yPosition += 5; // spacing between courses (unchanged)
         });
         
-        yPosition += 2; // Minimal padding between verticals
+        yPosition += 2; // Minimal padding between verticals (unchanged)
       }
     }
   
-    while (yPosition < doc.internal.pageSize.height - 30) {
-      doc.text('', pageMargin, yPosition);
-      yPosition += 5;
-    }
+    // remove forced page-filling; add modest padding after honours block
+    yPosition += 12;
   }
   
+  // Add extra gap before Open Electives so sections are separated visibly
+  // (avoid forcing a new page unless necessary)
   // Open Electives
   if (groupedElectives[sectionTypes.OPEN] && groupedElectives[sectionTypes.OPEN].length > 0) {
     if (yPosition > doc.internal.pageSize.height - 60) {
       doc.addPage();
       yPosition = 20;
     }
+
+    // extra gap between sections
+    yPosition += 8;
   
     doc.setFontSize(12);
     doc.text('Open Electives', doc.internal.pageSize.width / 2, yPosition, { align: 'center' });
@@ -690,16 +698,18 @@ for (let i = 2; i < semestersData.length; i += 2) {
     doc.setFont('arial', 'normal');
     groupedElectives[sectionTypes.OPEN].forEach((course) => {
       doc.text(`${course.course_code}            ${course.course_title}`, pageMargin, yPosition);
-      yPosition += 5; // Reduced spacing between courses
+      yPosition += 5; // spacing between courses (unchanged)
     });
   }
   
-  // Language Electives
+  // add gap before Language Electives
   if (groupedElectives[sectionTypes.LANGUAGE] && groupedElectives[sectionTypes.LANGUAGE].length > 0) {
     if (yPosition > doc.internal.pageSize.height - 60) {
       doc.addPage();
       yPosition = 20;
     }
+
+    yPosition += 8;
   
     doc.setFontSize(12);
     doc.text('Language Electives', doc.internal.pageSize.width / 2, yPosition, { align: 'center' });
@@ -715,16 +725,18 @@ for (let i = 2; i < semestersData.length; i += 2) {
     doc.setFont('arial', 'normal');
     groupedElectives[sectionTypes.LANGUAGE].forEach((course) => {
       doc.text(`${course.course_code}            ${course.course_title}`, pageMargin, yPosition);
-      yPosition += 5; // Reduced spacing between courses
+      yPosition += 5; // spacing between courses (unchanged)
     });
   }
   
-  // Self Directed Learning Courses
+  // add gap before SDL
   if (groupedElectives[sectionTypes.SDL] && groupedElectives[sectionTypes.SDL].length > 0) {
     if (yPosition > doc.internal.pageSize.height - 60) {
       doc.addPage();
       yPosition = 20;
     }
+
+    yPosition += 8;
   
     doc.setFontSize(12);
     doc.text('Self Directed Learning Courses', doc.internal.pageSize.width / 2, yPosition, { align: 'center' });
@@ -740,7 +752,7 @@ for (let i = 2; i < semestersData.length; i += 2) {
     doc.setFont('arial', 'normal');
     groupedElectives[sectionTypes.SDL].forEach((course) => {
       doc.text(`${course.course_code}            ${course.course_title}`, pageMargin, yPosition);
-      yPosition += 5; // Reduced spacing between courses
+      yPosition += 5; // spacing between courses (unchanged)
     });
   }
       

@@ -258,13 +258,30 @@ function Course() {
     return credits;
   }
 
+  // Helper to clamp numeric inputs to integers >= 0, allow empty string
+  const clampNumericValue = (val) => {
+    if (val === "" || val === null || val === undefined) return "";
+    // remove leading plus
+    if (typeof val === "string" && val.startsWith("+")) val = val.slice(1);
+    const parsed = parseInt(val, 10);
+    if (isNaN(parsed)) return 0;
+    return Math.max(0, parsed);
+  };
+
   // Handle course changes
   const handleCourseChange = useCallback((index, field, value) => {
     setCourses(prevCourses => {
       const updatedCourses = [...prevCourses];
+      const numericFields = new Set(['serial_no','lecture','tutorial','practical','ca_marks','fe_marks','credits']);
+      let newValue = value;
+
+      if (numericFields.has(field)) {
+        newValue = clampNumericValue(value);
+      }
+
       updatedCourses[index] = {
         ...updatedCourses[index],
-        [field]: value,
+        [field]: newValue,
       };
     
       // Recalculate credits
@@ -567,17 +584,21 @@ const handleSubmit = useCallback(async () => {
           <label>CA Marks for all theory courses: </label>
           <input
             type="number"
+            min="0"
+            step="1"
             value={theoryDefaultMarks?.ca_marks || ""}
+            onKeyDown={(e) => { if (e.key === '-' || e.key === 'e' || e.key === 'E' || e.key === '+') e.preventDefault(); }}
             onChange={(e) => {
-              const value = e.target.value;
+              const raw = e.target.value;
+              const value = clampNumericValue(raw);
               setTheoryDefaultMarks(prev => ({...prev, ca_marks: value}));
               // Apply to all theory courses
               const updatedCourses = [...courses];
               updatedCourses
                 .filter(course => course.courseType === "theory")
                 .forEach(course => {
-                  const index = updatedCourses.findIndex(c => c === course);
-                  updatedCourses[index] = {...course, ca_marks: value};
+                  const idx = updatedCourses.findIndex(c => c === course);
+                  updatedCourses[idx] = {...course, ca_marks: value};
                 });
               setCourses(updatedCourses);
             }}
@@ -587,17 +608,21 @@ const handleSubmit = useCallback(async () => {
           <label>FE Marks for all theory courses: </label>
           <input
             type="number"
+            min="0"
+            step="1"
             value={theoryDefaultMarks?.fe_marks || ""}
+            onKeyDown={(e) => { if (e.key === '-' || e.key === 'e' || e.key === 'E' || e.key === '+') e.preventDefault(); }}
             onChange={(e) => {
-              const value = e.target.value;
+              const raw = e.target.value;
+              const value = clampNumericValue(raw);
               setTheoryDefaultMarks(prev => ({...prev, fe_marks: value}));
               // Apply to all theory courses
               const updatedCourses = [...courses];
               updatedCourses
                 .filter(course => course.courseType === "theory")
                 .forEach(course => {
-                  const index = updatedCourses.findIndex(c => c === course);
-                  updatedCourses[index] = {...course, fe_marks: value};
+                  const idx = updatedCourses.findIndex(c => c === course);
+                  updatedCourses[idx] = {...course, fe_marks: value};
                 });
               setCourses(updatedCourses);
             }}
@@ -629,33 +654,41 @@ const handleSubmit = useCallback(async () => {
                 <td>
                   <input
                     type="number"
+                    min="0"
+                    step="1"
                     value={course.serial_no || ""}
+                    onKeyDown={(e) => { if (e.key === '-' || e.key === 'e' || e.key === 'E' || e.key === '+') e.preventDefault(); }}
                     onChange={(e) => handleCourseChange(courses.findIndex((c) => c === course), "serial_no", e.target.value)}
                   />
                 </td>
                 {Object.keys(course)
                   .filter((key) => key !== "courseType" && key !== "serial_no")
-                  .map((field) => (
-                    <td key={field}>
-                      {field === "credits" ? (
-                        // show credits as a readonly centered number input to match other number boxes
-                        <input
-                          type="number"
-                          value={course[field] || ""}
-                          readOnly
-                          style={{ width: 60, textAlign: "center", padding: '4px' }}
-                        />
-                      ) : field === "CA_Marks" || field === "FE_Marks" ? (
-                        <span>{course[field]}</span>
-                      ) : (
-                        <input
-                          type={["lecture", "tutorial", "practical"].includes(field) ? "number" : "text"}
-                          value={course[field]}
-                          onChange={(e) => handleCourseChange(courses.findIndex((c) => c === course), field, e.target.value)}
-                        />
-                      )}
-                    </td>
-                  ))}
+                  .map((field) => {
+                    const isNumberField = ['lecture','tutorial','practical','serial_no','ca_marks','fe_marks','credits'].includes(field);
+                    return (
+                      <td key={field}>
+                        {field === "credits" ? (
+                          <input
+                            type="number"
+                            value={course[field] || ""}
+                            readOnly
+                            style={{ width: 60, textAlign: "center", padding: '4px' }}
+                          />
+                        ) : field === "CA_Marks" || field === "FE_Marks" ? (
+                          <span>{course[field]}</span>
+                        ) : (
+                          <input
+                            type={isNumberField ? "number" : "text"}
+                            min={isNumberField ? "0" : undefined}
+                            step={isNumberField ? "1" : undefined}
+                            onKeyDown={(e) => { if (isNumberField && (e.key === '-' || e.key === 'e' || e.key === 'E' || e.key === '+')) e.preventDefault(); }}
+                            value={course[field]}
+                            onChange={(e) => handleCourseChange(courses.findIndex((c) => c === course), field, e.target.value)}
+                          />
+                        )}
+                      </td>
+                    );
+                  })}
               </tr>
             ))}
         </tbody>
@@ -668,17 +701,21 @@ const handleSubmit = useCallback(async () => {
           <label>CA Marks for all practical courses: </label>
           <input
             type="number"
+            min="0"
+            step="1"
             value={practicalDefaultMarks?.ca_marks || ""}
+            onKeyDown={(e) => { if (e.key === '-' || e.key === 'e' || e.key === 'E' || e.key === '+') e.preventDefault(); }}
             onChange={(e) => {
-              const value = e.target.value;
+              const raw = e.target.value;
+              const value = clampNumericValue(raw);
               setPracticalDefaultMarks(prev => ({...prev, ca_marks: value}));
               // Apply to all practical courses
               const updatedCourses = [...courses];
               updatedCourses
                 .filter(course => course.courseType === "practical")
                 .forEach(course => {
-                  const index = updatedCourses.findIndex(c => c === course);
-                  updatedCourses[index] = {...course, ca_marks: value};
+                  const idx = updatedCourses.findIndex(c => c === course);
+                  updatedCourses[idx] = {...course, ca_marks: value};
                 });
               setCourses(updatedCourses);
             }}
@@ -689,16 +726,20 @@ const handleSubmit = useCallback(async () => {
           <label>FE Marks for all practical courses: </label>
           <input
             type="number"
+            min="0"
+            step="1"
             value={practicalDefaultMarks?.fe_marks || ""}
+            onKeyDown={(e) => { if (e.key === '-' || e.key === 'e' || e.key === 'E' || e.key === '+') e.preventDefault(); }}
             onChange={(e) => {
-              const value = e.target.value;
+              const raw = e.target.value;
+              const value = clampNumericValue(raw);
               setPracticalDefaultMarks(prev => ({...prev, fe_marks: value}));
               const updatedCourses = [...courses];
               updatedCourses
                 .filter(course => course.courseType === "practical")
                 .forEach(course => {
-                  const index = updatedCourses.findIndex(c => c === course);
-                  updatedCourses[index] = {...course, fe_marks: value};
+                  const idx = updatedCourses.findIndex(c => c === course);
+                  updatedCourses[idx] = {...course, fe_marks: value};
                 });
               setCourses(updatedCourses);
             }}
@@ -730,32 +771,41 @@ const handleSubmit = useCallback(async () => {
                 <td>
                   <input
                     type="number"
+                    min="0"
+                    step="1"
                     value={course.serial_no || ""}
+                    onKeyDown={(e) => { if (e.key === '-' || e.key === 'e' || e.key === 'E' || e.key === '+') e.preventDefault(); }}
                     onChange={(e) => handleCourseChange(courses.findIndex((c) => c === course), "serial_no", e.target.value)}
                   />
                 </td>
                 {Object.keys(course)
                   .filter((key) => key !== "courseType" && key !== "serial_no")
-                  .map((field) => (
-                    <td key={field}>
-                      {field === "credits" ? (
-                        <input
-                          type="number"
-                          value={course[field] || ""}
-                          readOnly
-                          style={{ width: 60, textAlign: "center", padding: '4px' }}
-                        />
-                      ) : field === "CA_Marks" || field === "FE_Marks" ? (
-                        <span>{course[field]}</span>
-                      ) : (
-                        <input
-                          type={["lecture", "tutorial", "practical"].includes(field) ? "number" : "text"}
-                          value={course[field]}
-                          onChange={(e) => handleCourseChange(courses.findIndex((c) => c === course), field, e.target.value)}
-                        />
-                      )}
-                    </td>
-                  ))}
+                  .map((field) => {
+                    const isNumberField = ['lecture','tutorial','practical','serial_no','ca_marks','fe_marks','credits'].includes(field);
+                    return (
+                      <td key={field}>
+                        {field === "credits" ? (
+                          <input
+                            type="number"
+                            value={course[field] || ""}
+                            readOnly
+                            style={{ width: 60, textAlign: "center", padding: '4px' }}
+                          />
+                        ) : field === "CA_Marks" || field === "FE_Marks" ? (
+                          <span>{course[field]}</span>
+                        ) : (
+                          <input
+                            type={isNumberField ? "number" : "text"}
+                            min={isNumberField ? "0" : undefined}
+                            step={isNumberField ? "1" : undefined}
+                            onKeyDown={(e) => { if (isNumberField && (e.key === '-' || e.key === 'e' || e.key === 'E' || e.key === '+')) e.preventDefault(); }}
+                            value={course[field]}
+                            onChange={(e) => handleCourseChange(courses.findIndex((c) => c === course), field, e.target.value)}
+                          />
+                        )}
+                      </td>
+                    );
+                  })}
               </tr>
             ))}
         </tbody>
@@ -787,31 +837,40 @@ const handleSubmit = useCallback(async () => {
                 <td>
                   <input
                     type="number"
+                    min="0"
+                    step="1"
                     value={course.serial_no || ""}
+                    onKeyDown={(e) => { if (e.key === '-' || e.key === 'e' || e.key === 'E' || e.key === '+') e.preventDefault(); }}
                     onChange={(e) => handleCourseChange(courses.findIndex((c) => c === course), "serial_no", e.target.value)}
                   />
                 </td>
                 
                 {Object.keys(course)
                   .filter((key) => key !== "courseType" && key !== "serial_no")
-                  .map((field) => (
-                    <td key={field}>
-                      {field === "credits" ? (
-                        <input
-                          type="number"
-                          value={course[field] || ""}
-                          readOnly
-                          style={{ width: 60, textAlign: "center", padding: '4px' }}
-                        />
-                      ) : (
-                        <input
-                          type={["lecture", "tutorial", "practical"].includes(field) ? "number" : "text"}
-                          value={course[field]}
-                          onChange={(e) => handleCourseChange(courses.findIndex((c) => c === course), field, e.target.value)}
-                        />
-                      )}
-                    </td>
-                  ))}
+                  .map((field) => {
+                    const isNumberField = ['lecture','tutorial','practical','serial_no','ca_marks','fe_marks','credits'].includes(field);
+                    return (
+                      <td key={field}>
+                        {field === "credits" ? (
+                          <input
+                            type="number"
+                            value={course[field] || ""}
+                            readOnly
+                            style={{ width: 60, textAlign: "center", padding: '4px' }}
+                          />
+                        ) : (
+                          <input
+                            type={isNumberField ? "number" : "text"}
+                            min={isNumberField ? "0" : undefined}
+                            step={isNumberField ? "1" : undefined}
+                            onKeyDown={(e) => { if (isNumberField && (e.key === '-' || e.key === 'e' || e.key === 'E' || e.key === '+')) e.preventDefault(); }}
+                            value={course[field]}
+                            onChange={(e) => handleCourseChange(courses.findIndex((c) => c === course), field, e.target.value)}
+                          />
+                        )}
+                      </td>
+                    );
+                  })}
               </tr>
             ))}
         </tbody>
