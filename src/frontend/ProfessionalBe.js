@@ -66,7 +66,7 @@ function ProfessionalBe() {
         }
       } else {
         console.log(courseData);
-        const response = await axios.post('${process.env.REACT_APP_API_URL}/api/proelective/courses', courseData);
+        const response = await axios.post(`${process.env.REACT_APP_API_URL}/api/proelective/courses`, courseData);
         if (response.status === 201) {
           alert('Course added successfully');
         }
@@ -144,7 +144,7 @@ function ProfessionalBe() {
         department: department
       };
 
-      const response = await axios.post('${process.env.REACT_APP_API_URL}/api/proelective/verticals', verticalData);
+      const response = await axios.post(`${process.env.REACT_APP_API_URL}/api/proelective/verticals`, verticalData);
       if (response.status === 201) {
         alert('Vertical added successfully');
         setNewVerticalName('');
