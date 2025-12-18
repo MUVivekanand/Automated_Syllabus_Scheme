@@ -177,7 +177,9 @@ const fetchData = async () => {
   // Update common info change handler
   const handleCommonInfoChange = useCallback((e) => {
     const { name, value } = e.target;
-    setCommonInfo(prev => ({ ...prev, [name]: value }));
+    const numericNames = new Set(['caMarks','feMarks','totalMarks','semNo','totalCredits']);
+    const newValue = numericNames.has(name) ? clampNumericValue(value) : value;
+    setCommonInfo(prev => ({ ...prev, [name]: newValue }));
   }, []);
 
   // Filter change handler
@@ -230,21 +232,36 @@ const fetchData = async () => {
     return credits;
   }
 
+  // Helper to clamp numeric inputs to integers >= 0, allow empty string
+  const clampNumericValue = (val) => {
+    if (val === "" || val === null || val === undefined) return "";
+    if (typeof val === "string" && val.startsWith("+")) val = val.slice(1);
+    const parsed = parseInt(val, 10);
+    if (isNaN(parsed)) return 0;
+    return Math.max(0, parsed);
+  };
+
   // Handle course changes
   const handleCourseChange = useCallback((index, field, value) => {
     setCourses(prevCourses => {
       const updatedCourses = [...prevCourses];
+      const numericFields = new Set(['serial_no','lecture','tutorial','practical','credits']);
+      let newValue = value;
+      if (numericFields.has(field)) {
+        newValue = clampNumericValue(value);
+      }
+
       updatedCourses[index] = {
         ...updatedCourses[index],
-        [field]: value,
+        [field]: newValue,
       };
-    
+
       // Recalculate credits
       const lecture = Number(updatedCourses[index].lecture || 0);
       const tutorial = Number(updatedCourses[index].tutorial || 0);
       const practical = Number(updatedCourses[index].practical || 0);
       updatedCourses[index].credits = calculateCredits(lecture, tutorial, practical);
-    
+
       // Recalculate total row
       const totals = updatedCourses.reduce(
         (acc, course) => ({
@@ -255,7 +272,7 @@ const fetchData = async () => {
         }),
         { lecture: 0, tutorial: 0, practical: 0, credits: 0 }
       );
-    
+
       setTotalRow(totals);
       return updatedCourses;
     });
@@ -558,6 +575,9 @@ const handleSubmit = useCallback(async () => {
         name="caMarks"
         value={commonInfo.caMarks}
         onChange={handleCommonInfoChange}
+        min="0"
+        step="1"
+        onKeyDown={(e) => { if (e.key === '-' || e.key === 'e' || e.key === 'E' || e.key === '+') e.preventDefault(); }}
       />
     </div>
     <div>
@@ -567,6 +587,9 @@ const handleSubmit = useCallback(async () => {
         name="feMarks"
         value={commonInfo.feMarks}
         onChange={handleCommonInfoChange}
+        min="0"
+        step="1"
+        onKeyDown={(e) => { if (e.key === '-' || e.key === 'e' || e.key === 'E' || e.key === '+') e.preventDefault(); }}
       />
     </div>
     <div>
@@ -576,6 +599,9 @@ const handleSubmit = useCallback(async () => {
         name="totalMarks"
         value={commonInfo.totalMarks}
         onChange={handleCommonInfoChange}
+        min="0"
+        step="1"
+        onKeyDown={(e) => { if (e.key === '-' || e.key === 'e' || e.key === 'E' || e.key === '+') e.preventDefault(); }}
       />
     </div>
     <div>
@@ -627,6 +653,9 @@ const handleSubmit = useCallback(async () => {
               type="number"
               value={course.serial_no || ""}
               onChange={(e) => handleCourseChange(index, "serial_no", e.target.value)}
+              min="0"
+              step="1"
+              onKeyDown={(e) => { if (e.key === '-' || e.key === 'e' || e.key === 'E' || e.key === '+') e.preventDefault(); }}
             />
           </td>
           <td>
@@ -648,6 +677,9 @@ const handleSubmit = useCallback(async () => {
               type="number"
               value={course.lecture || ""}
               onChange={(e) => handleCourseChange(index, "lecture", e.target.value)}
+              min="0"
+              step="1"
+              onKeyDown={(e) => { if (e.key === '-' || e.key === 'e' || e.key === 'E' || e.key === '+') e.preventDefault(); }}
             />
           </td>
           <td>
@@ -655,6 +687,9 @@ const handleSubmit = useCallback(async () => {
               type="number"
               value={course.tutorial || ""}
               onChange={(e) => handleCourseChange(index, "tutorial", e.target.value)}
+              min="0"
+              step="1"
+              onKeyDown={(e) => { if (e.key === '-' || e.key === 'e' || e.key === 'E' || e.key === '+') e.preventDefault(); }}
             />
           </td>
           <td>
@@ -662,10 +697,18 @@ const handleSubmit = useCallback(async () => {
               type="number"
               value={course.practical || ""}
               onChange={(e) => handleCourseChange(index, "practical", e.target.value)}
+              min="0"
+              step="1"
+              onKeyDown={(e) => { if (e.key === '-' || e.key === 'e' || e.key === 'E' || e.key === '+') e.preventDefault(); }}
             />
           </td>
           <td>
-            <span>{course.credits}</span>
+            <input
+              type="number"
+              value={course.credits || ""}
+              readOnly
+              style={{ width: 70, textAlign: "center", padding: '8px', fontSize: '16px' }}
+            />
           </td>
           <td>
             <input

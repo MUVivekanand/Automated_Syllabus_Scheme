@@ -308,35 +308,98 @@ function Course() {
     });
   }, []);
 
+// const handleSubmit = useCallback(async () => {
+//   try {
+//     for (let i = 0; i < courses.length; i++) {
+//       const course = courses[i];
+//       const originalName = originalCourseNames[i];
+      
+//       if (course.courseTitle) {
+//         if (originalName && originalName !== course.courseTitle) {
+//            try {
+//             // Delete with all three PK fields as query parameters
+//             await axios.delete(
+//               `${process.env.REACT_APP_API_URL}/api/course/credits/${encodeURIComponent(originalName)}`,
+//               {
+//                 params: {
+//                   degree: commonInfo.degree,
+//                   department: commonInfo.department
+//                 }
+//               }
+//             );
+//         } catch (deleteError) {
+//             console.error("Error deleting old course record:", deleteError);
+//           }
+//         }
+        
+//         try {
+//           // Calculate total marks as sum of CA and FE marks
+//           const totalMarks = Number(course.ca_marks || 0) + Number(course.fe_marks || 0);
+          
+//           await axios.patch(`${process.env.REACT_APP_API_URL}/api/course/credits/${encodeURIComponent(course.courseTitle)}`, {
+//             serial_no: course.serial_no || 0,
+//             course_code: course.courseCode,
+//             lecture: course.lecture || 0,
+//             tutorial: course.tutorial || 0,
+//             practical: course.practical || 0,
+//             credits: course.credits || 0,
+//             ca_marks: course.ca_marks || 0,
+//             fe_marks: course.fe_marks || 0,
+//             total_marks: totalMarks, // Using calculated total marks
+//             type: course.type || '',
+//             faculty: course.faculty || '',
+//             department: commonInfo.department || '',
+//             degree: commonInfo.degree || '',
+//             sem_no: currentSem,
+//             category: course.courseType
+//           });
+//         } catch (updateError) {
+//           console.error(`Error updating course ${course.courseTitle}:`, updateError.response?.data || updateError.message);
+//           alert(`Failed to update course ${course.courseTitle}: ${updateError.response?.data?.message || updateError.message}`);
+//         }
+//       }
+//     }
+    
+//     alert("Data updated successfully!");
+//     fetchData();
+//   } catch (error) {
+//     console.error("Error in submission process:", error);
+//     alert("Failed to update data: " + (error.response?.data?.message || error.message));
+//   }
+// }, [courses, commonInfo, currentSem, originalCourseNames]);
+
+
+
 const handleSubmit = useCallback(async () => {
   try {
+    // STEP 1: Validate that no existing course names have been changed
     for (let i = 0; i < courses.length; i++) {
       const course = courses[i];
       const originalName = originalCourseNames[i];
       
-      if (course.courseTitle) {
-        if (originalName && originalName !== course.courseTitle) {
-           try {
-            // Delete with all three PK fields as query parameters
-            await axios.delete(
-              `${process.env.REACT_APP_API_URL}/api/course/credits/${encodeURIComponent(originalName)}`,
-              {
-                params: {
-                  degree: commonInfo.degree,
-                  department: commonInfo.department
-                }
-              }
-            );
-        } catch (deleteError) {
-            console.error("Error deleting old course record:", deleteError);
-          }
-        }
+      // Check if this is an existing course with a changed name
+      if (originalName && course.courseTitle && originalName !== course.courseTitle) {
+        alert(`Cannot change course name from "${originalName}" to "${course.courseTitle}". Course names cannot be modified once created. Please revert the change or delete the old course first.`);
+        return; // Stop submission
+      }
+    }
+
+    // STEP 2: Process all courses (no deletions needed since names can't change)
+    for (let i = 0; i < courses.length; i++) {
+      const course = courses[i];
+      
+      // Skip empty rows
+      if (!course.courseTitle) {
+        continue;
+      }
+      
+      try {
+        // Calculate total marks as sum of CA and FE marks
+        const totalMarks = Number(course.ca_marks || 0) + Number(course.fe_marks || 0);
         
-        try {
-          // Calculate total marks as sum of CA and FE marks
-          const totalMarks = Number(course.ca_marks || 0) + Number(course.fe_marks || 0);
-          
-          await axios.patch(`${process.env.REACT_APP_API_URL}/api/course/credits/${encodeURIComponent(course.courseTitle)}`, {
+        await axios.patch(
+          `${process.env.REACT_APP_API_URL}/api/course/credits/${encodeURIComponent(course.courseTitle)}`, 
+          {
             serial_no: course.serial_no || 0,
             course_code: course.courseCode,
             lecture: course.lecture || 0,
@@ -345,28 +408,37 @@ const handleSubmit = useCallback(async () => {
             credits: course.credits || 0,
             ca_marks: course.ca_marks || 0,
             fe_marks: course.fe_marks || 0,
-            total_marks: totalMarks, // Using calculated total marks
+            total_marks: totalMarks,
             type: course.type || '',
             faculty: course.faculty || '',
             department: commonInfo.department || '',
             degree: commonInfo.degree || '',
             sem_no: currentSem,
             category: course.courseType
-          });
-        } catch (updateError) {
-          console.error(`Error updating course ${course.courseTitle}:`, updateError.response?.data || updateError.message);
+          }
+        );
+      } catch (updateError) {
+        console.error(`Error updating course ${course.courseTitle}:`, updateError.response?.data || updateError.message);
+        
+        // Check if backend rejected course name change
+        if (updateError.response?.data?.cannotModify) {
+          alert(`Cannot modify course name: ${updateError.response.data.message}`);
+        } else {
           alert(`Failed to update course ${course.courseTitle}: ${updateError.response?.data?.message || updateError.message}`);
         }
+        return; // Stop on first error
       }
     }
     
     alert("Data updated successfully!");
-    fetchData();
+    fetchData(); // Refresh the data
   } catch (error) {
     console.error("Error in submission process:", error);
     alert("Failed to update data: " + (error.response?.data?.message || error.message));
   }
-}, [courses, commonInfo, currentSem, originalCourseNames]);
+}, [courses, commonInfo, currentSem, originalCourseNames, fetchData]);
+
+
 
   // Navigation handlers
   const handleNext = useCallback(() => {
