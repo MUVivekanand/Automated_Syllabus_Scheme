@@ -185,36 +185,23 @@ const sectionTypes = {
 };
   
 
-  const fetchAllSemestersData = async (degree, department) => {
-    try {
-      const semestersData = [];
-      
-      // Fetch data for all 8 semesters
-      for (let semNo = 1; semNo <= 8; semNo++) {
-        const semInfoResponse = await axios.get(
-          `${process.env.REACT_APP_API_URL}/api/course/seminfo/${semNo}`, 
-          { params: { degree, department } }
-        );
-        
-        const coursesResponse = await axios.get(
-          `${process.env.REACT_APP_API_URL}/api/course/courses/${semNo}`, 
-          { params: { degree, department } }
-        );
-        
-        semestersData.push({
-          semNo,
-          semInfo: semInfoResponse.data,
-          courses: coursesResponse.data
-        });
+ const fetchAllSemestersData = async (degree, department) => {
+  try {
+    const response = await axios.get(
+      `${process.env.REACT_APP_API_URL}/api/course/getAllSemestersData`,
+      {
+        params: { degree, department },
+        timeout: 15000,
       }
-      
-      setSemestersData(semestersData);
-      return semestersData;
-    } catch (error) {
-      console.error("Error fetching all semesters data:", error);
-      throw error;
-    }
-  };
+    );
+
+    setSemestersData(response.data);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching all semesters data:", error);
+    throw error;
+  }
+};
 
   const fetchCourseDetailsForAllSemesters = async () => {
     try {
@@ -362,27 +349,6 @@ const sectionTypes = {
   const calculateColumnTotal = (semesterNum) => {
     return summaryData.reduce((sum, row) => sum + (row.credits[semesterNum] || 0), 0);
   };
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
   
   const exportToPDF = async () => {
     try {
