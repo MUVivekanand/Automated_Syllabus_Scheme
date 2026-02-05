@@ -12,10 +12,15 @@ const Regulations = () => {
   const [toSemester, setToSemester] = useState("");
   const [newRows, setNewRows] = useState({});
   const [refresh, setRefresh] = useState(false);
+  const [pageMode, setPageMode] = useState("normal"); // "normal" | "new"
+  const [showSemInfo, setShowSemInfo] = useState(false);
+  const [semInfoRows, setSemInfoRows] = useState([]);
+  const [courseCountErrors, setCourseCountErrors] = useState([]);
   
   // Store degree and department in state instead of reading from URL only
   const [degreeState, setDegreeState] = useState("");
   const [departmentState, setDepartmentState] = useState("");
+  const [baseDepartment, setBaseDepartment] = useState("");
   
   // Common information
   const [commonInfo, setCommonInfo] = useState({
@@ -31,18 +36,32 @@ const Regulations = () => {
     const searchParams = new URLSearchParams(location.search);
     const degreeFromUrl = searchParams.get('degree');
     const departmentFromUrl = searchParams.get('department');
+    const modeFromUrl = searchParams.get('mode');
     
     if (degreeFromUrl) setDegreeState(degreeFromUrl);
-    if (departmentFromUrl) setDepartmentState(departmentFromUrl);
+    if (departmentFromUrl) {
+      setDepartmentState(departmentFromUrl);
+      setBaseDepartment(departmentFromUrl);
+    }
+    if (modeFromUrl === "new") {
+      setPageMode("new");
+      setCourses([]);
+      setShowSemInfo(false);
+      setLoading(false);
+    }
   }, [location.search]);
 
   useEffect(() => {
-    if (degreeState && departmentState) {
+    if (degreeState && departmentState && pageMode === "normal") {
       fetchCourses();
     }
-  }, [refresh, degreeState, departmentState]);
+  }, [refresh, degreeState, departmentState, pageMode]);
 
   const fetchCourses = async () => {
+    if (pageMode === "new") {
+      setLoading(false);
+      return;
+    }
     if (!degreeState || !departmentState) {
       setLoading(false);
       return;
@@ -50,7 +69,7 @@ const Regulations = () => {
     
     try {
       const response = await axios.get(`${process.env.REACT_APP_API_URL}/api/regulations/allcourses`, {
-        params: { degree: degreeState, department: departmentState }
+        params: { degree: degreeState, department: baseDepartment || departmentState }
       });
   
       setCourses(response.data);
@@ -67,6 +86,21 @@ const Regulations = () => {
       year = year.slice(-2);
     }
     setRegulationYear(year);
+    if (year.length === 2) {
+      const semCount = degreeState === "M.E" ? 4 : 8;
+      setSemInfoRows(
+        Array.from({ length: semCount }, (_, i) => ({
+          sem_no: i + 1,
+          theory_courses: "",
+          practical_courses: "",
+          mandatory_courses: ""
+        }))
+      );
+      setShowSemInfo(true);
+    } else {
+      setShowSemInfo(false);
+      setSemInfoRows([]);
+    }
   };
 
   const handleCommonInfoChange = (field, value) => {
@@ -74,6 +108,86 @@ const Regulations = () => {
       ...prev,
       [field]: value
     }));
+  };
+
+  const validateCourseCounts = () => {
+    if (!semInfoRows.length) {
+      setCourseCountErrors([]);
+      return;
+    }
+    const errors = [];
+    semInfoRows.forEach((row) => {
+      const semCourses = courses.filter(c => c.sem_no === row.sem_no);
+      const countByCategory = (cat) =>
+        semCourses.filter(c => (c.category || "").toLowerCase() === cat).length;
+
+      const theoryCount = countByCategory("theory");
+      const practicalCount = countByCategory("practical");
+      const mandatoryCount = countByCategory("mandatory");
+
+      if (String(row.theory_courses) !== "" && Number(row.theory_courses) !== theoryCount) {
+        errors.push(`Semester ${row.sem_no}: theory courses mismatch (expected ${row.theory_courses}, found ${theoryCount})`);
+      }
+      if (String(row.practical_courses) !== "" && Number(row.practical_courses) !== practicalCount) {
+        errors.push(`Semester ${row.sem_no}: practical courses mismatch (expected ${row.practical_courses}, found ${practicalCount})`);
+      }
+      if (String(row.mandatory_courses) !== "" && Number(row.mandatory_courses) !== mandatoryCount) {
+        errors.push(`Semester ${row.sem_no}: mandatory courses mismatch (expected ${row.mandatory_courses}, found ${mandatoryCount})`);
+      }
+    });
+    setCourseCountErrors(errors);
+  };
+
+  const handleSemInfoChange = (index, field, value) => {
+    const updated = [...semInfoRows];
+    if (value === "") {
+      updated[index][field] = "";
+    } else {
+      const parsed = parseInt(value, 10);
+      updated[index][field] = isNaN(parsed) ? 0 : Math.max(0, parsed);
+    }
+    setSemInfoRows(updated);
+  };
+
+  const handleSemInfoSubmit = async () => {
+    if (!degreeState || !departmentState) {
+      alert("Degree and Department information is required!");
+      return;
+    }
+    if (!regulationYear || regulationYear.length !== 2) {
+      alert("Please enter a valid 2-digit regulation year!");
+      return;
+    }
+
+    const baseDept = (baseDepartment || departmentState || "").replace(/-\d{2}$/, "");
+    const departmentWithYear = `${baseDept}-${regulationYear}`;
+    const payload = semInfoRows.map((row) => ({
+      sem_no: row.sem_no,
+      theory_courses: row.theory_courses ?? null,
+      practical_courses: row.practical_courses ?? null,
+      mandatory_courses: row.mandatory_courses ?? null,
+      total_credits: null,
+      degree: degreeState,
+      department: departmentWithYear
+    }));
+
+    try {
+      const response = await axios.post(
+        `${process.env.REACT_APP_API_URL}/api/seminfo/updateSemInfo`,
+        { semData: payload }
+      );
+      if (response.data?.success) {
+        setDepartmentState(departmentWithYear);
+        setPageMode("normal");
+        setShowSemInfo(false);
+        setRefresh((prev) => !prev);
+      } else {
+        alert("Failed to update semester information.");
+      }
+    } catch (error) {
+      console.error("Error updating semester info:", error);
+      alert("An error occurred while updating semester information.");
+    }
   };
 
   // Updated to track both old and new course names for proper updates
@@ -371,6 +485,7 @@ const Regulations = () => {
   
     try {
       setLoading(true);
+      const baseDept = (baseDepartment || departmentState || "").replace(/-\d{2}$/, "");
       
       // Process the existing courses
       const coursesToSubmit = courses.map(course => {
@@ -421,7 +536,7 @@ const Regulations = () => {
       const response = await axios.post(`${process.env.REACT_APP_API_URL}/api/regulations/confirm-regulation`, {
         courses: coursesToSubmit,
         degree: degreeState,
-        department: departmentState,
+        department: baseDept,
         regulationYear
       });
       
@@ -442,10 +557,16 @@ const Regulations = () => {
     }
   };
 
+  useEffect(() => {
+    if (pageMode === "normal") {
+      validateCourseCounts();
+    }
+  }, [courses, semInfoRows, pageMode]);
+
   return (
-    <div>
+    <div className="container-regulations">
       <Navbar/>
-      <h2>New Regulations</h2>
+      <h2 className="page-title">New Regulations</h2>
 
       {/* Common Information Section - Now Editable */}
       <div className="common-info-reg-section">
@@ -506,12 +627,79 @@ const Regulations = () => {
         </button>
       </div>
 
+      {pageMode === "new" && showSemInfo && (
+        <div className="seminfo-reg-container">
+          <h3>Semester Information</h3>
+
+          <div className="table-container">
+            <table className="data-table" border="1">
+              <thead>
+                <tr>
+                  <th>Semester No</th>
+                  <th>Theory Courses</th>
+                  <th>Practical Courses</th>
+                  <th>Mandatory Courses</th>
+                </tr>
+              </thead>
+              <tbody>
+                {semInfoRows.map((row, index) => (
+                  <tr key={row.sem_no}>
+                    <td>{row.sem_no}</td>
+                    <td>
+                      <input
+                        type="number"
+                        min="0"
+                        step="1"
+                        value={row.theory_courses}
+                        onChange={(e) => handleSemInfoChange(index, "theory_courses", e.target.value)}
+                      />
+                    </td>
+                    <td>
+                      <input
+                        type="number"
+                        min="0"
+                        step="1"
+                        value={row.practical_courses}
+                        onChange={(e) => handleSemInfoChange(index, "practical_courses", e.target.value)}
+                      />
+                    </td>
+                    <td>
+                      <input
+                        type="number"
+                        min="0"
+                        step="1"
+                        value={row.mandatory_courses}
+                        onChange={(e) => handleSemInfoChange(index, "mandatory_courses", e.target.value)}
+                      />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <button onClick={handleSemInfoSubmit} className="confirm-regulation-btn">
+            Submit Semester Info
+          </button>
+        </div>
+      )}
+
       {loading ? (
         <p>Loading...</p>
       ) : !degreeState || !departmentState ? (
         <p>Please enter Degree and Department to load courses.</p>
-      ) : (
+      ) : pageMode === "normal" ? (
         <div className="table-container">
+          {courseCountErrors.length > 0 && (
+            <div className="error-box">
+              <div className="error-title">Course count mismatches</div>
+              <ul className="error-list">
+                {courseCountErrors.map((msg, idx) => (
+                  <li key={idx}>{msg}</li>
+                ))}
+              </ul>
+            </div>
+          )}
           {[...Array(8)].map((_, semesterIndex) => {
             const semesterNumber = semesterIndex + 1;
             const semesterCourses = courses.filter(course => course.sem_no === semesterNumber);
@@ -526,15 +714,15 @@ const Regulations = () => {
                   <thead>
                     <tr>
                       <th>Serial No</th>
-                      <th>Course Code</th>
-                      <th>Course Title</th>
+                      <th className="wide-column">Course Code</th>
+                      <th className="extra-wide-column">Course Title</th>
                       <th>Lecture</th>
                       <th>Tutorial</th>
                       <th>Practical</th>
                       <th>Credits</th>
-                      <th>Type</th>
-                      <th>Faculty</th>
-                      <th>Course Type</th>
+                      <th className="wide-column">Type</th>
+                      <th className="wide-column">Faculty</th>
+                      <th className="wide-column">Course Type</th>
                       <th>Actions</th>
                     </tr>
                   </thead>
@@ -739,7 +927,7 @@ const Regulations = () => {
             <button onClick={handleMoveCourse}>Move</button>
           </div>
         </div>
-      )}
+      ) : null}
     </div>
   );
 };

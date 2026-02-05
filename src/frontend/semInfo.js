@@ -166,6 +166,7 @@ function SemInfo() {
   const navigate = useNavigate();
   const [degree, setDegree] = useState("");
   const [department, setDepartment] = useState("");
+  const [departments, setDepartments] = useState([]);
   const [loading, setLoading] = useState(false);
   const [existingData, setExistingData] = useState(null);
 
@@ -219,6 +220,21 @@ function SemInfo() {
       fetchExistingData();
     }
   }, [degree, department]);
+
+  useEffect(() => {
+    fetchDepartments();
+  }, []);
+
+  const fetchDepartments = async () => {
+    try {
+      const response = await axios.get(`${process.env.REACT_APP_API_URL}/api/course/departments`);
+      if (response.data?.success) {
+        setDepartments(response.data.data || []);
+      }
+    } catch (error) {
+      console.error("Error fetching departments:", error);
+    }
+  };
 
   const fetchExistingData = async () => {
     try {
@@ -307,7 +323,7 @@ function SemInfo() {
   };
 
   const navigateRegulations = () => {
-    navigate(`/Regulations?degree=${degree}&department=${department}`);
+    navigate(`/Regulations?degree=${degree}&department=${department}&mode=new`);
   };  
 
   const handleTotalCreditsChange = (e) => {
@@ -474,12 +490,9 @@ function SemInfo() {
             disabled={degree === "M.E"} // Disable for M.E since only CSE is allowed
           >
             <option value="">Select Department</option>
-            <option value="CSE">CSE</option>
-            {degree === "B.E" && (
-              <>
-                <option value="CSE AI-ML">CSE AI-ML</option>
-              </>
-            )}
+            {departments.map((dep, index) => (
+              <option key={`${dep}-${index}`} value={dep}>{dep}</option>
+            ))}
           </select>
         </div>
       </div>
