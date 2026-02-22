@@ -42,6 +42,7 @@ function Course() {
   const [practicalDefaultMarks, setPracticalDefaultMarks] = useState({ CA_Marks: "", FE_Marks: "" });
 
   const [departments, setDepartments] = useState([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const navigate = useNavigate();
 
@@ -371,6 +372,7 @@ function Course() {
 
 
 const handleSubmit = useCallback(async () => {
+  setIsSubmitting(true);
   try {
     // STEP 1: Validate that no existing course names have been changed
     for (let i = 0; i < courses.length; i++) {
@@ -380,6 +382,7 @@ const handleSubmit = useCallback(async () => {
       // Check if this is an existing course with a changed name
       if (originalName && course.courseTitle && originalName !== course.courseTitle) {
         alert(`Cannot change course name from "${originalName}" to "${course.courseTitle}". Course names cannot be modified once created. Please revert the change or delete the old course first.`);
+        setIsSubmitting(false);
         return; // Stop submission
       }
     }
@@ -426,14 +429,17 @@ const handleSubmit = useCallback(async () => {
         } else {
           alert(`Failed to update course ${course.courseTitle}: ${updateError.response?.data?.message || updateError.message}`);
         }
+        setIsSubmitting(false);
         return; // Stop on first error
       }
     }
     
     alert("Data updated successfully!");
     fetchData(); // Refresh the data
+    setIsSubmitting(false);
   } catch (error) {
     console.error("Error in submission process:", error);
+    setIsSubmitting(false);
     alert("Failed to update data: " + (error.response?.data?.message || error.message));
   }
 }, [courses, commonInfo, currentSem, originalCourseNames, fetchData]);
@@ -1111,7 +1117,20 @@ const handleSubmit = useCallback(async () => {
         </div>
       
       <div className="action-buttons"> 
-        <button onClick={handleSubmit}>Submit</button>
+        <button onClick={handleSubmit} disabled={isSubmitting} style={{display:'inline-flex', alignItems:'center', gap:8}}>
+          {isSubmitting ? (
+            <>
+              <svg width="16" height="16" viewBox="0 0 50 50" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                <circle cx="25" cy="25" r="20" stroke="#333" strokeWidth="4" fill="none" strokeLinecap="round" strokeDasharray="31.4 31.4">
+                  <animateTransform attributeName="transform" type="rotate" from="0 25 25" to="360 25 25" dur="1s" repeatCount="indefinite" />
+                </circle>
+              </svg>
+              Submitting...
+            </>
+          ) : (
+            'Submit'
+          )}
+        </button>
         <button onClick={navigateSummary}>Generate Summary</button>
         <button onClick={navigateProfessional}>Professional Electives</button>
         <button onClick={navigateWordPage}>Downloadable Word Format</button>

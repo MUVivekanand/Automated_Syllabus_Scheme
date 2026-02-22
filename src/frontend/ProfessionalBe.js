@@ -36,7 +36,8 @@ function ProfessionalBe() {
     BE: 'Professional electives for BE degree programme',
     BE_HONOURS: 'Professional Electives for BE Honours / BE Honours with specialization in same discipline and BE Minor degree programmes',
     OPEN: 'OPEN ELECTIVES',
-    SDL: 'SELF DIRECTED LEARNING COURSES'
+    SDL: 'SELF DIRECTED LEARNING COURSES',
+    ONE_CREDIT: 'ONE CREDIT COURSES'
   };
 
   // Fetch courses and verticals from backend
@@ -307,6 +308,12 @@ function ProfessionalBe() {
         >
           Self Directed Learning
         </button>
+        <button
+          className={activeSection === 'ONE_CREDIT' ? 'active' : ''}
+          onClick={() => setActiveSection('ONE_CREDIT')}
+        >
+          One Credit Courses
+        </button>
       </div>
 
       {activeSection === 'BE_HONOURS' && (
@@ -566,6 +573,36 @@ function ProfessionalBe() {
               </thead>
               <tbody>
                 {groupedCourses[sectionTypes.SDL].map(course => (
+                  <tr key={course.course_code}>
+                    <td>{course.course_code}</td>
+                    <td>{course.course_title}</td>
+                    <td>
+                      <div className="action-butto">
+                        <button onClick={() => editCourse(course)}>Edit</button>
+                        <button onClick={() => deleteCourse(course.course_code)}>Delete</button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {/* Display One Credit Courses */}
+        {groupedCourses[sectionTypes.ONE_CREDIT] && groupedCourses[sectionTypes.ONE_CREDIT].length > 0 && (
+          <div className="course-section">
+            <h3>ONE CREDIT COURSES</h3>
+            <table>
+              <thead>
+                <tr>
+                  <th>Course Code</th>
+                  <th>Course Title</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {groupedCourses[sectionTypes.ONE_CREDIT].map(course => (
                   <tr key={course.course_code}>
                     <td>{course.course_code}</td>
                     <td>{course.course_title}</td>
