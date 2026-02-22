@@ -15,11 +15,13 @@ const updateCourseDetails = async (req, res) => {
       outcomes,
     } = req.body;
 
-    // Check if the course exists in `course_details`
+    // Check if the course exists in `course_details` using composite key
     const { data: existingCourse, error: fetchError } = await supabase
       .from("course_details")
       .select("course_name")
-      .eq("course_name", courseName);
+      .eq("course_name", courseName)
+      .eq("degree", degree)
+      .eq("department", department);
 
     if (fetchError) {
       console.error("❌ Error fetching course details:", fetchError);
@@ -73,11 +75,13 @@ const updateCourseDetails = async (req, res) => {
       if (insertError) throw insertError;
     }
 
-    // ✅ Update Timings (Hours) in `timings` table
+    // ✅ Update Timings (Hours) in `timings` table using composite key
     const { data: existingTimings, error: checkError } = await supabase
       .from("timings")
       .select("course_name")
-      .eq("course_name", courseName);
+      .eq("course_name", courseName)
+      .eq("degree", degree)
+      .eq("department", department);
 
     if (checkError) throw checkError;
 
@@ -136,7 +140,7 @@ const updateCourseDetails = async (req, res) => {
       if (insertTimingsError) throw insertTimingsError;
     }
 
-    // ✅ Delete old textbooks and references
+    // ✅ Delete old textbooks and references using composite key
     await supabase
       .from("textbooks")
       .delete()
@@ -232,19 +236,20 @@ const getCourse = async (req, res) => {
   }
 };
 
-// Get course details by course name
+// Get course details by course name using composite key
 const getCourseDetails = async (req, res) => {
   try {
-    const courseName = req.query.courseName; // Change courseCode to courseName
+    const courseName = req.query.courseName;
     const degree = req.query.degree;
     const department = req.query.department;
 
-    if (!courseName) {
-      return res.status(400).send({ message: "Course name is required" });
+    if (!courseName || !degree || !department) {
+      return res.status(400).send({ 
+        message: "Course name, degree, and department are required" 
+      });
     }
 
-    // Fetch course details
-
+    // Fetch course details using composite key
     const { data: courseDetails, error: courseDetailsError } = await supabase
       .from("course_details")
       .select(
@@ -254,6 +259,7 @@ const getCourseDetails = async (req, res) => {
       .eq("degree", degree)
       .eq("department", department)
       .maybeSingle();
+    
     if (courseDetailsError) throw courseDetailsError;
 
     if (!courseDetails) {
@@ -262,7 +268,7 @@ const getCourseDetails = async (req, res) => {
         .send({ success: false, message: "Course details not found." });
     }
 
-    // Fetch textbooks for the course
+    // Fetch textbooks for the course using composite key
     const { data: textbooks, error: textbooksError } = await supabase
       .from("textbooks")
       .select("*")
@@ -272,7 +278,7 @@ const getCourseDetails = async (req, res) => {
 
     if (textbooksError) throw textbooksError;
 
-    // Fetch references for the course
+    // Fetch references for the course using composite key
     const { data: references, error: referencesError } = await supabase
       .from("refs")
       .select("*")
@@ -282,7 +288,7 @@ const getCourseDetails = async (req, res) => {
 
     if (referencesError) throw referencesError;
 
-    // Fetch hours from the Timings table
+    // Fetch hours from the Timings table using composite key
     const { data: timings, error: timingsError } = await supabase
       .from("timings")
       .select(
@@ -351,6 +357,8 @@ const addMapping = async (req, res) => {
       !course_code ||
       !course_name ||
       !faculty ||
+      !degree ||
+      !department ||
       !Array.isArray(mappingData) ||
       !outcomes
     ) {
@@ -360,15 +368,17 @@ const addMapping = async (req, res) => {
       });
     }
 
+    // Check if mapping exists using composite key
     const { data: existingMapping, error: fetchError } = await supabase
       .from("mapping")
-      .select("id") // Adjust based on your table schema
+      .select("id")
       .eq("course_name", course_name)
       .eq("degree", degree)
       .eq("department", department);
 
     if (fetchError) throw fetchError;
 
+    // Delete existing mapping using composite key
     if (existingMapping.length > 0) {
       const { error: deleteError } = await supabase
         .from("mapping")

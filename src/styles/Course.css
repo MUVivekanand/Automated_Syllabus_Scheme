@@ -1,6 +1,6 @@
 .container-course {
   padding: 20px;
-  max-width: 1200px;
+  max-width: 1500px;
   margin: 0 auto;
 }
 
@@ -73,6 +73,39 @@
 .existing-courses-table th {
   background-color: #f5f5f5;
   font-weight: bold;
+}
+.fixed-marks-inputs {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin: 1rem 0;
+  font-family: Arial, sans-serif;
+}
+
+.marks-input-group {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.marks-input-group label {
+  font-weight: 500;
+  font-size: 0.95rem;
+  white-space: nowrap;
+}
+
+.marks-input-group input {
+  width: 180px;
+  padding: 6px 10px;
+  font-size: 0.9rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  transition: border-color 0.2s ease-in-out;
+}
+
+.marks-input-group input:focus {
+  border-color: #4a90e2;
+  outline: none;
 }
 
 .total-row {
@@ -210,4 +243,9 @@ td.sno-column {
 .action-buttons button:disabled {
   background-color: #cccccc;
   cursor: not-allowed;
+}
+
+.data-table th, .existing-courses-table th {
+  color: #000 !important; /* Black text */
+  background-color: #f0f0f0 !important; /* Light gray background */
 }

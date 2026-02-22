@@ -45,4 +45,8 @@ Generated Word file (downloadable ones by the admin).
 9/3/2025:
 Added degree specialization filter (M.E,B.E) and dept wise (CSE,AI,IT,etc.) for all the existing pages.
 Word file -> converted directly to downloadable PDF (PDF is now downloadable by the admin).
-Changes made in Faculty login
+Changes made in Faculty login.
+
+13/3/2025:
+CO_PO Excel file downloadable in faculty login.
+Professional Electives for M.E specialization.

@@ -30,7 +30,7 @@ const Regulations = () => {
 
   const fetchCourses = async () => {
     try {
-      const response = await axios.get("http://localhost:4000/api/regulations/allcourses", {
+      const response = await axios.get(`${process.env.REACT_APP_API_URL}/api/regulations/allcourses`, {
         params: { degree, department }
       });
   
@@ -57,10 +57,11 @@ const Regulations = () => {
     }));
   };
 
-  const handleChange = (courseCode, field, value) => {
+  // FIXED: Now uses course_name (part of composite PK) instead of course_code
+  const handleChange = (courseName, field, value) => {
     setCourses(prevCourses => 
       prevCourses.map(course => 
-        course.course_code === courseCode
+        course.course_name === courseName
           ? { ...course, [field]: field === "serial_no" ? parseInt(value) || 0 : value }
           : course
       )
@@ -108,9 +109,9 @@ const Regulations = () => {
           serial_no: nextSerialNo,
           degree: degree,
           department: department,
-          ca_marks: commonInfo.ca_marks,
-          fe_marks: commonInfo.fe_marks,
-          total_marks: commonInfo.total_marks
+          ca_marks: commonInfo.ca_marks || 0,
+          fe_marks: commonInfo.fe_marks || 0,
+          total_marks: commonInfo.total_marks || 0
         }
       ]
     }));
@@ -121,13 +122,19 @@ const Regulations = () => {
       ...newRows[semesterNumber][rowIndex],
       degree: degree,
       department: department,
-      ca_marks: commonInfo.ca_marks,
-      fe_marks: commonInfo.fe_marks,
-      total_marks: commonInfo.total_marks
+      ca_marks: parseFloat(commonInfo.ca_marks) || 0,
+      fe_marks: parseFloat(commonInfo.fe_marks) || 0,
+      total_marks: parseFloat(commonInfo.total_marks) || 0
     };
+
+    // Validate course name
+    if (!newCourse.course_name || newCourse.course_name.trim() === '') {
+      alert("Course name is required!");
+      return;
+    }
     
     try {
-      const response = await axios.post("http://localhost:4000/api/regulations/addcourse", newCourse);
+      const response = await axios.post(`${process.env.REACT_APP_API_URL}/api/regulations/addcourse`, newCourse);
       setCourses(prev => [...prev, response.data]);
       
       // Remove the new row after successful save
@@ -140,7 +147,8 @@ const Regulations = () => {
       setRefresh((prev) => !prev);
     } catch (error) {
       console.error("Error adding course:", error);
-      alert("Failed to add course: " + (error.response?.data?.message || error.message));
+      const errorMsg = error.response?.data?.message || error.message;
+      alert("Failed to add course: " + errorMsg);
     }
   };
 
@@ -154,12 +162,16 @@ const Regulations = () => {
     }
   
     try {
-      await axios.put(`http://localhost:4000/api/regulations/updatecourse/${courseName}`, updatedCourse);
+      await axios.put(`${process.env.REACT_APP_API_URL}/api/regulations/updatecourse/${courseName}`, {
+        ...updatedCourse,
+        degree,
+        department
+      });
       alert("Course updated successfully!");
       setRefresh((prev) => !prev);
     } catch (error) {
       console.error("Error updating course:", error);
-      alert("Failed to update course");
+      alert("Failed to update course: " + (error.response?.data?.message || error.message));
     }
   };
 
@@ -177,9 +189,14 @@ const Regulations = () => {
     }
   
     try {
-      await axios.delete(`http://localhost:4000/api/regulations/deletemovecourse/${fromCourseName}`);
+      // Delete the old course
+      await axios.delete(`${process.env.REACT_APP_API_URL}/api/regulations/deletemovecourse/${fromCourseName}`, {
+        data: { degree, department }
+      });
+      
+      // Add the course with new semester
       const updatedCourse = { ...courseToMove, sem_no: parseInt(toSemester, 10) };
-      await axios.post("http://localhost:4000/api/regulations/addcourse", updatedCourse);
+      await axios.post(`${process.env.REACT_APP_API_URL}/api/regulations/addcourse`, updatedCourse);
       
       setCourses((prevCourses) =>
         prevCourses
@@ -190,9 +207,10 @@ const Regulations = () => {
       alert("Course moved successfully!");
       setFromCourseName("");
       setToSemester("");
+      setRefresh((prev) => !prev);
     } catch (error) {
       console.error("Error moving course:", error);
-      alert("Failed to move course. Try again.");
+      alert("Failed to move course: " + (error.response?.data?.message || error.message));
     }
   };
 
@@ -201,7 +219,9 @@ const Regulations = () => {
     if (!confirmDelete) return;
 
     try {
-      const response = await axios.delete(`http://localhost:4000/api/regulations/delete-course/${courseName}`);
+      const response = await axios.delete(`${process.env.REACT_APP_API_URL}/api/regulations/delete-course/${courseName}`, {
+        data: { degree, department }
+      });
 
       if (response.status === 200) {
         setCourses((prevCourses) => prevCourses.filter((course) => course.course_name !== courseName));
@@ -209,7 +229,87 @@ const Regulations = () => {
       }
     } catch (error) {
       console.error("Error deleting course:", error);
-      alert(error.response?.data?.error || "Failed to delete course.");
+      alert(error.response?.data?.message || error.response?.data?.error || "Failed to delete course.");
+    }
+  };
+
+  const handleConfirmRegulation = async () => {
+    if (!degree || !department) {
+      alert("Degree and department information is required!");
+      return;
+    }
+  
+    if (!regulationYear) {
+      alert("Regulation year is required!");
+      return;
+    }
+  
+    try {
+      setLoading(true);
+      
+      // Process the existing courses
+      const coursesToSubmit = courses.map(course => {
+        return {
+          course_code: regulationYear.length === 2 
+            ? `${regulationYear}${course.course_code.slice(2)}` 
+            : course.course_code,
+          course_name: course.course_name,
+          sem_no: course.sem_no,
+          degree,
+          department,
+          lecture: course.lecture || 0,
+          tutorial: course.tutorial || 0,
+          practical: course.practical || 0,
+          credits: course.credits || 0,
+          type: course.type || "",
+          faculty: course.faculty || "",
+          category: course.category || "",
+          serial_no: course.serial_no || 0
+        };
+      });
+      
+      // Process any new rows
+      Object.keys(newRows).forEach(sem => {
+        if (newRows[sem]?.length > 0) {
+          newRows[sem].forEach(row => {
+            if (row.course_code && row.course_name) {
+              coursesToSubmit.push({
+                course_code: row.course_code,
+                course_name: row.course_name,
+                sem_no: parseInt(sem),
+                degree,
+                department,
+                lecture: row.lecture || 0,
+                tutorial: row.tutorial || 0,
+                practical: row.practical || 0,
+                credits: row.credits || 0,
+                type: row.type || "",
+                faculty: row.faculty || "",
+                category: row.category || "",
+                serial_no: row.serial_no || 0
+              });
+            }
+          });
+        }
+      });
+  
+      const response = await axios.post(`${process.env.REACT_APP_API_URL}/api/regulations/confirm-regulation`, {
+        courses: coursesToSubmit,
+        degree,
+        department,
+        regulationYear
+      });
+      
+      console.log("Regulation confirmed successfully:", response.data);
+      alert(`Regulation confirmed successfully! Saved with department: ${response.data.department}`);
+      setRefresh((prev) => !prev);
+      
+    } catch (error) {
+      console.error("Error confirming regulation:", error);
+      const errorMessage = error.response?.data?.message || error.message;
+      alert(`Failed to confirm regulation: ${errorMessage}`);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -219,45 +319,38 @@ const Regulations = () => {
 
       {/* Common Information Section */}
       <div className="common-info-reg-section">
-          <h3>Common Information</h3>
-          <div className="common-info-reg-grid">
-            <div>
-              <label>Degree:</label>
-              <input type="text" value={degree || ""} readOnly />
-            </div>
-            <div>
-              <label>Department:</label>
-              <input type="text" value={department || ""} readOnly />
-            </div>
-            <div>
-              <label>CA Marks:</label>
-              <input 
-                type="number" 
-                value={commonInfo.ca_marks} 
-                onChange={(e) => handleCommonInfoChange("ca_marks", e.target.value)} 
-              />
-            </div>
-            <div>
-              <label>FE Marks:</label>
-              <input 
-                type="number" 
-                value={commonInfo.fe_marks} 
-                onChange={(e) => handleCommonInfoChange("fe_marks", e.target.value)} 
-              />
-            </div>
-            <div>
-              <label>Total Marks:</label>
-              <input 
-                type="number" 
-                value={commonInfo.total_marks} 
-                onChange={(e) => handleCommonInfoChange("total_marks", e.target.value)} 
-              />
-            </div>
+        <h3>Common Information</h3>
+        <div className="common-info-reg-grid">
+          <div>
+            <label>Degree:</label>
+            <input type="text" value={degree || ""} readOnly />
+          </div>
+          <div>
+            <label>Department:</label>
+            <input type="text" value={department || ""} readOnly />
           </div>
         </div>
+      </div>
 
-      <label>Enter Regulation Year: </label>
-      <input type="text" value={regulationYear} onChange={handleRegulationChange} />
+      <div className="regulation-controls">
+        <label>Enter Regulation Year: </label>
+        <input type="text" value={regulationYear} onChange={handleRegulationChange} />
+        <button 
+          className="confirm-regulation-btn"
+          onClick={handleConfirmRegulation}
+          style={{ 
+            marginLeft: '10px',
+            padding: '8px 16px',
+            backgroundColor: '#007BFF',
+            color: 'white',
+            border: 'none',
+            borderRadius: '4px',
+            cursor: 'pointer'
+          }}
+        >
+          Confirm Regulation
+        </button>
+      </div>
 
       {loading ? (
         <p>Loading...</p>
@@ -290,13 +383,14 @@ const Regulations = () => {
                     </tr>
                   </thead>
                   <tbody>
+                    {/* FIXED: Using composite key for React key */}
                     {semesterCourses.map((course) => (
-                      <tr key={course.course_code}>
+                      <tr key={`${course.degree}-${course.department}-${course.course_name}`}>
                         <td>
                           <input 
                             type="number"
                             value={course.serial_no || 0}
-                            onChange={(e) => handleChange(course.course_code, "serial_no", e.target.value)}
+                            onChange={(e) => handleChange(course.course_name, "serial_no", e.target.value)}
                           />
                         </td>
                         <td>
@@ -306,59 +400,59 @@ const Regulations = () => {
                                 ? `${regulationYear}${course.course_code.slice(2)}` 
                                 : course.course_code
                             }
-                            onChange={(e) => handleChange(course.course_code, "course_code", e.target.value)} 
+                            onChange={(e) => handleChange(course.course_name, "course_code", e.target.value)} 
                           />
                         </td>
                         <td>
                           <input 
                             value={course.course_name || ""} 
-                            onChange={(e) => handleChange(course.course_code, "course_name", e.target.value)} 
+                            onChange={(e) => handleChange(course.course_name, "course_name", e.target.value)} 
                           />
                         </td>
                         <td>
                           <input 
                             type="number" 
                             value={course.lecture || 0} 
-                            onChange={(e) => handleChange(course.course_code, "lecture", e.target.value)} 
+                            onChange={(e) => handleChange(course.course_name, "lecture", e.target.value)} 
                           />
                         </td>
                         <td>
                           <input 
                             type="number" 
                             value={course.tutorial || 0} 
-                            onChange={(e) => handleChange(course.course_code, "tutorial", e.target.value)} 
+                            onChange={(e) => handleChange(course.course_name, "tutorial", e.target.value)} 
                           />
                         </td>
                         <td>
                           <input 
                             type="number" 
                             value={course.practical || 0} 
-                            onChange={(e) => handleChange(course.course_code, "practical", e.target.value)} 
+                            onChange={(e) => handleChange(course.course_name, "practical", e.target.value)} 
                           />
                         </td>
                         <td>
                           <input 
                             type="number" 
                             value={course.credits || 0} 
-                            onChange={(e) => handleChange(course.course_code, "credits", e.target.value)} 
+                            onChange={(e) => handleChange(course.course_name, "credits", e.target.value)} 
                           />
                         </td>
                         <td>
                           <input 
                             value={course.type || ""} 
-                            onChange={(e) => handleChange(course.course_code, "type", e.target.value)} 
+                            onChange={(e) => handleChange(course.course_name, "type", e.target.value)} 
                           />
                         </td>
                         <td>
                           <input 
                             value={course.faculty || ""} 
-                            onChange={(e) => handleChange(course.course_code, "faculty", e.target.value)} 
+                            onChange={(e) => handleChange(course.course_name, "faculty", e.target.value)} 
                           />
                         </td>
                         <td>
                           <input 
                             value={course.category || ""} 
-                            onChange={(e) => handleChange(course.course_code, "category", e.target.value)} 
+                            onChange={(e) => handleChange(course.course_name, "category", e.target.value)} 
                           />
                         </td>
                         <td>
@@ -388,6 +482,7 @@ const Regulations = () => {
                           <input 
                             value={newRow.course_name || ''}
                             onChange={(e) => handleNewRowChange(semesterNumber, rowIndex, "course_name", e.target.value)}
+                            placeholder="Enter course name"
                           />
                         </td>
                         <td>

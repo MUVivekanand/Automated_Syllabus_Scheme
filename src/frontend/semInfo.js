@@ -222,8 +222,9 @@ function SemInfo() {
   const fetchExistingData = async () => {
     try {
       setLoading(true);
+      console.log(process.env.REACT_APP_API_URL);
       const response = await axios.get(
-        `http://localhost:4000/api/seminfo/getSemInfo?degree=${degree}&department=${department}`
+        `https://automated-syllabus-scheme-backend.vercel.app/api/seminfo/getSemInfo?degree=${degree}&department=${department}`
       );
   
       // Generate default semester data based on degree
@@ -398,7 +399,7 @@ function SemInfo() {
 
         // API calls
         const semInfoResponse = await axios.post(
-            "http://localhost:4000/api/seminfo/updateSemInfo",
+            `https://automated-syllabus-scheme-backend.vercel.app/api/seminfo/updateSemInfo`,
             { semData: semInfoPayload }
         );
 
@@ -451,7 +452,6 @@ function SemInfo() {
             {degree === "B.E" && (
               <>
                 <option value="CSE AI-ML">CSE AI-ML</option>
-                <option value="IT">IT</option>
               </>
             )}
           </select>

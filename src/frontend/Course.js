@@ -23,6 +23,8 @@ function Course() {
     tutorial: 0,
     practical: 0,
     credits: 0,
+    caMarks: 0,
+    feMarks: 0,
   });
   const [filterForm, setFilterForm] = useState({
     filterSem: "",
@@ -35,25 +37,37 @@ function Course() {
   const [department, setDepartment] = useState("");
   const [originalCourseNames, setOriginalCourseNames] = useState({});
 
+  const [theoryDefaultMarks, setTheoryDefaultMarks] = useState({ CA_Marks: "", FE_Marks: "" });
+  const [practicalDefaultMarks, setPracticalDefaultMarks] = useState({ CA_Marks: "", FE_Marks: "" });
+
   const navigate = useNavigate();
 
   const navigateSummary = () => {
     navigate(`/Summary?degree=${encodeURIComponent(degree)}&department=${encodeURIComponent(department)}`);
   };
 
+  const navigateProfessional = () => {
+    if(degree == 'B.E'){
+      navigate(`/ProfessionalBe?degree=${encodeURIComponent(degree)}&department=${encodeURIComponent(department)}`);
+    }
+  };
+
   const navigateWordPage = () => {
     navigate(`/wordPage?degree=${encodeURIComponent(degree)}&department=${encodeURIComponent(department)}`);
   }
-     
 
+  const navigateMe = () => {
+    navigate("/courseME?degree='M.E'&department='CSE'");
+  }
+     
   const fetchData = async () => {
     try {
       setCourses([]);
       setExistingCourses([]);
-      setTotalRow({ lecture: 0, tutorial: 0, practical: 0, credits: 0 });
+      setTotalRow({ lecture: 0, tutorial: 0, practical: 0, credits: 0 , caMarks: 0, feMarks: 0 });
   
       // Pass degree and department as query parameters
-      const semResponse = await axios.get(`http://localhost:4000/api/course/seminfo/${currentSem}`, {
+      const semResponse = await axios.get(`${process.env.REACT_APP_API_URL}/api/course/seminfo/${currentSem}`, {
         params: { degree, department }
       });
       const semInfo = semResponse.data;
@@ -68,6 +82,8 @@ function Course() {
           tutorial: 0,
           practical: 0,
           credits: 0,
+          ca_marks: 0,  
+          fe_marks: 0, 
           type: "",
           faculty: "",
           courseType: category
@@ -82,7 +98,7 @@ function Course() {
       };
   
       // Fetch existing courses with degree parameter
-      const coursesResponse = await axios.get(`http://localhost:4000/api/course/courses/${currentSem}`, {
+      const coursesResponse = await axios.get(`${process.env.REACT_APP_API_URL}/api/course/courses/${currentSem}`, {
         params: { degree, department }
       });
       const existingCoursesData = coursesResponse.data;
@@ -100,6 +116,8 @@ function Course() {
             tutorial: course.tutorial,
             practical: course.practical,
             credits: course.credits,
+            ca_marks: course.ca_marks,
+            fe_marks: course.fe_marks,
             type: course.type,
             faculty: course.faculty,
             courseType: cat
@@ -156,8 +174,10 @@ function Course() {
         tutorial: acc.tutorial + Number(course.tutorial || 0),
         practical: acc.practical + Number(course.practical || 0),
         credits: acc.credits + Number(course.credits || 0),
+        caMarks: acc.caMarks + Number(course.ca_marks || 0),
+        feMarks: acc.feMarks + Number(course.fe_marks || 0),
       }),
-      { lecture: 0, tutorial: 0, practical: 0, credits: 0 }
+      { lecture: 0, tutorial: 0, practical: 0, credits: 0 , caMarks: 0, feMarks: 0}
     );
     setTotalRow(totals);
   };
@@ -165,7 +185,7 @@ function Course() {
   const resetStates = () => {
     setCourses([]);
     setExistingCourses([]);
-    setTotalRow({ lecture: 0, tutorial: 0, practical: 0, credits: 0 });
+    setTotalRow({ lecture: 0, tutorial: 0, practical: 0, credits: 0 , caMarks: 0, feMarks: 0});
   };
 
   // Update common info change handler
@@ -186,7 +206,7 @@ function Course() {
   // Fetch table data
   const fetchTableData = async () => {
     try {
-      const response = await axios.get('http://localhost:4000/api/course/getTableData');
+      const response = await axios.get(`${process.env.REACT_APP_API_URL}/api/course/getTableData`);
       if (response.data.success) {
         setTableData(response.data.data);
       }
@@ -246,8 +266,10 @@ function Course() {
           tutorial: acc.tutorial + Number(course.tutorial || 0),
           practical: acc.practical + Number(course.practical || 0),
           credits: acc.credits + Number(course.credits || 0),
+          caMarks: acc.caMarks + Number(course.ca_marks || 0),
+          feMarks: acc.feMarks + Number(course.fe_marks || 0),
         }),
-        { lecture: 0, tutorial: 0, practical: 0, credits: 0 }
+        { lecture: 0, tutorial: 0, practical: 0, credits: 0, caMarks: 0, feMarks: 0 }
       );
     
       setTotalRow(totals);
@@ -265,7 +287,7 @@ const handleSubmit = useCallback(async () => {
         if (originalName && originalName !== course.courseTitle) {
           try {
             // First delete the old record - the backend will handle related records
-            await axios.delete(`http://localhost:4000/api/course/credits/${encodeURIComponent(originalName)}`);
+            await axios.delete(`${process.env.REACT_APP_API_URL}/api/course/credits/${encodeURIComponent(originalName)}`);
           } catch (deleteError) {
             console.error("Error deleting old course record:", deleteError);
             // Continue with update attempt even if delete fails
@@ -274,15 +296,15 @@ const handleSubmit = useCallback(async () => {
         
         try {
           // Create or update with new course data
-          await axios.patch(`http://localhost:4000/api/course/credits/${encodeURIComponent(course.courseTitle)}`, {
+          await axios.patch(`${process.env.REACT_APP_API_URL}/api/course/credits/${encodeURIComponent(course.courseTitle)}`, {
             serial_no: course.serial_no || 0,
             course_code: course.courseCode,
             lecture: course.lecture || 0,
             tutorial: course.tutorial || 0,
             practical: course.practical || 0,
             credits: course.credits || 0,
-            ca_marks: commonInfo.caMarks || 0,
-            fe_marks: commonInfo.feMarks || 0,
+            ca_marks: course.ca_marks || 0,
+            fe_marks: course.fe_marks || 0,
             total_marks: commonInfo.totalMarks || 0,
             type: course.type || '',
             faculty: course.faculty || '',
@@ -376,6 +398,8 @@ const handleSubmit = useCallback(async () => {
     }
   }, [degree]);
 
+  
+
   // Update this handler for degree change
   const handleDegreeChange = (e) => {
     const selectedDegree = e.target.value;
@@ -384,6 +408,9 @@ const handleSubmit = useCallback(async () => {
       ...prev,
       degree: selectedDegree
     }));
+    if(selectedDegree == 'M.E'){
+      navigateMe();
+    }
   };
   
   // Update department handler
@@ -432,327 +459,343 @@ const handleSubmit = useCallback(async () => {
 
   return (
     <div className="container-course">
-      <h1>Course Details - Semester {currentSem}</h1>
+    <h1>Course Details - Semester {currentSem}</h1>
 
-      <div className="dropdown-container">
-        <div>
-          <label>Degree: </label>
-          <select value={degree} onChange={handleDegreeChange}>
-            <option value="">Select Degree</option>
-                <option value="B.E">B.E</option>
-                <option value="M.E">M.E</option>
-              </select>
-            </div>
-
-            <div>
-              <label>Department: </label>
-              <select
-                value={department}
-                onChange={handleDepartmentChange}
-                disabled={degree === "M.E"} // Disable if M.E is selected
-              >
-                <option value="">Select Department</option>
-                {degree === "M.E" ? (
-                  <option value="CSE">CSE</option>
-                ) : (
-                  <>
-                    <option value="CSE">CSE</option>
-                    <option value="CSE AI-ML">CSE AI-ML</option>
-                    <option value="IT">IT</option>
-                  </>
-                )}
-              </select>
-            </div>
-          </div>
-                
-
-
-      {/* Common Information Section */}
-      <div className="form-container">
-        <h3>Common Information</h3>
-        <div className="form-fields">
-          <div>
-            <label>Semester Number:</label>
-            <input type="number" value={commonInfo.semNo} readOnly />
-          </div>
-          <div>
-            <label>Total Theory:</label>
-            <input type="number" value={commonInfo.theoryCourses} readOnly />
-          </div>
-          <div>
-            <label>Total Practical:</label>
-            <input type="number" value={commonInfo.practicalCourses} readOnly />
-          </div>
-          <div>
-            <label>Total Mandatory:</label>
-            <input type="number" value={commonInfo.mandatoryCourses} readOnly />
-          </div>
-          <div>
-            <label>CA Marks:</label>
-            <input
-              type="number"
-              name="caMarks"
-              value={commonInfo.caMarks}
-              onChange={handleCommonInfoChange}
-            />
-          </div>
-          <div>
-            <label>FE Marks:</label>
-            <input
-              type="number"
-              name="feMarks"
-              value={commonInfo.feMarks}
-              onChange={handleCommonInfoChange}
-            />
-          </div>
-          <div>
-            <label>Total Marks:</label>
-            <input
-              type="number"
-              name="totalMarks"
-              value={commonInfo.totalMarks}
-              onChange={handleCommonInfoChange}
-            />
-          </div>
-          <div>
-            <label>Department:</label>
-            <input
-              type="text"
-              name="department"
-              value={commonInfo.department}
-              onChange={handleCommonInfoChange}
-            />
-          </div>
-          <div>
-            <label>Degree:</label>
-            <input
-              type="text"
-              name="degree"
-              value={commonInfo.degree}
-              onChange={handleCommonInfoChange}
-            />
-          </div>
-        </div>
+    <div className="dropdown-container">
+      <div>
+        <label>Degree: </label>
+        <select value={degree} onChange={handleDegreeChange}>
+          <option value="">Select Degree</option>
+          <option value="B.E">B.E</option>
+          <option value="M.E">M.E</option>
+        </select>
       </div>
 
-      {/* Course Details Input Section */}
-      <div className="table-container">
-        <h2>Course Details</h2>
+      <div>
+        <label>Department: </label>
+        <select
+          value={department}
+          onChange={handleDepartmentChange}
+          disabled={degree === "M.E"} // Disable if M.E is selected
+        >
+          <option value="">Select Department</option>
+          {degree === "M.E" ? (
+            <option value="CSE">CSE</option>
+          ) : (
+            <>
+              <option value="CSE">CSE</option>
+              <option value="CSE AI-ML">CSE AI-ML</option>
+            </>
+          )}
+        </select>
+      </div>
+    </div>
+            
+    {/* Common Information Section */}
+    <div className="form-container">
+      <h3>Common Information</h3>
+      <div className="form-fields">
+        <div>
+          <label>Semester Number:</label>
+          <input type="number" value={commonInfo.semNo} readOnly />
+        </div>
+        <div>
+          <label>Total Theory:</label>
+          <input type="number" value={commonInfo.theoryCourses} readOnly />
+        </div>
+        <div>
+          <label>Total Practical:</label>
+          <input type="number" value={commonInfo.practicalCourses} readOnly />
+        </div>
+        <div>
+          <label>Total Mandatory:</label>
+          <input type="number" value={commonInfo.mandatoryCourses} readOnly />
+        </div>
+        <div>
+          <label>Total Marks:</label>
+          <input
+            type="number"
+            name="totalMarks"
+            value={commonInfo.totalMarks}
+            onChange={handleCommonInfoChange}
+          />
+        </div>
+        <div>
+          <label>Department:</label>
+          <input
+            type="text"
+            name="department"
+            value={commonInfo.department}
+            onChange={handleCommonInfoChange}
+          />
+        </div>
+        <div>
+          <label>Degree:</label>
+          <input
+            type="text"
+            name="degree"
+            value={commonInfo.degree}
+            onChange={handleCommonInfoChange}
+          />
+        </div>
+      </div>
+    </div>
 
-        {/* Theory Courses Section */}
-        <h4>Theory Courses</h4>
-        <table className="data-table">
-          <thead>
-            <tr>
-              <th>Serial No</th>
-              <th className="wide-column">Course Code</th>
-              <th className="extra-wide-column">Course Title</th>
-              <th>Lecture</th>
-              <th>Tutorial</th>
-              <th>Practical</th>
-              <th>Credits</th>
-              <th className="wide-column">Type</th>
-              <th className="wide-column">Faculty Assigned</th>
-            </tr>
-          </thead>
-          <tbody>
-            {courses
-              .filter((course) => course.courseType === "theory")
-              .map((course, index) => (
-                <tr key={`theory-${index}`}>
-                  <td>
-                      <input
-                        type="number"
-                        value={course.serial_no || ""}
-                        onChange={(e) => handleCourseChange(courses.findIndex((c) => c === course), "serial_no", e.target.value)}
-                      />
+    <div className="table-container">
+      <h2>Course Details</h2>
+
+      {/* Theory Courses Section */}
+      <h4>Theory Courses</h4>
+      <div className="fixed-marks-inputs">
+        <div className="marks-input-group">
+          <label>CA Marks for all theory courses: </label>
+          <input
+            type="number"
+            value={theoryDefaultMarks?.ca_marks || ""}
+            onChange={(e) => {
+              const value = e.target.value;
+              setTheoryDefaultMarks(prev => ({...prev, ca_marks: value}));
+              // Apply to all theory courses
+              const updatedCourses = [...courses];
+              updatedCourses
+                .filter(course => course.courseType === "theory")
+                .forEach(course => {
+                  const index = updatedCourses.findIndex(c => c === course);
+                  updatedCourses[index] = {...course, ca_marks: value};
+                });
+              setCourses(updatedCourses);
+            }}
+          />
+        </div>
+        <div className="marks-input-group">
+          <label>FE Marks for all theory courses: </label>
+          <input
+            type="number"
+            value={theoryDefaultMarks?.fe_marks || ""}
+            onChange={(e) => {
+              const value = e.target.value;
+              setTheoryDefaultMarks(prev => ({...prev, fe_marks: value}));
+              // Apply to all theory courses
+              const updatedCourses = [...courses];
+              updatedCourses
+                .filter(course => course.courseType === "theory")
+                .forEach(course => {
+                  const index = updatedCourses.findIndex(c => c === course);
+                  updatedCourses[index] = {...course, fe_marks: value};
+                });
+              setCourses(updatedCourses);
+            }}
+          />
+        </div>
+      </div>
+  
+      <table className="data-table">
+        <thead>
+          <tr>
+            <th>Serial No</th>
+            <th className="wide-column">Course Code</th>
+            <th className="extra-wide-column">Course Title</th>
+            <th>Lecture</th>
+            <th>Tutorial</th>
+            <th>Practical</th>
+            <th>Credits</th>
+            <th>CA_Marks</th>
+            <th>FE_Marks</th>
+            <th className="wide-column">Type</th>
+            <th className="wide-column">Faculty Assigned</th>
+          </tr>
+        </thead>
+        <tbody>
+          {courses
+            .filter((course) => course.courseType === "theory")
+            .map((course, index) => (
+              <tr key={`theory-${index}`}>
+                <td>
+                  <input
+                    type="number"
+                    value={course.serial_no || ""}
+                    onChange={(e) => handleCourseChange(courses.findIndex((c) => c === course), "serial_no", e.target.value)}
+                  />
+                </td>
+                {Object.keys(course)
+                  .filter((key) => key !== "courseType" && key !== "serial_no")
+                  .map((field) => (
+                    <td key={field}>
+                      {field === "credits" ? (
+                        <span>{course[field]}</span>
+                      ) : field === "CA_Marks" || field === "FE_Marks" ? (
+                        <span>{course[field]}</span>
+                      ) : (
+                        <input
+                          type={["lecture", "tutorial", "practical"].includes(field) ? "number" : "text"}
+                          value={course[field]}
+                          onChange={(e) => handleCourseChange(courses.findIndex((c) => c === course), field, e.target.value)}
+                        />
+                      )}
                     </td>
+                  ))}
+              </tr>
+            ))}
+        </tbody>
+      </table>
 
-                  {Object.keys(course)
-                    .filter((key) => key !== "courseType" && key !== "serial_no")
-                    .map((field) => (
-                      <td key={field}>
-                        {field === "credits" ? (
-                          <span>{course[field]}</span>
-                        ) : (
-                          <input
-                            type={["lecture", "tutorial", "practical"].includes(field) ? "number" : "text"}
-                            value={course[field]}
-                            onChange={(e) => handleCourseChange(courses.findIndex((c) => c === course), field, e.target.value)}
-                          />
-                        )}
-                      </td>
-                    ))}
-                </tr>
-              ))}
-          </tbody>
-        </table>
+      {/* Practical Courses Section */}
+      <h4>Practical Courses</h4>
+      <div className="fixed-marks-inputs">
+        <div className="marks-input-group">
+          <label>CA Marks for all practical courses: </label>
+          <input
+            type="number"
+            value={practicalDefaultMarks?.ca_marks || ""}
+            onChange={(e) => {
+              const value = e.target.value;
+              setPracticalDefaultMarks(prev => ({...prev, ca_marks: value}));
+              // Apply to all practical courses
+              const updatedCourses = [...courses];
+              updatedCourses
+                .filter(course => course.courseType === "practical")
+                .forEach(course => {
+                  const index = updatedCourses.findIndex(c => c === course);
+                  updatedCourses[index] = {...course, ca_marks: value};
+                });
+              setCourses(updatedCourses);
+            }}
+          />
+        </div>
 
-        {/* Practical Courses Section */}
-        <h4>Practical Courses</h4>
-        <table className="data-table">
-          <thead>
-            <tr>
-              <th>Serial No</th>
-              <th className="wide-column">Course Code</th>
-              <th className="extra-wide-column">Course Title</th>
-              <th>Lecture</th>
-              <th>Tutorial</th>
-              <th>Practical</th>
-              <th>Credits</th>
-              <th className="wide-column">Type</th>
-              <th className="wide-column">Faculty Assigned</th>
-            </tr>
-          </thead>
-          <tbody>
-            {courses
-              .filter((course) => course.courseType === "practical")
-              .map((course, index) => (
-                <tr key={`practical-${index}`}>
-                  <td>
-                      <input
-                        type="number"
-                        value={course.serial_no || ""}
-                        onChange={(e) => handleCourseChange(courses.findIndex((c) => c === course), "serial_no", e.target.value)}
-                      />
+        <div className="marks-input-group">
+          <label>FE Marks for all practical courses: </label>
+          <input
+            type="number"
+            value={practicalDefaultMarks?.fe_marks || ""}
+            onChange={(e) => {
+              const value = e.target.value;
+              setPracticalDefaultMarks(prev => ({...prev, fe_marks: value}));
+              const updatedCourses = [...courses];
+              updatedCourses
+                .filter(course => course.courseType === "practical")
+                .forEach(course => {
+                  const index = updatedCourses.findIndex(c => c === course);
+                  updatedCourses[index] = {...course, fe_marks: value};
+                });
+              setCourses(updatedCourses);
+            }}
+          />
+        </div>
+      </div>
+      
+      <table className="data-table">
+        <thead>
+          <tr>
+            <th>Serial No</th>
+            <th className="wide-column">Course Code</th>
+            <th className="extra-wide-column">Course Title</th>
+            <th>Lecture</th>
+            <th>Tutorial</th>
+            <th>Practical</th>
+            <th>Credits</th>
+            <th>CA_Marks</th>
+            <th>FE_Marks</th>
+            <th className="wide-column">Type</th>
+            <th className="wide-column">Faculty Assigned</th>
+          </tr>
+        </thead>
+        <tbody>
+          {courses
+            .filter((course) => course.courseType === "practical")
+            .map((course, index) => (
+              <tr key={`practical-${index}`}>
+                <td>
+                  <input
+                    type="number"
+                    value={course.serial_no || ""}
+                    onChange={(e) => handleCourseChange(courses.findIndex((c) => c === course), "serial_no", e.target.value)}
+                  />
+                </td>
+                {Object.keys(course)
+                  .filter((key) => key !== "courseType" && key !== "serial_no")
+                  .map((field) => (
+                    <td key={field}>
+                      {field === "credits" ? (
+                        <span>{course[field]}</span>
+                      ) : field === "CA_Marks" || field === "FE_Marks" ? (
+                        <span>{course[field]}</span>
+                      ) : (
+                        <input
+                          type={["lecture", "tutorial", "practical"].includes(field) ? "number" : "text"}
+                          value={course[field]}
+                          onChange={(e) => handleCourseChange(courses.findIndex((c) => c === course), field, e.target.value)}
+                        />
+                      )}
                     </td>
+                  ))}
+              </tr>
+            ))}
+        </tbody>
+      </table>
 
-                  {Object.keys(course)
-                    .filter((key) => key !== "courseType" && key !== "serial_no")
-                    .map((field) => (
-                      <td key={field}>
-                        {field === "credits" ? (
-                          <span>{course[field]}</span>
-                        ) : (
-                          <input
-                            type={["lecture", "tutorial", "practical"].includes(field) ? "number" : "text"}
-                            value={course[field]}
-                            onChange={(e) => handleCourseChange(courses.findIndex((c) => c === course), field, e.target.value)}
-                          />
-                        )}
-                      </td>
-                    ))}
-                </tr>
-              ))}
-          </tbody>
-        </table>
-
-<h4>Mandatory Courses</h4>
-<table className="data-table">
-  <thead>
-    <tr>
-      <th className="sno-column">Serial No</th>
-      <th className="wide-column">Course Code</th>
-      <th className="extra-wide-column">Course Title</th>
-      <th>Lecture</th>
-      <th>Tutorial</th>
-      <th>Practical</th>
-      <th>Credits</th>
-      <th className="wide-column">Type</th>
-      <th className="wide-column">Faculty Assigned</th>
-    </tr>
-  </thead>
-  <tbody>
-    {courses
-      .filter((course) => course.courseType === "mandatory")
-      .map((course, index) => (
-        <tr key={`mandatory-${index}`}>
-          <td>
-            <input
-              type="number"
-              value={course.serial_no || ""}
-              onChange={(e) =>
-                handleCourseChange(courses.findIndex((c) => c === course), "serial_no", e.target.value)
-              }
-            />
-          </td>
-          <td>
-            <input
-              type="text"
-              value={course.courseCode || ""}
-              onChange={(e) =>
-                handleCourseChange(courses.findIndex((c) => c === course), "courseCode", e.target.value)
-              }
-            />
-          </td>
-          <td>
-            <input
-              type="text"
-              value={course.courseTitle || ""}
-              onChange={(e) =>
-                handleCourseChange(courses.findIndex((c) => c === course), "courseTitle", e.target.value)
-              }
-            />
-          </td>
-          <td>
-            <input
-              type="number"
-              value={course.lecture || ""}
-              onChange={(e) =>
-                handleCourseChange(courses.findIndex((c) => c === course), "lecture", e.target.value)
-              }
-            />
-          </td>
-          <td>
-            <input
-              type="number"
-              value={course.tutorial || ""}
-              onChange={(e) =>
-                handleCourseChange(courses.findIndex((c) => c === course), "tutorial", e.target.value)
-              }
-            />
-          </td>
-          <td>
-            <input
-              type="number"
-              value={course.practical || ""}
-              onChange={(e) =>
-                handleCourseChange(courses.findIndex((c) => c === course), "practical", e.target.value)
-              }
-            />
-          </td>
-          <td>
-            <input
-              type="number"
-              value={course.credits || ""}
-              onChange={(e) =>
-                handleCourseChange(courses.findIndex((c) => c === course), "credits", e.target.value)
-              }
-            />
-          </td>
-          <td>
-            <input
-              type="text"
-              value={course.type || ""}
-              onChange={(e) =>
-                handleCourseChange(courses.findIndex((c) => c === course), "type", e.target.value)
-              }
-            />
-          </td>
-          <td>
-            <input
-              type="text"
-              value={course.faculty || ""}
-              onChange={(e) =>
-                handleCourseChange(courses.findIndex((c) => c === course), "faculty", e.target.value)
-              }
-            />
-          </td>
-        </tr>
-      ))}
-  </tbody>
-  <tbody>
-    <tr className="total-row">
-      <td colSpan="3" style={{ textAlign: "center", fontWeight: "bold" }}>Total</td>
-      <td style={{ textAlign: "center", fontWeight: "bold" }}>{totalRow.lecture}</td>
-      <td style={{ textAlign: "center", fontWeight: "bold" }}>{totalRow.tutorial}</td>
-      <td style={{ textAlign: "center", fontWeight: "bold" }}>{totalRow.practical}</td>
-      <td style={{ textAlign: "center", fontWeight: "bold" }}>{totalRow.credits}</td>
-      <td colSpan="2"></td>
-    </tr>
-  </tbody>
-</table>
-
+      {/* Mandatory Courses Section */}
+      <h4>Mandatory Courses</h4>
+      <table className="data-table">
+        <thead>
+          <tr>
+            <th>Serial No</th>
+            <th className="wide-column">Course Code</th>
+            <th className="extra-wide-column">Course Title</th>
+            <th>Lecture</th>
+            <th>Tutorial</th>
+            <th>Practical</th>
+            <th>Credits</th>
+            <th>CA_Marks</th>
+            <th>FE_Marks</th>
+            <th className="wide-column">Type</th>
+            <th className="wide-column">Faculty Assigned</th>
+          </tr>
+        </thead>
+        <tbody>
+          {courses
+            .filter((course) => course.courseType === "mandatory")
+            .map((course, index) => (
+              <tr key={`mandatory-${index}`}>
+                <td>
+                  <input
+                    type="number"
+                    value={course.serial_no || ""}
+                    onChange={(e) => handleCourseChange(courses.findIndex((c) => c === course), "serial_no", e.target.value)}
+                  />
+                </td>
+                
+                {Object.keys(course)
+                  .filter((key) => key !== "courseType" && key !== "serial_no")
+                  .map((field) => (
+                    <td key={field}>
+                      {field === "credits" ? (
+                        <span>{course[field]}</span>
+                      ) : (
+                        <input
+                          type={["lecture", "tutorial", "practical"].includes(field) ? "number" : "text"}
+                          value={course[field]}
+                          onChange={(e) => handleCourseChange(courses.findIndex((c) => c === course), field, e.target.value)}
+                        />
+                      )}
+                    </td>
+                  ))}
+              </tr>
+            ))}
+        </tbody>
+        <tbody>
+          <tr className="total-row">
+            <td colSpan="3" style={{ textAlign: "center", fontWeight: "bold" }}>Total</td>
+            <td style={{ textAlign: "center", fontWeight: "bold" }}>{totalRow.lecture}</td>
+            <td style={{ textAlign: "center", fontWeight: "bold" }}>{totalRow.tutorial}</td>
+            <td style={{ textAlign: "center", fontWeight: "bold" }}>{totalRow.practical}</td>
+            <td style={{ textAlign: "center", fontWeight: "bold" }}>{totalRow.credits}</td>
+            <td style={{ textAlign: "center", fontWeight: "bold" }}>{totalRow.caMarks}</td>
+            <td style={{ textAlign: "center", fontWeight: "bold" }}>{totalRow.feMarks}</td>
+            <td colSpan="2"></td>
+          </tr>
+        </tbody>
+      </table>
       </div>
 
       {/* Existing Courses Section */}
@@ -849,6 +892,7 @@ const handleSubmit = useCallback(async () => {
                 <th>FE</th>
                 <th>Total</th>
                 <th>Type</th>
+                
               </tr>
             </thead>
             <tbody>
@@ -903,9 +947,10 @@ const handleSubmit = useCallback(async () => {
           </select>
         </div>
       
-      <div className="action-buttons">
+      <div className="action-buttons"> 
         <button onClick={handleSubmit}>Submit</button>
         <button onClick={navigateSummary}>Generate Summary</button>
+        <button onClick={navigateProfessional}>Professional Electives</button>
         <button onClick={navigateWordPage}>Downloadable Word Format</button>
       </div>
     </div>
@@ -916,7 +961,7 @@ const handleSubmit = useCallback(async () => {
           <div className="filtered-results-container">
           </div>
         )}
-            </div>
+    </div>
   );
 }
 

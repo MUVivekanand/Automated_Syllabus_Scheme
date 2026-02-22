@@ -14,7 +14,7 @@ function FacultyLogin() {
 
     try {
       const response = await axios.post(
-        "http://localhost:4000/api/faculty/facultyLogin",
+        `${process.env.REACT_APP_API_URL}/api/faculty/facultyLogin`,
         {
           username: username.trim(),
           password: password.trim(), // Include password in the request
@@ -70,7 +70,22 @@ function FacultyLogin() {
           >
             Admin Login
           </button>
-        </div>
+          <button
+              type="button"
+              className="faculty-link"
+              onClick={() => navigate("/facultyRegister")}
+            >
+              Create New Account
+            </button>
+            <button
+                type="button"
+                className="faculty-link"
+                onClick={() => navigate("/facultyForgotPassword")}
+              >
+                Forgot Password?
+              </button>
+
+          </div>
       </form>
     </div>
   );

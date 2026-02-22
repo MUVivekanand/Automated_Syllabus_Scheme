@@ -2,8 +2,6 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import "../styles/Faculty.css";
-import * as XLSX from "xlsx";
-import { saveAs } from "file-saver";
 
 function Faculty() {
   const [facultyName, setFacultyName] = useState(
@@ -12,6 +10,8 @@ function Faculty() {
   const [courses, setCourses] = useState([]);
   const [errorMessage, setErrorMessage] = useState("");
   const [selectedCourse, setSelectedCourse] = useState(""); // Selected course code
+  const [selectedDegree, setSelectedDegree] = useState("");
+  const [selectedDepartment, setSelectedDepartment] = useState("");
   const [courseDetails, setCourseDetails] = useState({
     co: Array(5).fill({ name: "", desc: "" }),
     hours: Array(5).fill({ hour1: "", hour2: "" }),
@@ -24,32 +24,8 @@ function Faculty() {
     textbooks: false,
     references: false,
     courseOutcomes: false,
-    table: false
+    table: false,
   });
-
-  const baseData = [
-    { co: "CO1", pos: Array(12).fill(""), pso: ["", ""] },
-    { co: "CO2", pos: Array(12).fill(""), pso: ["", ""] },
-    { co: "CO3", pos: Array(12).fill(""), pso: ["", ""] },
-    { co: "CO4", pos: Array(12).fill(""), pso: ["", ""] },
-  ];
-  
-  const [tableData, setTableData] = useState(baseData);
-  
-  useEffect(() => {
-    const selectedDegree = courses.find(
-      (course) => course.course_code === selectedCourse.split(" - ")[0]
-    )?.degree;
-  
-    if (selectedDegree === "B.E") {
-      setTableData([
-        ...baseData,
-        { co: "CO5", pos: Array(12).fill(""), pso: ["", ""] },
-      ]);
-    } else {
-      setTableData(baseData);
-    }
-  }, [selectedCourse, courses]);
 
   // Function to toggle individual sections
   const toggleExpand = (section) => {
@@ -68,7 +44,7 @@ function Faculty() {
   const getCourses = async () => {
     try {
       const response = await axios.get(
-        "http://localhost:4000/api/faculty/getCourse",
+        `${process.env.REACT_APP_API_URL}/api/faculty/getCourse`,
         {
           params: { facultyName },
         }
@@ -91,7 +67,7 @@ function Faculty() {
   };
 
   const getCourseDetails = async () => {
-    if (!selectedCourse) {
+    if (!selectedCourse || !selectedDegree || !selectedDepartment) {
       alert("Please select a course first.");
       return;
     }
@@ -99,9 +75,13 @@ function Faculty() {
     const [, courseName] = selectedCourse.split(" - "); // ✅ Extract courseName
     try {
       const response = await axios.get(
-        "http://localhost:4000/api/faculty/getCourseDetails",
+        `${process.env.REACT_APP_API_URL}/api/faculty/getCourseDetails`,
         {
-          params: { courseName }, // ✅ Send courseName instead of courseCode
+          params: { 
+            courseName, 
+            degree: selectedDegree, 
+            department: selectedDepartment 
+          }, // ✅ Send all composite key parts
         }
       );
 
@@ -116,21 +96,28 @@ function Faculty() {
     }
   };
 
-
   // Handle dropdown change
   const handleCourseSelection = (event) => {
     setSelectedCourse(event.target.value);
     const selectedCourseCode = event.target.value.split(" - ")[0];
-    const selectedCourseObj = courses.find(course => course.course_code === selectedCourseCode);
-    
-    const maxCO = selectedCourseObj?.degree === "B.E" ? 5 : 4;
-    setCourseDetails({
-      co: Array(maxCO).fill({ name: "", desc: "" }),
-      hours: Array(maxCO).fill({ hour1: "", hour2: "" }),
-      textbooks: [],
-      references: [],
-      outcomes: Array(maxCO).fill(""),
-    });
+    const selectedCourseObj = courses.find(
+      (course) => course.course_code === selectedCourseCode
+    );
+
+    // ✅ Store degree and department for composite key
+    if (selectedCourseObj) {
+      setSelectedDegree(selectedCourseObj.degree);
+      setSelectedDepartment(selectedCourseObj.department);
+
+      const maxCO = selectedCourseObj?.degree === "B.E" ? 5 : 4;
+      setCourseDetails({
+        co: Array(maxCO).fill({ name: "", desc: "" }),
+        hours: Array(maxCO).fill({ hour1: "", hour2: "" }),
+        textbooks: [],
+        references: [],
+        outcomes: Array(5).fill(""),
+      });
+    }
   };
 
   // Handles input changes dynamically
@@ -147,110 +134,32 @@ function Faculty() {
     }));
   };
 
-  const handleTableInputChange = (rowIndex, key, subIndex, value) => {
-    const updatedData = [...tableData];
-    if (subIndex !== null) {
-      updatedData[rowIndex][key][subIndex] = value;
-    } else {
-      updatedData[rowIndex][key] = value;
-    }
-    setTableData(updatedData);
-  };
-
-  const generateExcel = () => {
-    if (!selectedCourse) {
-      alert("Please select a course first.");
-      return;
-    }
-  
-    const [courseCode, courseName] = selectedCourse.split(" - "); // Extract Course Code & Name
-  
-    // Headers Row
-    const headers = [
-      "Course Code",
-      "Course Name",
-      "COs/POs",
-      "POa",
-      "POb",
-      "POc",
-      "POd",
-      "POe",
-      "POf",
-      "POg",
-      "POh",
-      "POi",
-      "POj",
-      "POk",
-      "PSO1",
-      "PSO2",
-    ];
-  
-    // Generate rows for each CO with '\n' for wrapping
-    const dataRows = courseDetails.outcomes.map((outcome, index) => {
-      return [
-        index === 0 ? courseCode : "", // Course Code in first CO row only
-        index === 0 ? courseName : "", // Course Name in first CO row only
-        `CO${index + 1}:\n${outcome || "N/A"}`,// CO description with '\n' to force wrap
-        "",
-        "",
-        "",
-        "",
-        "",
-        "",
-        "",
-        "",
-        "",
-        "",
-        "",
-        "",
-        "",
-        "", // Empty PO values
-      ];
-    });
-  
-    // Create the worksheet
-    const ws = XLSX.utils.aoa_to_sheet([headers, ...dataRows]);
-  
-    // Set column widths (Increased for Course Name and COs/POs)
-    ws["!cols"] = [
-      { wch: 15 }, // Course Code
-      { wch: 40 }, // Course Name (Increased width)
-      { wch: 60 }, // COs/POs (Increased width to accommodate wrapping)
-      ...Array(13).fill({ wch: 10 }), // Default width for PO mappings
-    ];
-  
-    // Set cell styles manually (Enable wrap text in Excel)
-    Object.keys(ws).forEach((cell) => {
-      if (cell.startsWith("C")) { // COs/POs Column (Column C)
-        ws[cell].s = { alignment: { wrapText: true } }; // Wrap text
-      }
-    });
-  
-    // Create a workbook and append the worksheet
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "PO Mapping");
-  
-    // Convert to Blob and trigger download
-    const excelBuffer = XLSX.write(wb, { bookType: "xlsx", type: "array" });
-    const dataBlob = new Blob([excelBuffer], {
-      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    });
-  
-    saveAs(dataBlob, `PO_Mapping_${courseCode}.xlsx`);
-  };
-
   const navigate = useNavigate();
 
+  const handleTable = async () => {
+    navigate("/CoPo", {
+      state: {
+        degree: selectedDegree,
+        department: selectedDepartment,
+        facultyName: facultyName,
+        selectedCourse: selectedCourse,
+        outcomes: courseDetails.outcomes,
+      },
+    });
+  };
+
   const handleSave = async () => {
-    if (!selectedCourse) {
+    if (!selectedCourse || !selectedDegree || !selectedDepartment) {
       alert("Please select a course first.");
       return;
     }
 
     const [courseCode, courseName] = selectedCourse.split(" - ");
-
     const selectedCourseDetails = courses.find(
-      (course) => course.course_code === courseCode
+      (course) => 
+        course.course_code === courseCode && 
+        course.degree === selectedDegree && 
+        course.department === selectedDepartment
     );
 
     if (!selectedCourseDetails) {
@@ -276,10 +185,13 @@ function Faculty() {
 
     try {
       const response = await axios.post(
-        "http://localhost:4000/api/faculty/updateCourseDetails",
+        `${process.env.REACT_APP_API_URL}/api/faculty/updateCourseDetails`,
         {
-          courseName, // ✅ Send courseName instead of courseCode
+          courseCode,
+          courseName, // ✅ Send courseName
           facultyName,
+          degree: selectedDegree, // ✅ Send degree from state
+          department: selectedDepartment, // ✅ Send department from state
           coDetails: courseDetails.co,
           hours: courseDetails.hours,
           textbooks: courseDetails.textbooks,
@@ -312,7 +224,6 @@ function Faculty() {
       );
     }
   };
-  
 
   return (
     <div className="faculty-container">
@@ -365,10 +276,10 @@ function Faculty() {
           <option value="">-- Select a Course --</option>
           {courses.map((course) => (
             <option
-              key={course.course_code}
+              key={`${course.course_code}-${course.degree}-${course.department}`}
               value={`${course.course_code} - ${course.course_name}`}
             >
-              {course.course_code} - {course.course_name}
+              {course.course_code} - {course.course_name} ({course.degree} - {course.department})
             </option>
           ))}
         </select>
@@ -464,58 +375,63 @@ function Faculty() {
           )}
 
           {/* Textbooks Section */}
-          {courses.find(course => course.course_code === selectedCourse.split(" - ")[0]).degree === ("B.E" || null) && (
+          {selectedDegree === "B.E" && (
             <>
-            <button
-              className="toggle-btn"
-              onClick={() => toggleExpand("textbooks")}
-            >
-              Textbooks
-            </button>
-            {expandedSections.textbooks && (
-              <div className="textbook-section">
-                <h4 className="section-title">Textbooks</h4>
-                {courseDetails.textbooks.map((textbook, i) => (
-                  <div key={i} className="textbook-entry">
-                    {["title", "author", "publisher", "place", "year"].map(
-                      (field) => (
-                        <input
-                          key={field}
-                          className="input-field"
-                          type="text"
-                          placeholder={`Textbook ${i + 1} ${field}`}
-                          value={textbook[field] || ""}
-                          onChange={(e) =>
-                            handleChange("textbooks", i, field, e.target.value)
-                          }
-                        />
-                      )
-                    )}
-                  </div>
-                ))}
-                <button
-                  className="add-button"
-                  onClick={() =>
-                    setCourseDetails((prev) => ({
-                      ...prev,
-                      textbooks: [
-                        ...prev.textbooks,
-                        {
-                          title: "",
-                          author: "",
-                          publisher: "",
-                          place: "",
-                          year: "",
-                        },
-                      ],
-                    }))
-                  }
-                  disabled={courseDetails.textbooks.length >= 2} // Disable when 2 textbooks added
-                >
-                  + Add Textbook
-                </button>
-              </div>
-            )}
+              <button
+                className="toggle-btn"
+                onClick={() => toggleExpand("textbooks")}
+              >
+                Textbooks
+              </button>
+              {expandedSections.textbooks && (
+                <div className="textbook-section">
+                  <h4 className="section-title">Textbooks</h4>
+                  {courseDetails.textbooks.map((textbook, i) => (
+                    <div key={i} className="textbook-entry">
+                      {["title", "author", "publisher", "place", "year"].map(
+                        (field) => (
+                          <input
+                            key={field}
+                            className="input-field"
+                            type="text"
+                            placeholder={`Textbook ${i + 1} ${field}`}
+                            value={textbook[field] || ""}
+                            onChange={(e) =>
+                              handleChange(
+                                "textbooks",
+                                i,
+                                field,
+                                e.target.value
+                              )
+                            }
+                          />
+                        )
+                      )}
+                    </div>
+                  ))}
+                  <button
+                    className="add-button"
+                    onClick={() =>
+                      setCourseDetails((prev) => ({
+                        ...prev,
+                        textbooks: [
+                          ...prev.textbooks,
+                          {
+                            title: "",
+                            author: "",
+                            publisher: "",
+                            place: "",
+                            year: "",
+                          },
+                        ],
+                      }))
+                    }
+                    disabled={courseDetails.textbooks.length >= 2} // Disable when 2 textbooks added
+                  >
+                    + Add Textbook
+                  </button>
+                </div>
+              )}
             </>
           )}
 
@@ -564,7 +480,10 @@ function Faculty() {
                     ],
                   }))
                 }
-                disabled={courseDetails.references.length >= (courses.find(course => course.course_code === selectedCourse.split(" - ")[0]).degree === "B.E" ? 4 : 5)} // Disable when 4 references added
+                disabled={
+                  courseDetails.references.length >=
+                  (selectedDegree === "B.E" ? 4 : 5)
+                } // Disable when 4 references added
               >
                 + Add Reference
               </button>
@@ -573,58 +492,13 @@ function Faculty() {
 
           <button className="save-button" onClick={handleSave}>
             Save
-          </button><br/><br/>
+          </button>
+          <br />
+          <br />
 
           {/* Table Section */}
-          <button
-            className="generate-button"
-            onClick={() => toggleExpand("table")}
-          >
-            {expandedSections.table ? "Hide Table" : "View Table"}
-          </button>
-          {expandedSections.table && (
-            <div className="table-section">
-            <h4 className="section-title">Table</h4>
-            <table border="1">
-              <thead>
-                <tr>
-                  <th>COs/POs</th>
-                  {[...Array(12).keys()].map(i => <th key={i}>{`PO${i+1}`}</th>)}
-                  <th>PSO1</th>
-                  <th>PSO2</th>
-                </tr>
-              </thead>
-              <tbody>
-                {tableData.map((row, rowIndex) => (
-                  <tr key={rowIndex}>
-                    <td>{row.co}</td>
-                    {row.pos.map((po, i) => (
-                      <td key={i}>
-                        <input
-                          type="text"
-                          value={po}
-                          onChange={(e) => handleTableInputChange(rowIndex, "pos", i, e.target.value)}
-                        />
-                      </td>
-                    ))}
-                    {row.pso.map((pso, i) => (
-                      <td key={i}>
-                        <input
-                          type="text"
-                          value={pso}
-                          onChange={(e) => handleTableInputChange(rowIndex, "pso", i, e.target.value)}
-                        />
-                      </td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            </div>
-          )}
-
-          <button className="generate-button" onClick={generateExcel}>
-            Generate File
+          <button className="generate-button" onClick={handleTable}>
+            CO/PO Mapping
           </button>
         </div>
       )}
