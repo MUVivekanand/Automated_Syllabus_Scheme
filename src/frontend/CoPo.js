@@ -26,10 +26,10 @@ function CoPo() {
     setTableData(updatedData);
   };
 
-  const generateAllMappingsExcel = async () => {
+ const generateAllMappingsExcel = async () => {
     try {
       const response = await axios.get(
-        `${process.env.REACT_APP_API_URL}/api/faculty/getAllMappings`
+        `${process.env.REACT_APP_API_URL}/api/faculty/getAllMappings`,
       );
 
       if (!response.data.success) {
@@ -39,7 +39,7 @@ function CoPo() {
 
       const mappings = response.data.mappings;
 
-      // Group mappings by course_code
+      // Group by course_code
       const grouped = {};
       for (const row of mappings) {
         if (!grouped[row.course_code]) {
@@ -70,7 +70,7 @@ function CoPo() {
         });
       }
 
-      // Generate Excel rows
+      // ---------------- SHEET 1 (ALL DATA) ----------------
       const headers = [
         "Course Code",
         "Course Name",
@@ -97,7 +97,7 @@ function CoPo() {
       for (const [courseCode, data] of Object.entries(grouped)) {
         const { course_name, faculty, rows } = data;
 
-        // First row: only course info
+        // Course header row
         sheetData.push([
           courseCode,
           course_name,
@@ -106,7 +106,7 @@ function CoPo() {
           ...Array(14).fill(""),
         ]);
 
-        // Each mapping row
+        // CO rows
         rows.forEach((entry, index) => {
           sheetData.push([
             "",
@@ -118,23 +118,61 @@ function CoPo() {
           ]);
         });
 
-        // Empty row between courses
         sheetData.push([]);
       }
 
-      const ws = XLSX.utils.aoa_to_sheet(sheetData);
+      // ---------------- SHEET 2 (AVERAGES) ----------------
+      const avgSheet = [headers];
 
-      // Optional column width formatting
-      ws["!cols"] = [
+      for (const [courseCode, data] of Object.entries(grouped)) {
+        const { course_name, faculty, rows } = data;
+
+        const poSum = Array(12).fill(0);
+        const psoSum = Array(2).fill(0);
+        let count = rows.length;
+
+        rows.forEach((row) => {
+          row.pos.forEach((val, i) => {
+            poSum[i] += parseFloat(val) || 0;
+          });
+          row.pso.forEach((val, i) => {
+            psoSum[i] += parseFloat(val) || 0;
+          });
+        });
+
+        const poAvg = poSum.map((s) => (count ? (s / count).toFixed(2) : "0"));
+        const psoAvg = psoSum.map((s) =>
+          count ? (s / count).toFixed(2) : "0",
+        );
+
+        avgSheet.push([
+          courseCode,
+          course_name,
+          faculty,
+          "AVERAGE",
+          ...poAvg,
+          ...psoAvg,
+        ]);
+
+        avgSheet.push([]);
+      }
+
+      // ---------------- CREATE EXCEL ----------------
+      const ws1 = XLSX.utils.aoa_to_sheet(sheetData);
+      const ws2 = XLSX.utils.aoa_to_sheet(avgSheet);
+
+      ws1["!cols"] = [
         { wch: 15 },
         { wch: 35 },
         { wch: 25 },
         { wch: 60 },
         ...Array(14).fill({ wch: 8 }),
       ];
+      ws2["!cols"] = ws1["!cols"];
 
       const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, "All Mappings");
+      XLSX.utils.book_append_sheet(wb, ws1, "All Mappings");
+      XLSX.utils.book_append_sheet(wb, ws2, "PO Averages");
 
       const excelBuffer = XLSX.write(wb, { bookType: "xlsx", type: "array" });
       const dataBlob = new Blob([excelBuffer], {
@@ -144,7 +182,7 @@ function CoPo() {
       saveAs(dataBlob, `All_CoPo_Mappings.xlsx`);
     } catch (err) {
       console.error("Excel generation failed:", err);
-      alert("An error occurred while generating the Excel file.");
+      alert("Error generating Excel file.");
     }
   };
 
