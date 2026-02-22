@@ -24,7 +24,7 @@ function FacultyForgotPassword() {
     setError(""); setMessage("");
 
     try {
-      const res = await axios.post("http://localhost:4000/api/faculty/findUser", {
+      const res = await axios.post(`${process.env.REACT_APP_API_URL}/api/faculty/findUser`, {
         username: formData.username.trim(),
         email: formData.email.trim(),
       });
@@ -45,7 +45,7 @@ function FacultyForgotPassword() {
     setError(""); setMessage("");
 
     try {
-      const res = await axios.post("http://localhost:4000/api/faculty/verifyAnswer", {
+      const res = await axios.post(`${process.env.REACT_APP_API_URL}/api/faculty/verifyAnswer`, {
         username: formData.username.trim(),
         email: formData.email.trim(),
         reset_ans: formData.reset_ans.trim(),
@@ -71,7 +71,7 @@ function FacultyForgotPassword() {
     }
 
     try {
-      const res = await axios.post("http://localhost:4000/api/faculty/updatePassword", {
+      const res = await axios.post(`${process.env.REACT_APP_API_URL}/api/faculty/updatePassword`, {
         username: formData.username.trim(),
         email: formData.email.trim(),
         newPassword: formData.newPassword,

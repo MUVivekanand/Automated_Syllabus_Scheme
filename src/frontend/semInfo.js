@@ -158,6 +158,7 @@ import React, { useState, useEffect } from "react";
 import "../styles/SemInfo.css";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import Navbar from './Navbar';
 
 function SemInfo() {
   const [semData, setSemData] = useState([]);
@@ -165,6 +166,7 @@ function SemInfo() {
   const navigate = useNavigate();
   const [degree, setDegree] = useState("");
   const [department, setDepartment] = useState("");
+  const [departments, setDepartments] = useState([]);
   const [loading, setLoading] = useState(false);
   const [existingData, setExistingData] = useState(null);
 
@@ -218,6 +220,21 @@ function SemInfo() {
       fetchExistingData();
     }
   }, [degree, department]);
+
+  useEffect(() => {
+    fetchDepartments();
+  }, []);
+
+  const fetchDepartments = async () => {
+    try {
+      const response = await axios.get(`${process.env.REACT_APP_API_URL}/api/course/departments`);
+      if (response.data?.success) {
+        setDepartments(response.data.data || []);
+      }
+    } catch (error) {
+      console.error("Error fetching departments:", error);
+    }
+  };
 
   const fetchExistingData = async () => {
     try {
@@ -283,17 +300,41 @@ function SemInfo() {
   
 
   const handleInputChange = (index, field, value) => {
+    // Allow empty value (user clearing input)
+    if (value === "") {
+      const updatedData = [...semData];
+      updatedData[index] = { ...updatedData[index], [field]: "" };
+      setSemData(updatedData);
+      return;
+    }
+
+    // Remove leading plus sign if present
+    if (typeof value === "string" && value.startsWith("+")) {
+      value = value.slice(1);
+    }
+
+    // Parse integer and clamp to zero if negative or invalid
+    const parsed = parseInt(value, 10);
+    const safeNumber = isNaN(parsed) ? 0 : Math.max(0, parsed);
+
     const updatedData = [...semData];
-    updatedData[index] = { ...updatedData[index], [field]: value };
+    updatedData[index] = { ...updatedData[index], [field]: safeNumber };
     setSemData(updatedData);
   };
 
   const navigateRegulations = () => {
-    navigate(`/Regulations?degree=${degree}&department=${department}`);
+    navigate(`/Regulations?degree=${degree}&department=${department}&mode=new`);
   };  
 
   const handleTotalCreditsChange = (e) => {
-    setTotalCredits(e.target.value);
+    const v = e.target.value;
+    if (v === "") {
+      setTotalCredits("");
+      return;
+    }
+    const parsed = parseInt(v, 10);
+    const safeNumber = isNaN(parsed) ? 0 : Math.max(0, parsed);
+    setTotalCredits(safeNumber);
   };
 
   const hasDataChanged = () => {
@@ -429,6 +470,7 @@ function SemInfo() {
 
   return (
     <div className="container-seminfo">
+      <Navbar/>
       <h1 className="page-title">Semester Information</h1>
       <div className="dropdown-container">
         <div>
@@ -441,19 +483,16 @@ function SemInfo() {
         </div>
 
         <div>
-          <label>Department: </label>
+          <label>Programme: </label>
           <select
             value={department}
             onChange={(e) => setDepartment(e.target.value)}
             disabled={degree === "M.E"} // Disable for M.E since only CSE is allowed
           >
             <option value="">Select Department</option>
-            <option value="CSE">CSE</option>
-            {degree === "B.E" && (
-              <>
-                <option value="CSE AI-ML">CSE AI-ML</option>
-              </>
-            )}
+            {departments.map((dep, index) => (
+              <option key={`${dep}-${index}`} value={dep}>{dep}</option>
+            ))}
           </select>
         </div>
       </div>
@@ -485,6 +524,11 @@ function SemInfo() {
                         className="input-sem"
                         placeholder="Enter theory courses"
                         value={row.theory_courses}
+                        min="0"
+                        step="1"
+                        onKeyDown={(e) => {
+                          if (e.key === "-" || e.key === "e" || e.key === "E" || e.key === "+") e.preventDefault();
+                        }}
                         onChange={(e) =>
                           handleInputChange(index, "theory_courses", e.target.value)
                         }
@@ -497,6 +541,11 @@ function SemInfo() {
                         className="input-sem"
                         placeholder="Enter practical courses"
                         value={row.practical_courses}
+                        min="0"
+                        step="1"
+                        onKeyDown={(e) => {
+                          if (e.key === "-" || e.key === "e" || e.key === "E" || e.key === "+") e.preventDefault();
+                        }}
                         onChange={(e) =>
                           handleInputChange(
                             index,
@@ -513,6 +562,11 @@ function SemInfo() {
                         className="input-sem"
                         placeholder="Enter mandatory courses"
                         value={row.mandatory_courses}
+                        min="0"
+                        step="1"
+                        onKeyDown={(e) => {
+                          if (e.key === "-" || e.key === "e" || e.key === "E" || e.key === "+") e.preventDefault();
+                        }}
                         onChange={(e) =>
                           handleInputChange(
                             index,
@@ -535,6 +589,11 @@ function SemInfo() {
               id="totalCredits"
               placeholder="Enter total credits"
               value={totalCredits}
+              min="0"
+              step="1"
+              onKeyDown={(e) => {
+                if (e.key === "-" || e.key === "e" || e.key === "E" || e.key === "+") e.preventDefault();
+              }}
               onChange={handleTotalCreditsChange}
             />
           </div>

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useLocation } from "react-router-dom";
 import "../styles/Professional.css"; // Import the CSS file
+import Navbar from "./Navbar";
 
 function ProfessionalMe() {
   const location = useLocation();
@@ -174,6 +175,7 @@ function ProfessionalMe() {
 
   return (
     <div className="professional-container">
+      <Navbar/>
       <h1 className="page-title">Professional Electives Management</h1>
 
       {/* Degree & Department inputs */}

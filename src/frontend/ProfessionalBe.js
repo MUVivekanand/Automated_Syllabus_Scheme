@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useLocation } from 'react-router-dom';
 import "../styles/ProfessionalBe.css";
+import Navbar from './Navbar';
 
 function ProfessionalBe() {
   const location = useLocation();
@@ -35,7 +36,8 @@ function ProfessionalBe() {
     BE: 'Professional electives for BE degree programme',
     BE_HONOURS: 'Professional Electives for BE Honours / BE Honours with specialization in same discipline and BE Minor degree programmes',
     OPEN: 'OPEN ELECTIVES',
-    SDL: 'SELF DIRECTED LEARNING COURSES'
+    SDL: 'SELF DIRECTED LEARNING COURSES',
+    ONE_CREDIT: 'ONE CREDIT COURSES'
   };
 
   // Fetch courses and verticals from backend
@@ -65,7 +67,7 @@ function ProfessionalBe() {
         }
       } else {
         console.log(courseData);
-        const response = await axios.post('${process.env.REACT_APP_API_URL}/api/proelective/courses', courseData);
+        const response = await axios.post(`${process.env.REACT_APP_API_URL}/api/proelective/courses`, courseData);
         if (response.status === 201) {
           alert('Course added successfully');
         }
@@ -143,7 +145,7 @@ function ProfessionalBe() {
         department: department
       };
 
-      const response = await axios.post('${process.env.REACT_APP_API_URL}/api/proelective/verticals', verticalData);
+      const response = await axios.post(`${process.env.REACT_APP_API_URL}/api/proelective/verticals`, verticalData);
       if (response.status === 201) {
         alert('Vertical added successfully');
         setNewVerticalName('');
@@ -268,6 +270,7 @@ function ProfessionalBe() {
 
   return (
     <div className="container">
+      <Navbar/>
       <h1>Elective Courses Management</h1>
       <div className="program-info">
         <h2>Degree: {degree}</h2>
@@ -304,6 +307,12 @@ function ProfessionalBe() {
           onClick={() => setActiveSection('SDL')}
         >
           Self Directed Learning
+        </button>
+        <button
+          className={activeSection === 'ONE_CREDIT' ? 'active' : ''}
+          onClick={() => setActiveSection('ONE_CREDIT')}
+        >
+          One Credit Courses
         </button>
       </div>
 
@@ -564,6 +573,36 @@ function ProfessionalBe() {
               </thead>
               <tbody>
                 {groupedCourses[sectionTypes.SDL].map(course => (
+                  <tr key={course.course_code}>
+                    <td>{course.course_code}</td>
+                    <td>{course.course_title}</td>
+                    <td>
+                      <div className="action-butto">
+                        <button onClick={() => editCourse(course)}>Edit</button>
+                        <button onClick={() => deleteCourse(course.course_code)}>Delete</button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {/* Display One Credit Courses */}
+        {groupedCourses[sectionTypes.ONE_CREDIT] && groupedCourses[sectionTypes.ONE_CREDIT].length > 0 && (
+          <div className="course-section">
+            <h3>ONE CREDIT COURSES</h3>
+            <table>
+              <thead>
+                <tr>
+                  <th>Course Code</th>
+                  <th>Course Title</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {groupedCourses[sectionTypes.ONE_CREDIT].map(course => (
                   <tr key={course.course_code}>
                     <td>{course.course_code}</td>
                     <td>{course.course_title}</td>

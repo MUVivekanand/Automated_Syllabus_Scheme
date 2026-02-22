@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import axios from 'axios';
 import "../styles/Regulations.css";
+import Navbar from './Navbar';
 
 const Regulations = () => {
   const [courses, setCourses] = useState([]);
@@ -11,6 +12,15 @@ const Regulations = () => {
   const [toSemester, setToSemester] = useState("");
   const [newRows, setNewRows] = useState({});
   const [refresh, setRefresh] = useState(false);
+  const [pageMode, setPageMode] = useState("normal"); // "normal" | "new"
+  const [showSemInfo, setShowSemInfo] = useState(false);
+  const [semInfoRows, setSemInfoRows] = useState([]);
+  const [courseCountErrors, setCourseCountErrors] = useState([]);
+  
+  // Store degree and department in state instead of reading from URL only
+  const [degreeState, setDegreeState] = useState("");
+  const [departmentState, setDepartmentState] = useState("");
+  const [baseDepartment, setBaseDepartment] = useState("");
   
   // Common information
   const [commonInfo, setCommonInfo] = useState({
@@ -20,18 +30,46 @@ const Regulations = () => {
   });
 
   const location = useLocation();
-  const searchParams = new URLSearchParams(location.search);
-  const degree = searchParams.get('degree');
-  const department = searchParams.get('department');
+  
+  // Initialize degree and department from URL on component mount
+  useEffect(() => {
+    const searchParams = new URLSearchParams(location.search);
+    const degreeFromUrl = searchParams.get('degree');
+    const departmentFromUrl = searchParams.get('department');
+    const modeFromUrl = searchParams.get('mode');
+    
+    if (degreeFromUrl) setDegreeState(degreeFromUrl);
+    if (departmentFromUrl) {
+      setDepartmentState(departmentFromUrl);
+      setBaseDepartment(departmentFromUrl);
+    }
+    if (modeFromUrl === "new") {
+      setPageMode("new");
+      setCourses([]);
+      setShowSemInfo(false);
+      setLoading(false);
+    }
+  }, [location.search]);
 
   useEffect(() => {
-    fetchCourses();
-  }, [refresh]);
+    if (degreeState && departmentState && pageMode === "normal") {
+      fetchCourses();
+    }
+  }, [refresh, degreeState, departmentState, pageMode]);
 
   const fetchCourses = async () => {
+    if (pageMode === "new") {
+      setLoading(false);
+      return;
+    }
+    if (!degreeState || !departmentState) {
+      setLoading(false);
+      return;
+    }
+    
     try {
       const response = await axios.get(`${process.env.REACT_APP_API_URL}/api/regulations/allcourses`, {
-        params: { degree, department }
+        params: { degree: degreeState, department: baseDepartment || departmentState }
       });
   
       setCourses(response.data);
@@ -48,6 +86,21 @@ const Regulations = () => {
       year = year.slice(-2);
     }
     setRegulationYear(year);
+    if (year.length === 2) {
+      const semCount = degreeState === "M.E" ? 4 : 8;
+      setSemInfoRows(
+        Array.from({ length: semCount }, (_, i) => ({
+          sem_no: i + 1,
+          theory_courses: "",
+          practical_courses: "",
+          mandatory_courses: ""
+        }))
+      );
+      setShowSemInfo(true);
+    } else {
+      setShowSemInfo(false);
+      setSemInfoRows([]);
+    }
   };
 
   const handleCommonInfoChange = (field, value) => {
@@ -57,14 +110,112 @@ const Regulations = () => {
     }));
   };
 
-  // FIXED: Now uses course_name (part of composite PK) instead of course_code
-  const handleChange = (courseName, field, value) => {
+  const validateCourseCounts = () => {
+    if (!semInfoRows.length) {
+      setCourseCountErrors([]);
+      return;
+    }
+    const errors = [];
+    semInfoRows.forEach((row) => {
+      const semCourses = courses.filter(c => c.sem_no === row.sem_no);
+      const countByCategory = (cat) =>
+        semCourses.filter(c => (c.category || "").toLowerCase() === cat).length;
+
+      const theoryCount = countByCategory("theory");
+      const practicalCount = countByCategory("practical");
+      const mandatoryCount = countByCategory("mandatory");
+
+      if (String(row.theory_courses) !== "" && Number(row.theory_courses) !== theoryCount) {
+        errors.push(`Semester ${row.sem_no}: theory courses mismatch (expected ${row.theory_courses}, found ${theoryCount})`);
+      }
+      if (String(row.practical_courses) !== "" && Number(row.practical_courses) !== practicalCount) {
+        errors.push(`Semester ${row.sem_no}: practical courses mismatch (expected ${row.practical_courses}, found ${practicalCount})`);
+      }
+      if (String(row.mandatory_courses) !== "" && Number(row.mandatory_courses) !== mandatoryCount) {
+        errors.push(`Semester ${row.sem_no}: mandatory courses mismatch (expected ${row.mandatory_courses}, found ${mandatoryCount})`);
+      }
+    });
+    setCourseCountErrors(errors);
+  };
+
+  const handleSemInfoChange = (index, field, value) => {
+    const updated = [...semInfoRows];
+    if (value === "") {
+      updated[index][field] = "";
+    } else {
+      const parsed = parseInt(value, 10);
+      updated[index][field] = isNaN(parsed) ? 0 : Math.max(0, parsed);
+    }
+    setSemInfoRows(updated);
+  };
+
+  const handleSemInfoSubmit = async () => {
+    if (!degreeState || !departmentState) {
+      alert("Degree and Department information is required!");
+      return;
+    }
+    if (!regulationYear || regulationYear.length !== 2) {
+      alert("Please enter a valid 2-digit regulation year!");
+      return;
+    }
+
+    const baseDept = (baseDepartment || departmentState || "").replace(/-\d{2}$/, "");
+    const departmentWithYear = `${baseDept}-${regulationYear}`;
+    const payload = semInfoRows.map((row) => ({
+      sem_no: row.sem_no,
+      theory_courses: row.theory_courses ?? null,
+      practical_courses: row.practical_courses ?? null,
+      mandatory_courses: row.mandatory_courses ?? null,
+      total_credits: null,
+      degree: degreeState,
+      department: departmentWithYear
+    }));
+
+    try {
+      const response = await axios.post(
+        `${process.env.REACT_APP_API_URL}/api/seminfo/updateSemInfo`,
+        { semData: payload }
+      );
+      if (response.data?.success) {
+        setDepartmentState(departmentWithYear);
+        setPageMode("normal");
+        setShowSemInfo(false);
+        setRefresh((prev) => !prev);
+      } else {
+        alert("Failed to update semester information.");
+      }
+    } catch (error) {
+      console.error("Error updating semester info:", error);
+      alert("An error occurred while updating semester information.");
+    }
+  };
+
+  // Updated to track both old and new course names for proper updates
+  const handleChange = (courseName, field, value, currentDegree, currentDepartment) => {
     setCourses(prevCourses => 
-      prevCourses.map(course => 
-        course.course_name === courseName
-          ? { ...course, [field]: field === "serial_no" ? parseInt(value) || 0 : value }
-          : course
-      )
+      prevCourses.map(course => {
+        // Match using composite key
+        if (course.course_name === courseName && 
+            course.degree === currentDegree && 
+            course.department === currentDepartment) {
+          const updatedCourse = { 
+            ...course, 
+            [field]: field === "serial_no" ? parseInt(value) || 0 : value 
+          };
+          
+          // Store original composite key for updates
+          if (!updatedCourse._originalKey) {
+            updatedCourse._originalKey = {
+              course_name: courseName,
+              degree: currentDegree,
+              department: currentDepartment
+            };
+          }
+          
+          return updatedCourse;
+        }
+        return course;
+      })
     );
   };
 
@@ -107,8 +258,8 @@ const Regulations = () => {
           category: '',
           sem_no: semesterNumber,
           serial_no: nextSerialNo,
-          degree: degree,
-          department: department,
+          degree: degreeState,
+          department: departmentState,
           ca_marks: commonInfo.ca_marks || 0,
           fe_marks: commonInfo.fe_marks || 0,
           total_marks: commonInfo.total_marks || 0
@@ -120,8 +271,8 @@ const Regulations = () => {
   const handleSaveNewCourse = async (semesterNumber, rowIndex) => {
     const newCourse = {
       ...newRows[semesterNumber][rowIndex],
-      degree: degree,
-      department: department,
+      degree: degreeState,
+      department: departmentState,
       ca_marks: parseFloat(commonInfo.ca_marks) || 0,
       fe_marks: parseFloat(commonInfo.fe_marks) || 0,
       total_marks: parseFloat(commonInfo.total_marks) || 0
@@ -130,6 +281,11 @@ const Regulations = () => {
     // Validate course name
     if (!newCourse.course_name || newCourse.course_name.trim() === '') {
       alert("Course name is required!");
+      return;
+    }
+    
+    if (!degreeState || !departmentState) {
+      alert("Please enter Degree and Department before adding courses!");
       return;
     }
     
@@ -152,31 +308,84 @@ const Regulations = () => {
     }
   };
 
-  const handleSubmit = async (courseName) => {
-    const updatedCourse = courses.find((course) => course.course_name === courseName);
-    console.log("Course Name Frontend:", courseName);
+  const handleSubmit = async (course) => {
+    console.log("Submitting course update:", course);
 
-    if (!updatedCourse) {
+    if (!course) {
       alert("Course not found!");
       return;
     }
-  
-    try {
-      await axios.put(`${process.env.REACT_APP_API_URL}/api/regulations/updatecourse/${courseName}`, {
-        ...updatedCourse,
-        degree,
-        department
-      });
-      alert("Course updated successfully!");
-      setRefresh((prev) => !prev);
-    } catch (error) {
-      console.error("Error updating course:", error);
-      alert("Failed to update course: " + (error.response?.data?.message || error.message));
+
+    if (!degreeState || !departmentState) {
+      alert("Please enter Degree and Department before updating courses!");
+      return;
+    }
+
+    // Get the original key if course name was changed
+    const originalKey = course._originalKey || {
+      course_name: course.course_name,
+      degree: course.degree,
+      department: course.department
+    };
+
+    // If course_name changed, we need to delete old and insert new
+    if (originalKey.course_name !== course.course_name) {
+      try {
+        // Delete the old record using original composite key
+        await axios.delete(
+          `${process.env.REACT_APP_API_URL}/api/regulations/delete-course/${encodeURIComponent(originalKey.course_name)}`,
+          {
+            data: { 
+              degree: originalKey.degree, 
+              department: originalKey.department 
+            }
+          }
+        );
+
+        // Insert new record with updated course name
+        await axios.post(`${process.env.REACT_APP_API_URL}/api/regulations/addcourse`, {
+          ...course,
+          degree: degreeState,
+          department: departmentState
+        });
+
+        alert("Course updated successfully!");
+        setRefresh((prev) => !prev);
+      } catch (error) {
+        console.error("Error updating course with name change:", error);
+        alert("Failed to update course: " + (error.response?.data?.message || error.message));
+      }
+    } else {
+      // Normal update without course_name change
+      try {
+        await axios.put(
+          `${process.env.REACT_APP_API_URL}/api/regulations/updatecourse/${encodeURIComponent(course.course_name)}`,
+          {
+            ...course,
+            degree: degreeState,
+            department: departmentState
+          }
+        );
+        alert("Course updated successfully!");
+        setRefresh((prev) => !prev);
+      } catch (error) {
+        console.error("Error updating course:", error);
+        alert("Failed to update course: " + (error.response?.data?.message || error.message));
+      }
     }
   };
 
   const handleMoveCourse = async () => {
-    const courseToMove = courses.find((course) => course.course_name === fromCourseName);
+    if (!degreeState || !departmentState) {
+      alert("Please enter Degree and Department before moving courses!");
+      return;
+    }
+    
+    const courseToMove = courses.find((course) => 
+      course.course_name === fromCourseName && 
+      course.degree === degreeState && 
+      course.department === departmentState
+    );
   
     if (!courseToMove) {
       alert("Invalid Course Name. Please enter a valid one.");
@@ -189,18 +398,30 @@ const Regulations = () => {
     }
   
     try {
-      // Delete the old course
-      await axios.delete(`${process.env.REACT_APP_API_URL}/api/regulations/deletemovecourse/${fromCourseName}`, {
-        data: { degree, department }
-      });
+      // Delete the old course with composite key
+      await axios.delete(
+        `${process.env.REACT_APP_API_URL}/api/regulations/deletemovecourse/${encodeURIComponent(fromCourseName)}`,
+        {
+          data: { degree: degreeState, department: departmentState }
+        }
+      );
       
       // Add the course with new semester
-      const updatedCourse = { ...courseToMove, sem_no: parseInt(toSemester, 10) };
+      const updatedCourse = { 
+        ...courseToMove, 
+        sem_no: parseInt(toSemester, 10),
+        degree: degreeState,
+        department: departmentState
+      };
       await axios.post(`${process.env.REACT_APP_API_URL}/api/regulations/addcourse`, updatedCourse);
       
       setCourses((prevCourses) =>
         prevCourses
-          .filter((course) => course.course_name !== fromCourseName)
+          .filter((course) => !(
+            course.course_name === fromCourseName && 
+            course.degree === degreeState && 
+            course.department === departmentState
+          ))
           .concat(updatedCourse)
       );
   
@@ -214,17 +435,35 @@ const Regulations = () => {
     }
   };
 
-  const handleDelete = async (courseName) => {
-    const confirmDelete = window.confirm(`Are you sure you want to delete course ${courseName}?`);
+  const handleDelete = async (course) => {
+    const confirmDelete = window.confirm(`Are you sure you want to delete course ${course.course_name}?`);
     if (!confirmDelete) return;
 
+    if (!degreeState || !departmentState) {
+      alert("Please enter Degree and Department before deleting courses!");
+      return;
+    }
+
     try {
-      const response = await axios.delete(`${process.env.REACT_APP_API_URL}/api/regulations/delete-course/${courseName}`, {
-        data: { degree, department }
-      });
+      // Send composite key in request body
+      const response = await axios.delete(
+        `${process.env.REACT_APP_API_URL}/api/regulations/delete-course/${encodeURIComponent(course.course_name)}`,
+        {
+          data: { 
+            degree: course.degree, 
+            department: course.department 
+          }
+        }
+      );
 
       if (response.status === 200) {
-        setCourses((prevCourses) => prevCourses.filter((course) => course.course_name !== courseName));
+        setCourses((prevCourses) => 
+          prevCourses.filter((c) => !(
+            c.course_name === course.course_name && 
+            c.degree === course.degree && 
+            c.department === course.department
+          ))
+        );
         alert(response.data.message);
       }
     } catch (error) {
@@ -234,7 +473,7 @@ const Regulations = () => {
   };
 
   const handleConfirmRegulation = async () => {
-    if (!degree || !department) {
+    if (!degreeState || !departmentState) {
       alert("Degree and department information is required!");
       return;
     }
@@ -246,6 +485,7 @@ const Regulations = () => {
   
     try {
       setLoading(true);
+      const baseDept = (baseDepartment || departmentState || "").replace(/-\d{2}$/, "");
       
       // Process the existing courses
       const coursesToSubmit = courses.map(course => {
@@ -255,8 +495,8 @@ const Regulations = () => {
             : course.course_code,
           course_name: course.course_name,
           sem_no: course.sem_no,
-          degree,
-          department,
+          degree: degreeState,
+          department: departmentState,
           lecture: course.lecture || 0,
           tutorial: course.tutorial || 0,
           practical: course.practical || 0,
@@ -277,8 +517,8 @@ const Regulations = () => {
                 course_code: row.course_code,
                 course_name: row.course_name,
                 sem_no: parseInt(sem),
-                degree,
-                department,
+                degree: degreeState,
+                department: departmentState,
                 lecture: row.lecture || 0,
                 tutorial: row.tutorial || 0,
                 practical: row.practical || 0,
@@ -295,13 +535,17 @@ const Regulations = () => {
   
       const response = await axios.post(`${process.env.REACT_APP_API_URL}/api/regulations/confirm-regulation`, {
         courses: coursesToSubmit,
-        degree,
-        department,
+        degree: degreeState,
+        department: baseDept,
         regulationYear
       });
       
       console.log("Regulation confirmed successfully:", response.data);
-      alert(`Regulation confirmed successfully! Saved with department: ${response.data.department}`);
+      
+      // Update the department state to the new department with year suffix
+      setDepartmentState(response.data.department);
+      
+      alert(`Regulation confirmed successfully! Department updated to: ${response.data.department}`);
       setRefresh((prev) => !prev);
       
     } catch (error) {
@@ -313,23 +557,54 @@ const Regulations = () => {
     }
   };
 
-  return (
-    <div>
-      <h2>New Regulations</h2>
+  useEffect(() => {
+    if (pageMode === "normal") {
+      validateCourseCounts();
+    }
+  }, [courses, semInfoRows, pageMode]);
 
-      {/* Common Information Section */}
+  return (
+    <div className="container-regulations">
+      <Navbar/>
+      <h2 className="page-title">New Regulations</h2>
+
+      {/* Common Information Section - Now Editable */}
       <div className="common-info-reg-section">
         <h3>Common Information</h3>
         <div className="common-info-reg-grid">
           <div>
             <label>Degree:</label>
-            <input type="text" value={degree || ""} readOnly />
+            <input 
+              type="text" 
+              value={degreeState || ""} 
+              onChange={(e) => setDegreeState(e.target.value)}
+              placeholder="Enter degree (e.g., B.E.)"
+            />
           </div>
           <div>
             <label>Department:</label>
-            <input type="text" value={department || ""} readOnly />
+            <input 
+              type="text" 
+              value={departmentState || ""} 
+              onChange={(e) => setDepartmentState(e.target.value)}
+              placeholder="Enter department (e.g., CSE)"
+            />
           </div>
         </div>
+        <button 
+          onClick={fetchCourses}
+          style={{ 
+            marginTop: '10px',
+            padding: '8px 16px',
+            backgroundColor: '#28a745',
+            color: 'white',
+            border: 'none',
+            borderRadius: '4px',
+            cursor: 'pointer'
+          }}
+        >
+          Load Courses
+        </button>
       </div>
 
       <div className="regulation-controls">
@@ -352,10 +627,79 @@ const Regulations = () => {
         </button>
       </div>
 
+      {pageMode === "new" && showSemInfo && (
+        <div className="seminfo-reg-container">
+          <h3>Semester Information</h3>
+
+          <div className="table-container">
+            <table className="data-table" border="1">
+              <thead>
+                <tr>
+                  <th>Semester No</th>
+                  <th>Theory Courses</th>
+                  <th>Practical Courses</th>
+                  <th>Mandatory Courses</th>
+                </tr>
+              </thead>
+              <tbody>
+                {semInfoRows.map((row, index) => (
+                  <tr key={row.sem_no}>
+                    <td>{row.sem_no}</td>
+                    <td>
+                      <input
+                        type="number"
+                        min="0"
+                        step="1"
+                        value={row.theory_courses}
+                        onChange={(e) => handleSemInfoChange(index, "theory_courses", e.target.value)}
+                      />
+                    </td>
+                    <td>
+                      <input
+                        type="number"
+                        min="0"
+                        step="1"
+                        value={row.practical_courses}
+                        onChange={(e) => handleSemInfoChange(index, "practical_courses", e.target.value)}
+                      />
+                    </td>
+                    <td>
+                      <input
+                        type="number"
+                        min="0"
+                        step="1"
+                        value={row.mandatory_courses}
+                        onChange={(e) => handleSemInfoChange(index, "mandatory_courses", e.target.value)}
+                      />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <button onClick={handleSemInfoSubmit} className="confirm-regulation-btn">
+            Submit Semester Info
+          </button>
+        </div>
+      )}
+
       {loading ? (
         <p>Loading...</p>
-      ) : (
+      ) : !degreeState || !departmentState ? (
+        <p>Please enter Degree and Department to load courses.</p>
+      ) : pageMode === "normal" ? (
         <div className="table-container">
+          {courseCountErrors.length > 0 && (
+            <div className="error-box">
+              <div className="error-title">Course count mismatches</div>
+              <ul className="error-list">
+                {courseCountErrors.map((msg, idx) => (
+                  <li key={idx}>{msg}</li>
+                ))}
+              </ul>
+            </div>
+          )}
           {[...Array(8)].map((_, semesterIndex) => {
             const semesterNumber = semesterIndex + 1;
             const semesterCourses = courses.filter(course => course.sem_no === semesterNumber);
@@ -370,27 +714,26 @@ const Regulations = () => {
                   <thead>
                     <tr>
                       <th>Serial No</th>
-                      <th>Course Code</th>
-                      <th>Course Title</th>
+                      <th className="wide-column">Course Code</th>
+                      <th className="extra-wide-column">Course Title</th>
                       <th>Lecture</th>
                       <th>Tutorial</th>
                       <th>Practical</th>
                       <th>Credits</th>
-                      <th>Type</th>
-                      <th>Faculty</th>
-                      <th>Course Type</th>
+                      <th className="wide-column">Type</th>
+                      <th className="wide-column">Faculty</th>
+                      <th className="wide-column">Course Type</th>
                       <th>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {/* FIXED: Using composite key for React key */}
                     {semesterCourses.map((course) => (
                       <tr key={`${course.degree}-${course.department}-${course.course_name}`}>
                         <td>
                           <input 
                             type="number"
                             value={course.serial_no || 0}
-                            onChange={(e) => handleChange(course.course_name, "serial_no", e.target.value)}
+                            onChange={(e) => handleChange(course.course_name, "serial_no", e.target.value, course.degree, course.department)}
                           />
                         </td>
                         <td>
@@ -400,64 +743,64 @@ const Regulations = () => {
                                 ? `${regulationYear}${course.course_code.slice(2)}` 
                                 : course.course_code
                             }
-                            onChange={(e) => handleChange(course.course_name, "course_code", e.target.value)} 
+                            onChange={(e) => handleChange(course.course_name, "course_code", e.target.value, course.degree, course.department)} 
                           />
                         </td>
                         <td>
                           <input 
                             value={course.course_name || ""} 
-                            onChange={(e) => handleChange(course.course_name, "course_name", e.target.value)} 
+                            onChange={(e) => handleChange(course.course_name, "course_name", e.target.value, course.degree, course.department)} 
                           />
                         </td>
                         <td>
                           <input 
                             type="number" 
                             value={course.lecture || 0} 
-                            onChange={(e) => handleChange(course.course_name, "lecture", e.target.value)} 
+                            onChange={(e) => handleChange(course.course_name, "lecture", e.target.value, course.degree, course.department)} 
                           />
                         </td>
                         <td>
                           <input 
                             type="number" 
                             value={course.tutorial || 0} 
-                            onChange={(e) => handleChange(course.course_name, "tutorial", e.target.value)} 
+                            onChange={(e) => handleChange(course.course_name, "tutorial", e.target.value, course.degree, course.department)} 
                           />
                         </td>
                         <td>
                           <input 
                             type="number" 
                             value={course.practical || 0} 
-                            onChange={(e) => handleChange(course.course_name, "practical", e.target.value)} 
+                            onChange={(e) => handleChange(course.course_name, "practical", e.target.value, course.degree, course.department)} 
                           />
                         </td>
                         <td>
                           <input 
                             type="number" 
                             value={course.credits || 0} 
-                            onChange={(e) => handleChange(course.course_name, "credits", e.target.value)} 
+                            onChange={(e) => handleChange(course.course_name, "credits", e.target.value, course.degree, course.department)} 
                           />
                         </td>
                         <td>
                           <input 
                             value={course.type || ""} 
-                            onChange={(e) => handleChange(course.course_name, "type", e.target.value)} 
+                            onChange={(e) => handleChange(course.course_name, "type", e.target.value, course.degree, course.department)} 
                           />
                         </td>
                         <td>
                           <input 
                             value={course.faculty || ""} 
-                            onChange={(e) => handleChange(course.course_name, "faculty", e.target.value)} 
+                            onChange={(e) => handleChange(course.course_name, "faculty", e.target.value, course.degree, course.department)} 
                           />
                         </td>
                         <td>
                           <input 
                             value={course.category || ""} 
-                            onChange={(e) => handleChange(course.course_name, "category", e.target.value)} 
+                            onChange={(e) => handleChange(course.course_name, "category", e.target.value, course.degree, course.department)} 
                           />
                         </td>
                         <td>
-                          <button onClick={() => handleSubmit(course.course_name)}>Update</button>
-                          <button onClick={() => handleDelete(course.course_name)}>Delete</button>
+                          <button onClick={() => handleSubmit(course)}>Update</button>
+                          <button onClick={() => handleDelete(course)}>Delete</button>
                         </td>
                       </tr>
                     ))}
@@ -584,7 +927,7 @@ const Regulations = () => {
             <button onClick={handleMoveCourse}>Move</button>
           </div>
         </div>
-      )}
+      ) : null}
     </div>
   );
 };

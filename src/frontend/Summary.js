@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useLocation } from "react-router-dom";
 import "../styles/Summary.css";
+import Navbar from './Navbar';
 
 function Summary() {
   const [tableData, setTableData] = useState([]);
@@ -115,6 +116,7 @@ ${Number(storedTotalCredits) === totalCalculatedCredits
 
   return (
     <div className="summary-container">
+      <Navbar/>
       {totalCreditsMismatch && (
         <div className="error-banner">
           Warning: Total credits mismatch! 

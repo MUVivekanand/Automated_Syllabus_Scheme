@@ -1,9 +1,16 @@
 import React from "react";
 import { useLocation } from "react-router-dom";
 import "../styles/CourseDetailsPage.css"; // Import updated styles
+import { useNavigate } from 'react-router-dom';
 
 function CourseDetailsPage() {
   const location = useLocation();
+  const navigate = useNavigate();
+
+  // Change this path to your desired destination page
+  const handleGoBack = () => {
+    navigate('/Faculty'); // Replace with your desired route
+  };
   const { courseName, courseDetails } = location.state || {};
 
   if (!courseName) {
@@ -80,6 +87,37 @@ function CourseDetailsPage() {
           <p className="no-data">No references available.</p>
         )}
       </div>
+      <button 
+        onClick={handleGoBack}
+        style={{
+          position: 'fixed',
+          top: '20px',
+          left: '20px',
+          padding: '12px 24px',
+          backgroundColor: '#000',
+          color: '#fff',
+          border: 'none',
+          borderRadius: '5px',
+          cursor: 'pointer',
+          fontSize: '16px',
+          fontWeight: '500',
+          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.2)',
+          transition: 'all 0.3s ease',
+          zIndex: 1000
+        }}
+        onMouseEnter={(e) => {
+          e.target.style.backgroundColor = '#333';
+          e.target.style.transform = 'translateY(-2px)';
+          e.target.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.3)';
+        }}
+        onMouseLeave={(e) => {
+          e.target.style.backgroundColor = '#000';
+          e.target.style.transform = 'translateY(0)';
+          e.target.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.2)';
+        }}
+      >
+        ← Go Back
+      </button>
     </div>
   );
 }

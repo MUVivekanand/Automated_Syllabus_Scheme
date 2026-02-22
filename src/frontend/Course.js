@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import axios from "axios";
 import "../styles/Course.css";
 import { useNavigate } from "react-router-dom";
+import Navbar from './Navbar';
 
 function Course() {
   const [currentSem, setCurrentSem] = useState(1);
@@ -39,6 +40,9 @@ function Course() {
 
   const [theoryDefaultMarks, setTheoryDefaultMarks] = useState({ CA_Marks: "", FE_Marks: "" });
   const [practicalDefaultMarks, setPracticalDefaultMarks] = useState({ CA_Marks: "", FE_Marks: "" });
+
+  const [departments, setDepartments] = useState([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const navigate = useNavigate();
 
@@ -156,6 +160,17 @@ function Course() {
     }
   };
 
+  const fetchDepartments = async () => {
+    try {
+      const response = await axios.get(`${process.env.REACT_APP_API_URL}/api/course/departments`);
+      if (response.data.success) {
+        setDepartments(response.data.data);
+      }
+    } catch (error) {
+      console.error("Error fetching departments:", error);
+    }
+  };
+
   const updateCommonInfo = (semInfo) => {
     setCommonInfo(prev => ({
       ...prev,
@@ -244,13 +259,30 @@ function Course() {
     return credits;
   }
 
+  // Helper to clamp numeric inputs to integers >= 0, allow empty string
+  const clampNumericValue = (val) => {
+    if (val === "" || val === null || val === undefined) return "";
+    // remove leading plus
+    if (typeof val === "string" && val.startsWith("+")) val = val.slice(1);
+    const parsed = parseInt(val, 10);
+    if (isNaN(parsed)) return 0;
+    return Math.max(0, parsed);
+  };
+
   // Handle course changes
   const handleCourseChange = useCallback((index, field, value) => {
     setCourses(prevCourses => {
       const updatedCourses = [...prevCourses];
+      const numericFields = new Set(['serial_no','lecture','tutorial','practical','ca_marks','fe_marks','credits']);
+      let newValue = value;
+
+      if (numericFields.has(field)) {
+        newValue = clampNumericValue(value);
+      }
+
       updatedCourses[index] = {
         ...updatedCourses[index],
-        [field]: value,
+        [field]: newValue,
       };
     
       // Recalculate credits
@@ -277,26 +309,100 @@ function Course() {
     });
   }, []);
 
+// const handleSubmit = useCallback(async () => {
+//   try {
+//     for (let i = 0; i < courses.length; i++) {
+//       const course = courses[i];
+//       const originalName = originalCourseNames[i];
+      
+//       if (course.courseTitle) {
+//         if (originalName && originalName !== course.courseTitle) {
+//            try {
+//             // Delete with all three PK fields as query parameters
+//             await axios.delete(
+//               `${process.env.REACT_APP_API_URL}/api/course/credits/${encodeURIComponent(originalName)}`,
+//               {
+//                 params: {
+//                   degree: commonInfo.degree,
+//                   department: commonInfo.department
+//                 }
+//               }
+//             );
+//         } catch (deleteError) {
+//             console.error("Error deleting old course record:", deleteError);
+//           }
+//         }
+        
+//         try {
+//           // Calculate total marks as sum of CA and FE marks
+//           const totalMarks = Number(course.ca_marks || 0) + Number(course.fe_marks || 0);
+          
+//           await axios.patch(`${process.env.REACT_APP_API_URL}/api/course/credits/${encodeURIComponent(course.courseTitle)}`, {
+//             serial_no: course.serial_no || 0,
+//             course_code: course.courseCode,
+//             lecture: course.lecture || 0,
+//             tutorial: course.tutorial || 0,
+//             practical: course.practical || 0,
+//             credits: course.credits || 0,
+//             ca_marks: course.ca_marks || 0,
+//             fe_marks: course.fe_marks || 0,
+//             total_marks: totalMarks, // Using calculated total marks
+//             type: course.type || '',
+//             faculty: course.faculty || '',
+//             department: commonInfo.department || '',
+//             degree: commonInfo.degree || '',
+//             sem_no: currentSem,
+//             category: course.courseType
+//           });
+//         } catch (updateError) {
+//           console.error(`Error updating course ${course.courseTitle}:`, updateError.response?.data || updateError.message);
+//           alert(`Failed to update course ${course.courseTitle}: ${updateError.response?.data?.message || updateError.message}`);
+//         }
+//       }
+//     }
+    
+//     alert("Data updated successfully!");
+//     fetchData();
+//   } catch (error) {
+//     console.error("Error in submission process:", error);
+//     alert("Failed to update data: " + (error.response?.data?.message || error.message));
+//   }
+// }, [courses, commonInfo, currentSem, originalCourseNames]);
+
+
+
 const handleSubmit = useCallback(async () => {
+  setIsSubmitting(true);
   try {
+    // STEP 1: Validate that no existing course names have been changed
     for (let i = 0; i < courses.length; i++) {
       const course = courses[i];
       const originalName = originalCourseNames[i];
       
-      if (course.courseTitle) {
-        if (originalName && originalName !== course.courseTitle) {
-          try {
-            // First delete the old record - the backend will handle related records
-            await axios.delete(`${process.env.REACT_APP_API_URL}/api/course/credits/${encodeURIComponent(originalName)}`);
-          } catch (deleteError) {
-            console.error("Error deleting old course record:", deleteError);
-            // Continue with update attempt even if delete fails
-          }
-        }
+      // Check if this is an existing course with a changed name
+      if (originalName && course.courseTitle && originalName !== course.courseTitle) {
+        alert(`Cannot change course name from "${originalName}" to "${course.courseTitle}". Course names cannot be modified once created. Please revert the change or delete the old course first.`);
+        setIsSubmitting(false);
+        return; // Stop submission
+      }
+    }
+
+    // STEP 2: Process all courses (no deletions needed since names can't change)
+    for (let i = 0; i < courses.length; i++) {
+      const course = courses[i];
+      
+      // Skip empty rows
+      if (!course.courseTitle) {
+        continue;
+      }
+      
+      try {
+        // Calculate total marks as sum of CA and FE marks
+        const totalMarks = Number(course.ca_marks || 0) + Number(course.fe_marks || 0);
         
-        try {
-          // Create or update with new course data
-          await axios.patch(`${process.env.REACT_APP_API_URL}/api/course/credits/${encodeURIComponent(course.courseTitle)}`, {
+        await axios.patch(
+          `${process.env.REACT_APP_API_URL}/api/course/credits/${encodeURIComponent(course.courseTitle)}`, 
+          {
             serial_no: course.serial_no || 0,
             course_code: course.courseCode,
             lecture: course.lecture || 0,
@@ -305,29 +411,40 @@ const handleSubmit = useCallback(async () => {
             credits: course.credits || 0,
             ca_marks: course.ca_marks || 0,
             fe_marks: course.fe_marks || 0,
-            total_marks: commonInfo.totalMarks || 0,
+            total_marks: totalMarks,
             type: course.type || '',
             faculty: course.faculty || '',
             department: commonInfo.department || '',
             degree: commonInfo.degree || '',
             sem_no: currentSem,
             category: course.courseType
-          });
-        } catch (updateError) {
-          console.error(`Error updating course ${course.courseTitle}:`, updateError.response?.data || updateError.message);
-          // Alert about specific course update failure but continue with others
+          }
+        );
+      } catch (updateError) {
+        console.error(`Error updating course ${course.courseTitle}:`, updateError.response?.data || updateError.message);
+        
+        // Check if backend rejected course name change
+        if (updateError.response?.data?.cannotModify) {
+          alert(`Cannot modify course name: ${updateError.response.data.message}`);
+        } else {
           alert(`Failed to update course ${course.courseTitle}: ${updateError.response?.data?.message || updateError.message}`);
         }
+        setIsSubmitting(false);
+        return; // Stop on first error
       }
     }
     
     alert("Data updated successfully!");
-    fetchData(); // Refresh data to get updated records
+    fetchData(); // Refresh the data
+    setIsSubmitting(false);
   } catch (error) {
     console.error("Error in submission process:", error);
+    setIsSubmitting(false);
     alert("Failed to update data: " + (error.response?.data?.message || error.message));
   }
-}, [courses, commonInfo, currentSem, originalCourseNames]);
+}, [courses, commonInfo, currentSem, originalCourseNames, fetchData]);
+
+
 
   // Navigation handlers
   const handleNext = useCallback(() => {
@@ -455,10 +572,16 @@ const handleSubmit = useCallback(async () => {
     fetchData();
   }, [currentSem, degree, department]);
 
+  useEffect(() => {
+  fetchDepartments();
+  }, []);
+
+
   // Rest of the component remains the same as in the original code...
 
   return (
     <div className="container-course">
+      <Navbar/>
     <h1>Course Details - Semester {currentSem}</h1>
 
     <div className="dropdown-container">
@@ -472,21 +595,18 @@ const handleSubmit = useCallback(async () => {
       </div>
 
       <div>
-        <label>Department: </label>
+        <label>Programme: </label>
         <select
           value={department}
           onChange={handleDepartmentChange}
-          disabled={degree === "M.E"} // Disable if M.E is selected
+          disabled={degree === "M.E"} // still disable for M.E if you want
         >
           <option value="">Select Department</option>
-          {degree === "M.E" ? (
-            <option value="CSE">CSE</option>
-          ) : (
-            <>
-              <option value="CSE">CSE</option>
-              <option value="CSE AI-ML">CSE AI-ML</option>
-            </>
-          )}
+          {departments.map((dep, index) => (
+            <option key={index} value={dep}>
+              {dep}
+            </option>
+          ))}
         </select>
       </div>
     </div>
@@ -510,15 +630,6 @@ const handleSubmit = useCallback(async () => {
         <div>
           <label>Total Mandatory:</label>
           <input type="number" value={commonInfo.mandatoryCourses} readOnly />
-        </div>
-        <div>
-          <label>Total Marks:</label>
-          <input
-            type="number"
-            name="totalMarks"
-            value={commonInfo.totalMarks}
-            onChange={handleCommonInfoChange}
-          />
         </div>
         <div>
           <label>Department:</label>
@@ -551,17 +662,21 @@ const handleSubmit = useCallback(async () => {
           <label>CA Marks for all theory courses: </label>
           <input
             type="number"
+            min="0"
+            step="1"
             value={theoryDefaultMarks?.ca_marks || ""}
+            onKeyDown={(e) => { if (e.key === '-' || e.key === 'e' || e.key === 'E' || e.key === '+') e.preventDefault(); }}
             onChange={(e) => {
-              const value = e.target.value;
+              const raw = e.target.value;
+              const value = clampNumericValue(raw);
               setTheoryDefaultMarks(prev => ({...prev, ca_marks: value}));
               // Apply to all theory courses
               const updatedCourses = [...courses];
               updatedCourses
                 .filter(course => course.courseType === "theory")
                 .forEach(course => {
-                  const index = updatedCourses.findIndex(c => c === course);
-                  updatedCourses[index] = {...course, ca_marks: value};
+                  const idx = updatedCourses.findIndex(c => c === course);
+                  updatedCourses[idx] = {...course, ca_marks: value};
                 });
               setCourses(updatedCourses);
             }}
@@ -571,17 +686,21 @@ const handleSubmit = useCallback(async () => {
           <label>FE Marks for all theory courses: </label>
           <input
             type="number"
+            min="0"
+            step="1"
             value={theoryDefaultMarks?.fe_marks || ""}
+            onKeyDown={(e) => { if (e.key === '-' || e.key === 'e' || e.key === 'E' || e.key === '+') e.preventDefault(); }}
             onChange={(e) => {
-              const value = e.target.value;
+              const raw = e.target.value;
+              const value = clampNumericValue(raw);
               setTheoryDefaultMarks(prev => ({...prev, fe_marks: value}));
               // Apply to all theory courses
               const updatedCourses = [...courses];
               updatedCourses
                 .filter(course => course.courseType === "theory")
                 .forEach(course => {
-                  const index = updatedCourses.findIndex(c => c === course);
-                  updatedCourses[index] = {...course, fe_marks: value};
+                  const idx = updatedCourses.findIndex(c => c === course);
+                  updatedCourses[idx] = {...course, fe_marks: value};
                 });
               setCourses(updatedCourses);
             }}
@@ -613,27 +732,41 @@ const handleSubmit = useCallback(async () => {
                 <td>
                   <input
                     type="number"
+                    min="0"
+                    step="1"
                     value={course.serial_no || ""}
+                    onKeyDown={(e) => { if (e.key === '-' || e.key === 'e' || e.key === 'E' || e.key === '+') e.preventDefault(); }}
                     onChange={(e) => handleCourseChange(courses.findIndex((c) => c === course), "serial_no", e.target.value)}
                   />
                 </td>
                 {Object.keys(course)
                   .filter((key) => key !== "courseType" && key !== "serial_no")
-                  .map((field) => (
-                    <td key={field}>
-                      {field === "credits" ? (
-                        <span>{course[field]}</span>
-                      ) : field === "CA_Marks" || field === "FE_Marks" ? (
-                        <span>{course[field]}</span>
-                      ) : (
-                        <input
-                          type={["lecture", "tutorial", "practical"].includes(field) ? "number" : "text"}
-                          value={course[field]}
-                          onChange={(e) => handleCourseChange(courses.findIndex((c) => c === course), field, e.target.value)}
-                        />
-                      )}
-                    </td>
-                  ))}
+                  .map((field) => {
+                    const isNumberField = ['lecture','tutorial','practical','serial_no','ca_marks','fe_marks','credits'].includes(field);
+                    return (
+                      <td key={field}>
+                        {field === "credits" ? (
+                          <input
+                            type="number"
+                            value={course[field] || ""}
+                            readOnly
+                            style={{ width: 60, textAlign: "center", padding: '4px' }}
+                          />
+                        ) : field === "CA_Marks" || field === "FE_Marks" ? (
+                          <span>{course[field]}</span>
+                        ) : (
+                          <input
+                            type={isNumberField ? "number" : "text"}
+                            min={isNumberField ? "0" : undefined}
+                            step={isNumberField ? "1" : undefined}
+                            onKeyDown={(e) => { if (isNumberField && (e.key === '-' || e.key === 'e' || e.key === 'E' || e.key === '+')) e.preventDefault(); }}
+                            value={course[field]}
+                            onChange={(e) => handleCourseChange(courses.findIndex((c) => c === course), field, e.target.value)}
+                          />
+                        )}
+                      </td>
+                    );
+                  })}
               </tr>
             ))}
         </tbody>
@@ -646,17 +779,21 @@ const handleSubmit = useCallback(async () => {
           <label>CA Marks for all practical courses: </label>
           <input
             type="number"
+            min="0"
+            step="1"
             value={practicalDefaultMarks?.ca_marks || ""}
+            onKeyDown={(e) => { if (e.key === '-' || e.key === 'e' || e.key === 'E' || e.key === '+') e.preventDefault(); }}
             onChange={(e) => {
-              const value = e.target.value;
+              const raw = e.target.value;
+              const value = clampNumericValue(raw);
               setPracticalDefaultMarks(prev => ({...prev, ca_marks: value}));
               // Apply to all practical courses
               const updatedCourses = [...courses];
               updatedCourses
                 .filter(course => course.courseType === "practical")
                 .forEach(course => {
-                  const index = updatedCourses.findIndex(c => c === course);
-                  updatedCourses[index] = {...course, ca_marks: value};
+                  const idx = updatedCourses.findIndex(c => c === course);
+                  updatedCourses[idx] = {...course, ca_marks: value};
                 });
               setCourses(updatedCourses);
             }}
@@ -667,16 +804,20 @@ const handleSubmit = useCallback(async () => {
           <label>FE Marks for all practical courses: </label>
           <input
             type="number"
+            min="0"
+            step="1"
             value={practicalDefaultMarks?.fe_marks || ""}
+            onKeyDown={(e) => { if (e.key === '-' || e.key === 'e' || e.key === 'E' || e.key === '+') e.preventDefault(); }}
             onChange={(e) => {
-              const value = e.target.value;
+              const raw = e.target.value;
+              const value = clampNumericValue(raw);
               setPracticalDefaultMarks(prev => ({...prev, fe_marks: value}));
               const updatedCourses = [...courses];
               updatedCourses
                 .filter(course => course.courseType === "practical")
                 .forEach(course => {
-                  const index = updatedCourses.findIndex(c => c === course);
-                  updatedCourses[index] = {...course, fe_marks: value};
+                  const idx = updatedCourses.findIndex(c => c === course);
+                  updatedCourses[idx] = {...course, fe_marks: value};
                 });
               setCourses(updatedCourses);
             }}
@@ -708,27 +849,41 @@ const handleSubmit = useCallback(async () => {
                 <td>
                   <input
                     type="number"
+                    min="0"
+                    step="1"
                     value={course.serial_no || ""}
+                    onKeyDown={(e) => { if (e.key === '-' || e.key === 'e' || e.key === 'E' || e.key === '+') e.preventDefault(); }}
                     onChange={(e) => handleCourseChange(courses.findIndex((c) => c === course), "serial_no", e.target.value)}
                   />
                 </td>
                 {Object.keys(course)
                   .filter((key) => key !== "courseType" && key !== "serial_no")
-                  .map((field) => (
-                    <td key={field}>
-                      {field === "credits" ? (
-                        <span>{course[field]}</span>
-                      ) : field === "CA_Marks" || field === "FE_Marks" ? (
-                        <span>{course[field]}</span>
-                      ) : (
-                        <input
-                          type={["lecture", "tutorial", "practical"].includes(field) ? "number" : "text"}
-                          value={course[field]}
-                          onChange={(e) => handleCourseChange(courses.findIndex((c) => c === course), field, e.target.value)}
-                        />
-                      )}
-                    </td>
-                  ))}
+                  .map((field) => {
+                    const isNumberField = ['lecture','tutorial','practical','serial_no','ca_marks','fe_marks','credits'].includes(field);
+                    return (
+                      <td key={field}>
+                        {field === "credits" ? (
+                          <input
+                            type="number"
+                            value={course[field] || ""}
+                            readOnly
+                            style={{ width: 60, textAlign: "center", padding: '4px' }}
+                          />
+                        ) : field === "CA_Marks" || field === "FE_Marks" ? (
+                          <span>{course[field]}</span>
+                        ) : (
+                          <input
+                            type={isNumberField ? "number" : "text"}
+                            min={isNumberField ? "0" : undefined}
+                            step={isNumberField ? "1" : undefined}
+                            onKeyDown={(e) => { if (isNumberField && (e.key === '-' || e.key === 'e' || e.key === 'E' || e.key === '+')) e.preventDefault(); }}
+                            value={course[field]}
+                            onChange={(e) => handleCourseChange(courses.findIndex((c) => c === course), field, e.target.value)}
+                          />
+                        )}
+                      </td>
+                    );
+                  })}
               </tr>
             ))}
         </tbody>
@@ -760,26 +915,40 @@ const handleSubmit = useCallback(async () => {
                 <td>
                   <input
                     type="number"
+                    min="0"
+                    step="1"
                     value={course.serial_no || ""}
+                    onKeyDown={(e) => { if (e.key === '-' || e.key === 'e' || e.key === 'E' || e.key === '+') e.preventDefault(); }}
                     onChange={(e) => handleCourseChange(courses.findIndex((c) => c === course), "serial_no", e.target.value)}
                   />
                 </td>
                 
                 {Object.keys(course)
                   .filter((key) => key !== "courseType" && key !== "serial_no")
-                  .map((field) => (
-                    <td key={field}>
-                      {field === "credits" ? (
-                        <span>{course[field]}</span>
-                      ) : (
-                        <input
-                          type={["lecture", "tutorial", "practical"].includes(field) ? "number" : "text"}
-                          value={course[field]}
-                          onChange={(e) => handleCourseChange(courses.findIndex((c) => c === course), field, e.target.value)}
-                        />
-                      )}
-                    </td>
-                  ))}
+                  .map((field) => {
+                    const isNumberField = ['lecture','tutorial','practical','serial_no','ca_marks','fe_marks','credits'].includes(field);
+                    return (
+                      <td key={field}>
+                        {field === "credits" ? (
+                          <input
+                            type="number"
+                            value={course[field] || ""}
+                            readOnly
+                            style={{ width: 60, textAlign: "center", padding: '4px' }}
+                          />
+                        ) : (
+                          <input
+                            type={isNumberField ? "number" : "text"}
+                            min={isNumberField ? "0" : undefined}
+                            step={isNumberField ? "1" : undefined}
+                            onKeyDown={(e) => { if (isNumberField && (e.key === '-' || e.key === 'e' || e.key === 'E' || e.key === '+')) e.preventDefault(); }}
+                            value={course[field]}
+                            onChange={(e) => handleCourseChange(courses.findIndex((c) => c === course), field, e.target.value)}
+                          />
+                        )}
+                      </td>
+                    );
+                  })}
               </tr>
             ))}
         </tbody>
@@ -833,7 +1002,7 @@ const handleSubmit = useCallback(async () => {
                     <td>{course.credits}</td>
                     <td>{course.ca_marks}</td>
                     <td>{course.fe_marks}</td>
-                    <td>{course.total_marks}</td>
+                    <td>{course.ca_marks + course.fe_marks}</td>
                     <td>{course.type}</td>
                   </tr>
                 ))}
@@ -870,7 +1039,7 @@ const handleSubmit = useCallback(async () => {
                     <td>{course.credits}</td>
                     <td>{course.ca_marks}</td>
                     <td>{course.fe_marks}</td>
-                    <td>{course.total_marks}</td>
+                    <td>{course.ca_marks + course.fe_marks}</td>
                     <td>{course.type}</td>
                   </tr>
                 ))}
@@ -908,7 +1077,7 @@ const handleSubmit = useCallback(async () => {
                     <td>{course.credits}</td>
                     <td>{course.ca_marks}</td>
                     <td>{course.fe_marks}</td>
-                    <td>{course.total_marks}</td>
+                    <td>{course.ca_marks + course.fe_marks}</td>
                     <td>{course.type}</td>
                   </tr>
                 ))}
@@ -922,7 +1091,7 @@ const handleSubmit = useCallback(async () => {
                 <td>{existingCourses.reduce((sum, course) => sum + course.credits, 0)}</td>
                 <td>{existingCourses.reduce((sum, course) => sum + course.ca_marks, 0)}</td>
                 <td>{existingCourses.reduce((sum, course) => sum + course.fe_marks, 0)}</td>
-                <td>{existingCourses.reduce((sum, course) => sum + course.total_marks, 0)}</td>
+                <td>{existingCourses.reduce((sum, course) => sum + (course.ca_marks + course.fe_marks), 0)}</td>
                 <td></td>
               </tr>
             </tbody>
@@ -948,7 +1117,20 @@ const handleSubmit = useCallback(async () => {
         </div>
       
       <div className="action-buttons"> 
-        <button onClick={handleSubmit}>Submit</button>
+        <button onClick={handleSubmit} disabled={isSubmitting} style={{display:'inline-flex', alignItems:'center', gap:8}}>
+          {isSubmitting ? (
+            <>
+              <svg width="16" height="16" viewBox="0 0 50 50" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                <circle cx="25" cy="25" r="20" stroke="#333" strokeWidth="4" fill="none" strokeLinecap="round" strokeDasharray="31.4 31.4">
+                  <animateTransform attributeName="transform" type="rotate" from="0 25 25" to="360 25 25" dur="1s" repeatCount="indefinite" />
+                </circle>
+              </svg>
+              Submitting...
+            </>
+          ) : (
+            'Submit'
+          )}
+        </button>
         <button onClick={navigateSummary}>Generate Summary</button>
         <button onClick={navigateProfessional}>Professional Electives</button>
         <button onClick={navigateWordPage}>Downloadable Word Format</button>
