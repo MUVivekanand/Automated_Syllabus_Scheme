@@ -122,40 +122,54 @@ function CoPo() {
       }
 
       // ---------------- SHEET 2 (AVERAGES) ----------------
-      const avgSheet = [headers];
+const avgSheet = [headers];
 
-      for (const [courseCode, data] of Object.entries(grouped)) {
-        const { course_name, faculty, rows } = data;
+for (const [courseCode, data] of Object.entries(grouped)) {
+  const { course_name, faculty, rows } = data;
 
-        const poSum = Array(12).fill(0);
-        const psoSum = Array(2).fill(0);
-        let count = rows.length;
+  const poSum = Array(12).fill(0);
+  const poCount = Array(12).fill(0);
 
-        rows.forEach((row) => {
-          row.pos.forEach((val, i) => {
-            poSum[i] += parseFloat(val) || 0;
-          });
-          row.pso.forEach((val, i) => {
-            psoSum[i] += parseFloat(val) || 0;
-          });
-        });
+  const psoSum = Array(2).fill(0);
+  const psoCount = Array(2).fill(0);
 
-        const poAvg = poSum.map((s) => (count ? (s / count).toFixed(2) : "0"));
-        const psoAvg = psoSum.map((s) =>
-          count ? (s / count).toFixed(2) : "0",
-        );
-
-        avgSheet.push([
-          courseCode,
-          course_name,
-          faculty,
-          "AVERAGE",
-          ...poAvg,
-          ...psoAvg,
-        ]);
-
-        avgSheet.push([]);
+  rows.forEach((row) => {
+    row.pos.forEach((val, i) => {
+      const num = parseFloat(val);
+      if (!isNaN(num) && num !== 0) {
+        poSum[i] += num;
+        poCount[i] += 1;
       }
+    });
+
+    row.pso.forEach((val, i) => {
+      const num = parseFloat(val);
+      if (!isNaN(num) && num !== 0) {
+        psoSum[i] += num;
+        psoCount[i] += 1;
+      }
+    });
+  });
+
+  const poAvg = poSum.map((sum, i) =>
+    poCount[i] ? (sum / poCount[i]).toFixed(2) : ""
+  );
+
+  const psoAvg = psoSum.map((sum, i) =>
+    psoCount[i] ? (sum / psoCount[i]).toFixed(2) : ""
+  );
+
+  avgSheet.push([
+    courseCode,
+    course_name,
+    faculty,
+    "AVERAGE",
+    ...poAvg,
+    ...psoAvg,
+  ]);
+
+  avgSheet.push([]);
+}
 
       // ---------------- CREATE EXCEL ----------------
       const ws1 = XLSX.utils.aoa_to_sheet(sheetData);
