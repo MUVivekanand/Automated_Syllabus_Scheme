@@ -3,6 +3,7 @@ import axios from "axios";
 import "../styles/Course.css";
 import { useNavigate } from "react-router-dom";
 import { useLocation } from "react-router-dom";
+import Navbar from './Navbar';
 
 function CourseMe() {
     const location = useLocation();
@@ -523,7 +524,8 @@ const handleSubmit = useCallback(async () => {
   // Rest of the component remains the same as in the original code...
 
   return (
-    <div className="container-course">
+    <div className="container-course page-with-navbar">
+      <Navbar/>
       <h1>Course Details - Semester {currentSem}</h1>
 
       <div className="dropdown-container">

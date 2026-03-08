@@ -15,8 +15,24 @@ function Summary() {
   const [department, setDepartment] = useState("");
 
   const location = useLocation();
-  const courseTypes = ["HS", "BS", "ES", "PC", "PE", "OE", "EEC", "MC"];
-  const semesters = Array.from({ length: 8 }, (_, i) => i + 1);
+  
+  // Dynamically set course types and semesters based on degree
+  const getCourseTypes = (degree) => {
+    if (degree === "M.E") {
+      return ["HS", "BS", "ES", "PC", "PE", "OE", "EEC", "MC", "RMC"];
+    }
+    return ["HS", "BS", "ES", "PC", "PE", "OE", "EEC", "MC"];
+  };
+  
+  const getSemesters = (degree) => {
+    if (degree === "M.E") {
+      return Array.from({ length: 4 }, (_, i) => i + 1);
+    }
+    return Array.from({ length: 8 }, (_, i) => i + 1);
+  };
+  
+  const [courseTypes, setCourseTypes] = useState(["HS", "BS", "ES", "PC", "PE", "OE", "EEC", "MC"]);
+  const [semesters, setSemesters] = useState(Array.from({ length: 8 }, (_, i) => i + 1));
 
   useEffect(() => {
     // Extract degree and department from URL parameters
@@ -27,6 +43,10 @@ function Summary() {
     setDegree(degreeParam);
     setDepartment(departmentParam);
     
+    // Update course types and semesters based on degree
+    setCourseTypes(getCourseTypes(degreeParam));
+    setSemesters(getSemesters(degreeParam));
+    
     // Only fetch data if we have degree and department
     if (degreeParam) {
       fetchData(degreeParam, departmentParam);
@@ -35,6 +55,10 @@ function Summary() {
 
   const fetchData = async (degree, department) => {
     try {
+      // Get dynamic course types and semesters based on degree
+      const dynamicCourseTypes = getCourseTypes(degree);
+      const dynamicSemesters = getSemesters(degree);
+      
       // Fetch both credits summary and total credits with filtering
       const [creditsSummaryResponse, totalCreditsResponse] = await Promise.all([
         axios.get(`${process.env.REACT_APP_API_URL}/api/summary/creditsSummary`, {
@@ -48,10 +72,10 @@ function Summary() {
       const backendData = creditsSummaryResponse.data;
       const storedTotalCredits = totalCreditsResponse.data.total_credits;
 
-      const processedData = courseTypes.map((type) => {
+      const processedData = dynamicCourseTypes.map((type) => {
         const typeData = { type, credits: {} };
 
-        semesters.forEach((sem) => {
+        dynamicSemesters.forEach((sem) => {
           const semesterCredits = backendData
             .filter((course) => course.type === type && course.sem_no === sem)
             .reduce((total, course) => total + (Number(course.credits) || 0), 0);
