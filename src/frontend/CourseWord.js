@@ -18,6 +18,9 @@ function CourseWord() {
   const [coursesElective, setCoursesElective] = useState([]);
   const [groupedElectives, setGroupedElectives] = useState({});
   const [honoursCoursesByVertical, setHonoursCoursesByVertical] = useState({});
+  const [electiveTypes, setElectiveTypes] = useState([]);
+  const [verticalTypeName, setVerticalTypeName] = useState(null);
+  const [verticals, setVerticals] = useState({});
 
 
   const [summaryData, setSummaryData] = useState([]);
@@ -49,8 +52,30 @@ useEffect(() => {
         });
         const courseDetailsData = response.data;
 
+        const [electiveTypesResponse, verticalsResponse] = await Promise.all([
+          axios.get(
+            `${process.env.REACT_APP_API_URL}/api/proelective/types`,
+            { params: { degree, department } }
+          ),
+          axios.get(
+            `${process.env.REACT_APP_API_URL}/api/proelective/verticals`,
+            { params: { degree, department } }
+          )
+        ]);
+        const types = electiveTypesResponse.data || [];
+        setElectiveTypes(types);
+        const verticalType = types.find(
+          (type) => Array.isArray(type.vertical) && type.vertical.length > 0
+        );
+        setVerticalTypeName(verticalType ? verticalType.name : null);
+        const verticalMap = {};
+        (verticalsResponse.data || []).forEach((vertical) => {
+          verticalMap[vertical.id] = vertical.name;
+        });
+        setVerticals(verticalMap);
+
         const { groupedElectives: electives, honoursCoursesByVertical: honoursCourses } = 
-        await fetchElectiveCourses(degree, department);
+        await fetchElectiveCourses(degree, department, verticalType?.name);
 
         setGroupedElectives(electives);
         setHonoursCoursesByVertical(honoursCourses);
@@ -121,7 +146,7 @@ useEffect(() => {
 }, [degree, department]);
 
 
-const fetchElectiveCourses = async (degree, department) => {
+const fetchElectiveCourses = async (degree, department, verticalType) => {
   try {
     const electivesResponse = await axios.get(
       `${process.env.REACT_APP_API_URL}/api/proelective/courses?degree=${encodeURIComponent(degree)}&department=${encodeURIComponent(department)}`
@@ -143,8 +168,8 @@ const fetchElectiveCourses = async (degree, department) => {
     });
     
     // Group BE Honours courses by vertical
-    const honoursCoursesByVertical = electivesData
-      .filter(course => course.type === "Professional Electives for BE Honours / BE Honours with specialization in same discipline and BE Minor degree programmes")
+    const honoursCoursesByVertical = verticalType ? electivesData
+      .filter(course => course.type === verticalType)
       .reduce((acc, course) => {
         const vertical = course.vertical || 0;
         if (!acc[vertical]) {
@@ -152,7 +177,7 @@ const fetchElectiveCourses = async (degree, department) => {
         }
         acc[vertical].push(course);
         return acc;
-      }, {});
+      }, {}) : {};
     
     // Sort each vertical group by serial number
     Object.keys(honoursCoursesByVertical).forEach(vertical => {
@@ -168,22 +193,8 @@ const fetchElectiveCourses = async (degree, department) => {
 };
 
 const getVerticalName = (vertical) => {
-  const verticalNames = {
-    1: "VERTICAL I: Computational Intelligence",
-    2: "VERTICAL II: Networking Technologies",
-    3: "VERTICAL III: Security and Privacy"
-  };
-  return verticalNames[vertical] || "";
+  return verticals[vertical] || "";
 };
-
-const sectionTypes = {
-  LANGUAGE: 'LANGUAGE ELECTIVES',
-  BE: 'Professional electives for BE degree programme',
-  BE_HONOURS: 'Professional Electives for BE Honours / BE Honours with specialization in same discipline and BE Minor degree programmes',
-  OPEN: 'OPEN ELECTIVES',
-  SDL: 'SELF DIRECTED LEARNING COURSES'
-};
-  
 
  const fetchAllSemestersData = async (degree, department) => {
   try {
@@ -570,157 +581,100 @@ for (let i = 2; i < semestersData.length; i += 2) {
   doc.text(pageNum.toString(), doc.internal.pageSize.width / 2, doc.internal.pageSize.height - 10, { align: 'center' });
 }
   
-  // Professional Electives for BE Degree Programme
+  // Elective sections (order from DB)
   doc.addPage();
   doc.setFont('arial');
-  doc.setFontSize(12);
-  doc.text('Professional Electives for BE Degree Programme', doc.internal.pageSize.width / 2, 20, { align: 'center' });
-  
-  // Add Course Code and Course Title header in bold
-  doc.setFontSize(10);
-  doc.setFont('arial', 'bold');
-  doc.text('Course Code        Course Title', pageMargin, 35);
-  
-  doc.setFont('arial', 'normal');
-  let yPosition = 42;
-  
-  groupedElectives[sectionTypes.BE].forEach((course) => {
-    doc.text(`${course.course_code}            ${course.course_title}`, pageMargin, yPosition);
-    yPosition += 5; // spacing between courses (unchanged)
-  });
+  let yPosition = 20;
+  const electiveLeftMargin = pageMargin + 6;
+  const electiveCodeX = electiveLeftMargin;
+  const electiveTitleX = electiveLeftMargin + 32;
 
-  // increase gap before next elective section
-  yPosition += 12;
-  
-  // Professional Electives for BE Honours
-  if (Object.keys(honoursCoursesByVertical).length > 0) {
-    if (yPosition > doc.internal.pageSize.height - 60) {
+  const ensurePageSpace = (neededHeight = 60) => {
+    if (yPosition > doc.internal.pageSize.height - neededHeight) {
       doc.addPage();
       yPosition = 20;
     }
-  
+  };
+
+  const splitHonoursTitle = (title) => {
+    const marker = "with specialization ";
+    const idx = title.indexOf(marker);
+    if (idx === -1) return [title];
+    const line1 = title.slice(0, idx + "with specialization".length);
+    const line2 = title.slice(idx + marker.length);
+    return [line1, line2];
+  };
+
+  electiveTypes.forEach((type) => {
+    const typeCourses = groupedElectives[type.name] || [];
+    const isVerticalType = verticalTypeName && type.name === verticalTypeName;
+    const hasVerticalCourses = isVerticalType && Object.keys(honoursCoursesByVertical).length > 0;
+
+    if (!typeCourses.length && !hasVerticalCourses) return;
+
+    ensurePageSpace();
+
     doc.setFontSize(12);
-    doc.text('Professional Electives for BE Honours / BE Honours with specialization', doc.internal.pageSize.width / 2, yPosition, { align: 'center' });
-    doc.text('in same discipline and BE Minor degree programmes', doc.internal.pageSize.width / 2, yPosition + 8, { align: 'center' });
-  
-    yPosition += 16;
-    
-    // Iterate through ALL verticals
-    for (const [vertical, courses] of Object.entries(honoursCoursesByVertical)) {
-      if (courses && courses.length > 0) {
-        if (yPosition > doc.internal.pageSize.height - 60) {
-          doc.addPage();
-          yPosition = 20;
-        }
-        
+    doc.setFont('arial', 'normal');
+
+    if (hasVerticalCourses) {
+      const lines = splitHonoursTitle(type.name);
+      if (lines.length === 2) {
+        doc.text(lines[0], doc.internal.pageSize.width / 2, yPosition, { align: 'center' });
+        doc.text(lines[1], doc.internal.pageSize.width / 2, yPosition + 8, { align: 'center' });
+        yPosition += 16;
+      } else {
+        doc.text(type.name, doc.internal.pageSize.width / 2, yPosition, { align: 'center' });
+        yPosition += 10;
+      }
+
+      for (const [vertical, courses] of Object.entries(honoursCoursesByVertical)) {
+        if (!courses || courses.length === 0) continue;
+        ensurePageSpace();
+
         doc.setFontSize(11);
         doc.setFont('arial', 'bold');
-        doc.text(getVerticalName(vertical), pageMargin, yPosition);
+        doc.text(getVerticalName(vertical), electiveLeftMargin, yPosition);
         yPosition += 6;
-        
-        // Add Course Code and Course Title header in bold
+
         doc.setFontSize(10);
         doc.setFont('arial', 'bold');
-        doc.text('Course Code        Course Title', pageMargin, yPosition);
+        doc.text('Course Code', electiveCodeX, yPosition);
+        doc.text('Course Title', electiveTitleX, yPosition);
         yPosition += 6;
-        
+
         doc.setFont('arial', 'normal');
         courses.forEach((course) => {
-          doc.text(`${course.course_code}            ${course.course_title}`, pageMargin, yPosition);
-          yPosition += 5; // spacing between courses (unchanged)
+          doc.text(`${course.course_code}`, electiveCodeX, yPosition);
+          doc.text(`${course.course_title}`, electiveTitleX, yPosition);
+          yPosition += 5;
         });
-        
-        yPosition += 2; // Minimal padding between verticals (unchanged)
+
+        yPosition += 2;
       }
+
+      yPosition += 12;
+      return;
     }
-  
-    // remove forced page-filling; add modest padding after honours block
+
+    doc.text(type.name, doc.internal.pageSize.width / 2, yPosition, { align: 'center' });
+    yPosition += 10;
+
+    doc.setFontSize(10);
+    doc.setFont('arial', 'bold');
+    doc.text('Course Code', electiveCodeX, yPosition);
+    doc.text('Course Title', electiveTitleX, yPosition);
+    yPosition += 6;
+
+    doc.setFont('arial', 'normal');
+    typeCourses.forEach((course) => {
+      doc.text(`${course.course_code}`, electiveCodeX, yPosition);
+      doc.text(`${course.course_title}`, electiveTitleX, yPosition);
+      yPosition += 5;
+    });
+
     yPosition += 12;
-  }
-  
-  // Add extra gap before Open Electives so sections are separated visibly
-  // (avoid forcing a new page unless necessary)
-  // Open Electives
-  if (groupedElectives[sectionTypes.OPEN] && groupedElectives[sectionTypes.OPEN].length > 0) {
-    if (yPosition > doc.internal.pageSize.height - 60) {
-      doc.addPage();
-      yPosition = 20;
-    }
-
-    // extra gap between sections
-    yPosition += 8;
-  
-    doc.setFontSize(12);
-    doc.text('Open Electives', doc.internal.pageSize.width / 2, yPosition, { align: 'center' });
-  
-    yPosition += 10;
-    
-    // Add Course Code and Course Title header in bold
-    doc.setFontSize(10);
-    doc.setFont('arial', 'bold');
-    doc.text('Course Code        Course Title', pageMargin, yPosition);
-    yPosition += 6;
-  
-    doc.setFont('arial', 'normal');
-    groupedElectives[sectionTypes.OPEN].forEach((course) => {
-      doc.text(`${course.course_code}            ${course.course_title}`, pageMargin, yPosition);
-      yPosition += 5; // spacing between courses (unchanged)
-    });
-  }
-  
-  // add gap before Language Electives
-  if (groupedElectives[sectionTypes.LANGUAGE] && groupedElectives[sectionTypes.LANGUAGE].length > 0) {
-    if (yPosition > doc.internal.pageSize.height - 60) {
-      doc.addPage();
-      yPosition = 20;
-    }
-
-    yPosition += 8;
-  
-    doc.setFontSize(12);
-    doc.text('Language Electives', doc.internal.pageSize.width / 2, yPosition, { align: 'center' });
-  
-    yPosition += 10;
-    
-    // Add Course Code and Course Title header in bold
-    doc.setFontSize(10);
-    doc.setFont('arial', 'bold');
-    doc.text('Course Code        Course Title', pageMargin, yPosition);
-    yPosition += 6;
-  
-    doc.setFont('arial', 'normal');
-    groupedElectives[sectionTypes.LANGUAGE].forEach((course) => {
-      doc.text(`${course.course_code}            ${course.course_title}`, pageMargin, yPosition);
-      yPosition += 5; // spacing between courses (unchanged)
-    });
-  }
-  
-  // add gap before SDL
-  if (groupedElectives[sectionTypes.SDL] && groupedElectives[sectionTypes.SDL].length > 0) {
-    if (yPosition > doc.internal.pageSize.height - 60) {
-      doc.addPage();
-      yPosition = 20;
-    }
-
-    yPosition += 8;
-  
-    doc.setFontSize(12);
-    doc.text('Self Directed Learning Courses', doc.internal.pageSize.width / 2, yPosition, { align: 'center' });
-  
-    yPosition += 10;
-    
-    // Add Course Code and Course Title header in bold
-    doc.setFontSize(10);
-    doc.setFont('arial', 'bold');
-    doc.text('Course Code        Course Title', pageMargin, yPosition);
-    yPosition += 6;
-  
-    doc.setFont('arial', 'normal');
-    groupedElectives[sectionTypes.SDL].forEach((course) => {
-      doc.text(`${course.course_code}            ${course.course_title}`, pageMargin, yPosition);
-      yPosition += 5; // spacing between courses (unchanged)
-    });
-  }
+  });
       
       // NEXT ADD SUMMARY TABLE ON A NEW PAGE
       
@@ -1301,125 +1255,61 @@ return (
     <div className="courses-display">
       <h2>Elective Courses</h2>
       
-      {/* Display Language Electives */}
-      {groupedElectives[sectionTypes.LANGUAGE] && groupedElectives[sectionTypes.LANGUAGE].length > 0 && (
-        <div className="course-section">
-          <h3>LANGUAGE ELECTIVES</h3>
-          <table>
-            <thead>
-              <tr>
-                <th>Course Code</th>
-                <th>Course Title</th>
-              </tr>
-            </thead>
-            <tbody>
-              {groupedElectives[sectionTypes.LANGUAGE].map(course => (
-                <tr key={course.course_code}>
-                  <td>{course.course_code}</td>
-                  <td>{course.course_title}</td>
-                </tr>
+      {electiveTypes.map((type) => {
+        const typeCourses = groupedElectives[type.name] || [];
+        if (typeCourses.length === 0) return null;
+
+        if (verticalTypeName && type.name === verticalTypeName) {
+          return (
+            <div key={type.name} className="course-section">
+              <h3>{type.name}</h3>
+              {Object.keys(honoursCoursesByVertical).sort().map((vertical) => (
+                <div key={vertical}>
+                  <h4>{getVerticalName(vertical)}</h4>
+                  <table className="elective-courses-table">
+                    <thead>
+                      <tr>
+                        <th>Course Code</th>
+                        <th>Course Title</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {honoursCoursesByVertical[vertical].map((course) => (
+                        <tr key={course.course_code}>
+                          <td>{course.course_code}</td>
+                          <td>{course.course_title}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-      
-      {/* Display BE Degree Programme Courses */}
-      {groupedElectives[sectionTypes.BE] && groupedElectives[sectionTypes.BE].length > 0 && (
-        <div className="course-section">
-          <h3>Professional electives for BE degree programme</h3>
-          <table>
-            <thead>
-              <tr>
-                <th>Course Code</th>
-                <th>Course Title</th>
-              </tr>
-            </thead>
-            <tbody>
-              {groupedElectives[sectionTypes.BE].map(course => (
-                <tr key={course.course_code}>
-                  <td>{course.course_code}</td>
-                  <td>{course.course_title}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-      
-      {/* Display BE Honours Courses by Vertical */}
-      {Object.keys(honoursCoursesByVertical).length > 0 && (
-        <div className="course-section">
-          <h3>Professional Electives for BE Honours / BE Honours with specialization in same discipline and BE Minor degree programmes</h3>
-          {Object.keys(honoursCoursesByVertical).sort().map(vertical => (
-            <div key={vertical}>
-              <h4>{getVerticalName(vertical)}</h4>
-              <table>
-                <thead>
-                  <tr>
-                    <th>Course Code</th>
-                    <th>Course Title</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {honoursCoursesByVertical[vertical].map(course => (
-                    <tr key={course.course_code}>
-                      <td>{course.course_code}</td>
-                      <td>{course.course_title}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
             </div>
-          ))}
-        </div>
-      )}
-      
-      {/* Display Open Electives */}
-      {groupedElectives[sectionTypes.OPEN] && groupedElectives[sectionTypes.OPEN].length > 0 && (
-        <div className="course-section">
-          <h3>OPEN ELECTIVES</h3>
-          <table>
-            <thead>
-              <tr>
-                <th>Course Code</th>
-                <th>Course Title</th>
-              </tr>
-            </thead>
-            <tbody>
-              {groupedElectives[sectionTypes.OPEN].map(course => (
-                <tr key={course.course_code}>
-                  <td>{course.course_code}</td>
-                  <td>{course.course_title}</td>
+          );
+        }
+
+        return (
+          <div key={type.name} className="course-section">
+            <h3>{type.name}</h3>
+            <table className="elective-courses-table">
+              <thead>
+                <tr>
+                  <th>Course Code</th>
+                  <th>Course Title</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-      
-      {/* Display Self Directed Learning Courses */}
-      {groupedElectives[sectionTypes.SDL] && groupedElectives[sectionTypes.SDL].length > 0 && (
-        <div className="course-section">
-          <h3>SELF DIRECTED LEARNING COURSES</h3>
-          <table>
-            <thead>
-              <tr>
-                <th>Course Code</th>
-                <th>Course Title</th>
-              </tr>
-            </thead>
-            <tbody>
-              {groupedElectives[sectionTypes.SDL].map(course => (
-                <tr key={course.course_code}>
-                  <td>{course.course_code}</td>
-                  <td>{course.course_title}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+              </thead>
+              <tbody>
+                {typeCourses.map((course) => (
+                  <tr key={course.course_code}>
+                    <td>{course.course_code}</td>
+                    <td>{course.course_title}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        );
+      })}
     </div>
 
     {totalCreditsInfo && (

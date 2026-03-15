@@ -456,3 +456,36 @@ button.toggle-btn:active {
 .electives-table tr:nth-child(even) {
   background-color: #f9f9f9;
 }
+
+/* Elective Courses (CourseWord) */
+.elective-courses-table {
+  width: 100%;
+  border-collapse: collapse;
+  border: 1px solid #ddd;
+  table-layout: fixed;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.elective-courses-table th,
+.elective-courses-table td {
+  border: 1px solid #ddd;
+  padding: 10px 12px;
+  text-align: center;
+  line-height: 1.35;
+}
+
+.elective-courses-table th {
+  background-color: #f5f5f5;
+  font-weight: bold;
+}
+
+.elective-courses-table th:first-child,
+.elective-courses-table td:first-child {
+  width: 22%;
+}
+
+.elective-courses-table th:last-child,
+.elective-courses-table td:last-child {
+  width: 78%;
+}

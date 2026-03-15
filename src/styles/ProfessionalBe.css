@@ -26,6 +26,9 @@
   
   .tabs {
     display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
     margin-bottom: 20px;
     border-bottom: 1px solid #ddd;
   }
@@ -46,6 +49,142 @@
   .tabs button.active {
     background-color: #2196F3;
     color: white;
+  }
+
+  .add-type-form,
+  .edit-type-form {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-top: 10px;
+    flex-wrap: wrap;
+  }
+
+  .add-type-form input,
+  .edit-type-form input {
+    padding: 10px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    min-height: 44px;
+    min-width: 360px;
+    font-size: 16px;
+  }
+
+  .add-type-button {
+    background-color: #2196F3;
+  }
+
+  .add-type-button:hover {
+    background-color: #0b7dda;
+  }
+
+  .view-types-button {
+    background-color: #6c757d;
+  }
+
+  .view-types-button:hover {
+    background-color: #5a6268;
+  }
+
+  .elective-types-panel {
+    background-color: #f9f9f9;
+    padding: 16px;
+    border-radius: 6px;
+    margin: 10px 0 20px;
+    border: 1px solid #e5e5e5;
+  }
+
+  .elective-types-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+  }
+
+  .elective-types-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .type-row {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .type-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 10px 12px;
+    background: #fff;
+    border: 1px solid #e6e6e6;
+    border-radius: 6px;
+  }
+
+  .type-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .type-name {
+    font-weight: 600;
+  }
+
+  .type-meta {
+    font-size: 12px;
+    color: #666;
+  }
+
+  .type-actions {
+    display: flex;
+    gap: 6px;
+  }
+
+  .type-actions button {
+    padding: 6px 10px;
+    font-size: 13px;
+    background-color: #6c757d;
+  }
+
+  .type-actions button:hover {
+    background-color: #5a6268;
+  }
+
+  .type-edit-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    background: #fff;
+    border: 1px dashed #d0d0d0;
+    border-radius: 6px;
+  }
+
+  .type-edit-row input {
+    padding: 10px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    width: 100%;
+    min-height: 46px;
+    font-size: 16px;
+  }
+
+  .type-edit-row button {
+    white-space: nowrap;
+  }
+
+  .add-vertical-form input,
+  .edit-vertical-form input {
+    padding: 10px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    min-height: 44px;
+    min-width: 300px;
+    font-size: 16px;
   }
   
   .form-section {
@@ -110,18 +249,28 @@
   table {
     width: 100%;
     border-collapse: collapse;
-    margin-bottom: 20px;
+    margin-bottom: 28px;
+    margin-left: auto;
+    margin-right: auto;
   }
   
   table th, table td {
     border: 1px solid #ddd;
-    padding: 8px;
-    text-align: left;
+    padding: 0 1px;
+    text-align: center;
+    line-height: 0.95;
+    vertical-align: middle;
+  }
+
+  table td {
+    font-size: 15px;
   }
   
   table th {
     background-color: #f2f2f2;
     font-weight: bold;
+    font-size: 14px;
+    padding: 8px 6px;
   }
   
   table tr:nth-child(even) {
@@ -130,8 +279,9 @@
   
   table button {
     margin-right: 5px;
-    padding: 5px 10px;
-    font-size: 14px;
+    padding: 0 6px;
+    font-size: 11px;
+    line-height: 1.1;
   }
   
   .courses-display {
@@ -139,7 +289,11 @@
   }
   
   .course-section {
-    margin-bottom: 30px;
+    margin-bottom: 20px;
+  }
+
+  .course-section h4 {
+    margin: 2px 0 2px;
   }
   
   @media (max-width: 768px) {
@@ -170,7 +324,7 @@
   .courses-display h3 {
     text-align: center;
     font-size: 20px;
-    margin-bottom: 15px;
+    margin: 6px 0 6px;
   }
   
   .electives-table {
@@ -196,11 +350,11 @@
 
   table td button {
     margin-right: 5px;
-    padding: 5px 10px;
-    font-size: 14px;
-    min-width: 80px; /* Set a minimum width for buttons */
+    padding: 0 6px;
+    font-size: 11px;
+    min-width: 72px; /* Set a minimum width for buttons */
     display: inline-block;
-    margin-bottom: 5px; /* Add some spacing between buttons */
+    margin-bottom: 0; /* Add some spacing between buttons */
   }
   
   /* Adjust the actions column width */
