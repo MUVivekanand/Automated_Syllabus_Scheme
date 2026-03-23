@@ -12,17 +12,32 @@ function CourseDetailsPage() {
     navigate('/Faculty'); // Replace with your desired route
   };
   const { courseName, courseDetails } = location.state || {};
-
+  
   if (!courseName) {
     return <p className="error-message">No course details found.</p>;
   }
 
+  const [courseCode] = courseName.split(" - ");
+  const semesterNumber = courseCode?.[3]; // 4th character
+  
+  const semesterMap = {
+    "1": "SEMESTER – I",
+    "2": "SEMESTER – II",
+    "3": "SEMESTER – III",
+    "4": "SEMESTER – IV",
+    "5": "SEMESTER – V",
+    "6": "SEMESTER – VI",
+    "7": "SEMESTER – VII",
+    "8": "SEMESTER – VIII",
+  };
+  
+  const semesterTitle = semesterMap[semesterNumber] || "SEMESTER";
   const textbooks = courseDetails.textbooks || [];
   const refs = courseDetails.references || [];
 
   return (
     <div className="course-details-container">
-      <h2 className="semester-title">SEMESTER – I</h2>
+      <h2 className="semester-title">{semesterTitle}</h2>
       <div className="course-header">
         <h1 className="course-title">{courseName}</h1>{" "}
         {/* Displays "course code - course name" */}
@@ -40,7 +55,9 @@ function CourseDetailsPage() {
               <b>{co.name}:</b> {co.desc}
             </p>
             <span className="hours">
-              ({courseDetails.hours[i].hour1} + {courseDetails.hours[i].hour2})
+              {courseDetails.hours[i].hour2
+                ? `(${courseDetails.hours[i].hour1} + ${courseDetails.hours[i].hour2})`
+                : `(${courseDetails.hours[i].hour1})`}
             </span>
           </div>
         ))}
