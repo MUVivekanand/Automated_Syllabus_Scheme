@@ -107,6 +107,7 @@ function Faculty() {
 
     // ✅ Store degree and department for composite key
     if (selectedCourseObj) {
+      setSelectedCourseInfo(selectedCourseObj);
       setSelectedDegree(selectedCourseObj.degree);
       setSelectedDepartment(selectedCourseObj.department);
 
@@ -333,6 +334,11 @@ function Faculty() {
             onClick={() => toggleExpand("syllabus")}
           >
             Course Syllabus
+            {selectedCourseInfo && (
+              <span className="ltpc">
+                ({selectedCourseInfo.lecture}-{selectedCourseInfo.tutorial}-{selectedCourseInfo.practical}-{selectedCourseInfo.credits})
+              </span>
+            )}
           </button>
           {expandedSections.syllabus && (
             <div className="co-section content">
