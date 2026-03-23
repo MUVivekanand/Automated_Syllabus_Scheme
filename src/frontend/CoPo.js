@@ -30,6 +30,12 @@ function CoPo() {
     try {
       const response = await axios.get(
         `${process.env.REACT_APP_API_URL}/api/faculty/getAllMappings`,
+        {
+          params: {
+            degree,
+            department,
+          },
+        }
       );
 
       if (!response.data.success) {
