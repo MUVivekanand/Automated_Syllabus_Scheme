@@ -13,6 +13,7 @@ function Faculty() {
   const [selectedCourse, setSelectedCourse] = useState(""); // Selected course code
   const [selectedDegree, setSelectedDegree] = useState("");
   const [selectedDepartment, setSelectedDepartment] = useState("");
+  const [selectedCourseInfo, setSelectedCourseInfo] = useState(null);
   const [courseDetails, setCourseDetails] = useState({
     co: Array(5).fill({ name: "", desc: "" }),
     hours: Array(5).fill({ hour1: "", hour2: "" }),
@@ -107,6 +108,7 @@ function Faculty() {
 
     // ✅ Store degree and department for composite key
     if (selectedCourseObj) {
+      setSelectedCourseInfo(selectedCourseObj);
       setSelectedDegree(selectedCourseObj.degree);
       setSelectedDepartment(selectedCourseObj.department);
 
@@ -333,6 +335,11 @@ function Faculty() {
             onClick={() => toggleExpand("syllabus")}
           >
             Course Syllabus
+            {selectedCourseInfo && (
+              <span className="ltpc">
+                ({selectedCourseInfo.lecture}-{selectedCourseInfo.tutorial}-{selectedCourseInfo.practical}-{selectedCourseInfo.credits})
+              </span>
+            )}
           </button>
           {expandedSections.syllabus && (
             <div className="co-section content">
