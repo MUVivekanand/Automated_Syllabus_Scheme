@@ -13,6 +13,7 @@ function Faculty() {
   const [selectedCourse, setSelectedCourse] = useState(""); // Selected course code
   const [selectedDegree, setSelectedDegree] = useState("");
   const [selectedDepartment, setSelectedDepartment] = useState("");
+  const [selectedCourseInfo, setSelectedCourseInfo] = useState(null);
   const [courseDetails, setCourseDetails] = useState({
     co: Array(5).fill({ name: "", desc: "" }),
     hours: Array(5).fill({ hour1: "", hour2: "" }),
