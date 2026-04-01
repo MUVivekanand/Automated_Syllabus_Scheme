@@ -34,7 +34,11 @@ function CourseDetailsPage() {
   const semesterTitle = semesterMap[semesterNumber] || "SEMESTER";
   const textbooks = courseDetails.textbooks || [];
   const refs = courseDetails.references || [];
-
+  const isLabCourse =
+  courseDetails?.lecture === 0 &&
+  courseDetails?.tutorial === 0 &&
+  courseDetails?.practical > 0;
+  
   return (
     <div className="course-details-container">
       <h2 className="semester-title">{semesterTitle}</h2>
@@ -49,29 +53,40 @@ function CourseDetailsPage() {
 
       {/* Detailed Course Topics Section */}
       <div className="section">
-        {courseDetails.co.map((co, i) => (
-          <div key={i} className="course-topic">
-            <p className="topic">
-              <b>{co.name}:</b> {co.desc}
+        {isLabCourse ? (
+          <>
+            <h2 className="section-title">COURSE DESCRIPTION</h2>
+            <p className="lab-description">
+              {courseDetails.description || "No description available."}
             </p>
-            <span className="hours">
-              {courseDetails.hours[i].hour2
-                ? `(${courseDetails.hours[i].hour1} + ${courseDetails.hours[i].hour2})`
-                : `(${courseDetails.hours[i].hour1})`}
-            </span>
-          </div>
-        ))}
+          </>
+        ) : (
+          courseDetails.co.map((co, i) => (
+            <div key={i} className="course-topic">
+              <p className="topic">
+                <b>{co.name}:</b> {co.desc}
+              </p>
+              <span className="hours">
+                {courseDetails.hours[i].hour2
+                  ? `(${courseDetails.hours[i].hour1} + ${courseDetails.hours[i].hour2})`
+                  : `(${courseDetails.hours[i].hour1})`}
+              </span>
+            </div>
+          ))
+        )}
       </div>
-
       {/* Total Hours */}
-      <div className="total-hours">
-        <p>
-          <b>Total =</b> L: 45{" "}
-          {courseDetails.credits === 4 ? "+ T: 15 = 60" : ""}
-        </p>
-      </div>
+      {!isLabCourse && (
+        <div className="total-hours">
+          <p>
+            <b>Total =</b> L: 45{" "}
+            {courseDetails.credits === 4 ? "+ T: 15 = 60" : ""}
+          </p>
+        </div>
+      )}
 
       {/* Textbooks Section */}
+      {!isLabCourse && (
       <div className="section">
         <h2 className="section-title">TEXT BOOKS</h2>
         {textbooks.length > 0 ? (
@@ -87,8 +102,10 @@ function CourseDetailsPage() {
           <p className="no-data">No textbooks available.</p>
         )}
       </div>
+      )}
 
       {/* References Section */}
+      {!isLabCourse && (
       <div className="section">
         <h2 className="section-title">REFERENCES</h2>
         {refs.length > 0 ? (
@@ -104,6 +121,7 @@ function CourseDetailsPage() {
           <p className="no-data">No references available.</p>
         )}
       </div>
+      )}
       <button 
         onClick={handleGoBack}
         style={{
