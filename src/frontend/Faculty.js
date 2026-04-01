@@ -94,7 +94,7 @@ function Faculty() {
       }
     } catch (error) {
       console.error("Error fetching course details:", error);
-      alert("Unexpected error while fetching course details.");
+      alert("Course Details not entered.");
     }
   };
 
