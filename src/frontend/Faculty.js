@@ -236,7 +236,7 @@ function Faculty() {
       0
     );
   
-    const requiredHours = credits === 4 ? 60 : credits === 3 ? 45 : 0;
+    const requiredHours = credits * 15;
   
     if (totalHours !== requiredHours) {
       alert(
