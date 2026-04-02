@@ -257,9 +257,7 @@ for (const [courseCode, data] of Object.entries(grouped)) {
               <tr>
                 <th>COs/POs</th>
                 {[...Array(12).keys()].map((i) => (
-                  <th key={i}>{`PO${String.fromCharCode(
-                    97 + i
-                  ).toUpperCase()}`}</th>
+                  <th key={i}>{`PO${i + 1}`}</th>
                 ))}
                 <th>PSO1</th>
                 <th>PSO2</th>

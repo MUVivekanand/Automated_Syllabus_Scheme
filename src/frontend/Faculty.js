@@ -20,6 +20,7 @@ function Faculty() {
     textbooks: [],
     references: [],
     outcomes: Array(5).fill(""),
+    description: "",
   });
   const [expandedSections, setExpandedSections] = useState({
     syllabus: false,
@@ -94,7 +95,7 @@ function Faculty() {
       }
     } catch (error) {
       console.error("Error fetching course details:", error);
-      alert("Unexpected error while fetching course details.");
+      alert("Course Details not entered.");
     }
   };
 
@@ -108,18 +109,27 @@ function Faculty() {
 
     // ✅ Store degree and department for composite key
     if (selectedCourseObj) {
-      setSelectedCourseInfo(selectedCourseObj);
-      setSelectedDegree(selectedCourseObj.degree);
-      setSelectedDepartment(selectedCourseObj.department);
-
-      const maxCO = selectedCourseObj?.degree === "B.E" ? 5 : 4;
-      setCourseDetails({
-        co: Array(maxCO).fill({ name: "", desc: "" }),
-        hours: Array(maxCO).fill({ hour1: "", hour2: "" }),
-        textbooks: [],
-        references: [],
-        outcomes: Array(5).fill(""),
-      });
+      const isLab =
+        selectedCourseObj.lecture === 0 &&
+        selectedCourseObj.tutorial === 0 &&
+        selectedCourseObj.practical > 0;
+    
+      if (isLab) {
+        setCourseDetails({
+          description: "",
+        });
+      } else {
+        const maxCO = selectedCourseObj?.degree === "B.E" ? 5 : 4;
+    
+        setCourseDetails({
+          co: Array(maxCO).fill({ name: "", desc: "" }),
+          hours: Array(maxCO).fill({ hour1: "", hour2: "" }),
+          textbooks: [],
+          references: [],
+          outcomes: Array(5).fill(""),
+          description: "", // keep safe
+        });
+      }
     }
   };
 
@@ -155,6 +165,12 @@ function Faculty() {
     });
   };
 
+  const isLabCourse =
+  selectedCourseInfo &&
+  selectedCourseInfo.lecture === 0 &&
+  selectedCourseInfo.tutorial === 0 &&
+  selectedCourseInfo.practical > 0;
+
   const handleSave = async () => {
     if (!selectedCourse || !selectedDegree || !selectedDepartment) {
       alert("Please select a course first.");
@@ -174,46 +190,27 @@ function Faculty() {
       return;
     }
 
-    const { credits } = selectedCourseDetails;
-    const totalHours = courseDetails.hours.reduce(
-      (total, hour) =>
-        total + (parseInt(hour.hour1) || 0) + (parseInt(hour.hour2) || 0),
-      0
-    );
-
-    const requiredHours = credits === 4 ? 60 : credits === 3 ? 45 : 0;
-
-    if (totalHours !== requiredHours) {
-      alert(
-        `Total hours must be ${requiredHours} for a course with ${credits} credits.`
-      );
-      return;
-    }
-
     try {
+    // 🔥 LAB COURSE FLOW
+    if (isLabCourse) {
       const response = await axios.post(
-        `${process.env.REACT_APP_API_URL}/api/faculty/updateCourseDetails`,
+        `${process.env.REACT_APP_API_URL}/api/faculty/updateLabCourseDetails`,
         {
-          courseCode,
-          courseName, // ✅ Send courseName
-          facultyName,
-          degree: selectedDegree, // ✅ Send degree from state
-          department: selectedDepartment, // ✅ Send department from state
-          coDetails: courseDetails.co,
-          hours: courseDetails.hours,
-          textbooks: courseDetails.textbooks,
-          references: courseDetails.references,
-          outcomes: courseDetails.outcomes,
+          courseName,
+          degree: selectedDegree,
+          department: selectedDepartment,
+          description: courseDetails.description,
         }
       );
-
+  
       if (response.data.success) {
-        alert("Course details updated successfully!");
+        alert("Lab course details updated successfully!");
+
         navigate("/course-details", {
           state: {
             courseName: `${courseCode} - ${courseName}`,
             courseDetails: {
-              ...courseDetails,
+              description: courseDetails.description,
               lecture: selectedCourseDetails.lecture || 0,
               tutorial: selectedCourseDetails.tutorial || 0,
               practical: selectedCourseDetails.practical || 0,
@@ -221,17 +218,75 @@ function Faculty() {
             },
           },
         });
+        
+        return; // ✅ stop further execution
       } else {
-        alert(`Failed to update course details: ${response.data.error}`);
+        alert(`Failed: ${response.data.error}`);
+        return;
       }
-    } catch (error) {
-      console.error("Error updating course details:", error);
-      alert(
-        `Unexpected error: ${error.response?.data?.error || error.message}`
-      );
     }
-  };
-
+  
+    // 🔥 THEORY COURSE FLOW (existing logic)
+  
+    const { credits } = selectedCourseDetails;
+  
+    const totalHours = courseDetails.hours.reduce(
+      (total, hour) =>
+        total + (parseInt(hour.hour1) || 0) + (parseInt(hour.hour2) || 0),
+      0
+    );
+  
+    const requiredHours = credits * 15;
+  
+    if (totalHours !== requiredHours) {
+      alert(
+        `Total hours must be ${requiredHours} for a course with ${credits} credits.`
+      );
+      return;
+    }
+  
+    const response = await axios.post(
+      `${process.env.REACT_APP_API_URL}/api/faculty/updateCourseDetails`,
+      {
+        courseCode,
+        courseName,
+        facultyName,
+        degree: selectedDegree,
+        department: selectedDepartment,
+        coDetails: courseDetails.co,
+        hours: courseDetails.hours,
+        textbooks: courseDetails.textbooks,
+        references: courseDetails.references,
+        outcomes: courseDetails.outcomes,
+      }
+    );
+  
+    if (response.data.success) {
+      alert("Course details updated successfully!");
+  
+      navigate("/course-details", {
+        state: {
+          courseName: `${courseCode} - ${courseName}`,
+          courseDetails: {
+            ...courseDetails,
+            lecture: selectedCourseDetails.lecture || 0,
+            tutorial: selectedCourseDetails.tutorial || 0,
+            practical: selectedCourseDetails.practical || 0,
+            credits: selectedCourseDetails.credits || 0,
+          },
+        },
+      });
+    } else {
+      alert(`Failed to update course details: ${response.data.error}`);
+    }
+  
+  } catch (error) {
+    console.error("Error updating course details:", error);
+    alert(
+      `Unexpected error: ${error.response?.data?.error || error.message}`
+    );
+  }
+  
   return (
     <div className="faculty-container">
       <h1 className="faculty-title">Faculty Dashboard</h1>
@@ -302,6 +357,8 @@ function Faculty() {
           <h2 className="course-details-title">Course Details</h2>
 
           {/* Course Outcome Section */}
+          {!isLabCourse && (
+          <>
           <button
             className="toggle-btn"
             onClick={() => toggleExpand("courseOutcomes")}
@@ -327,7 +384,9 @@ function Faculty() {
                 </div>
               ))}
             </div>
-          )}
+           )}
+         </>
+        )}
 
           {/* Course Syllabus Section */}
           <button
@@ -344,50 +403,68 @@ function Faculty() {
           {expandedSections.syllabus && (
             <div className="co-section content">
               <h4 className="section-title">Course Syllabus</h4>
-              {courseDetails.co.map((co, i) => (
-                <div key={i} className="co-entry">
-                  <input
-                    className="input-field"
-                    type="text"
-                    placeholder={`Unit${i + 1} Name`}
-                    value={co.name}
-                    onChange={(e) =>
-                      handleChange("co", i, "name", e.target.value)
-                    }
-                  />
-                  <textarea
-                    className="input-field textarea-field"
-                    placeholder={`Unit${i + 1} Description`}
-                    value={co.desc}
-                    onChange={(e) =>
-                      handleChange("co", i, "desc", e.target.value)
-                    }
-                  />
-                  <input
-                    className="input-field"
-                    type="number"
-                    placeholder={`Lecture Hour for Unit${i + 1}`}
-                    value={courseDetails.hours[i].hour1}
-                    onChange={(e) =>
-                      handleChange("hours", i, "hour1", e.target.value)
-                    }
-                  />
-                  <input
-                    className="input-field"
-                    type="number"
-                    placeholder={`Pratical Hour for Unit${i + 1}`}
-                    value={courseDetails.hours[i].hour2}
-                    onChange={(e) =>
-                      handleChange("hours", i, "hour2", e.target.value)
-                    }
-                  />
-                </div>
-              ))}
+          
+              {/* 🔥 LAB COURSE UI */}
+              {isLabCourse ? (
+                <textarea
+                  className="input-field textarea-field"
+                  placeholder="Enter Lab Course Description"
+                  value={courseDetails.description || ""}
+                  onChange={(e) =>
+                    setCourseDetails((prev) => ({
+                      ...prev,
+                      description: e.target.value,
+                    }))
+                  }
+                  rows={6}
+                />
+              ) : (
+                /* ✅ EXISTING THEORY UI */
+                courseDetails.co.map((co, i) => (
+                  <div key={i} className="co-entry">
+                    <input
+                      className="input-field"
+                      type="text"
+                      placeholder={`Unit${i + 1} Name`}
+                      value={co.name}
+                      onChange={(e) =>
+                        handleChange("co", i, "name", e.target.value)
+                      }
+                    />
+                    <textarea
+                      className="input-field textarea-field"
+                      placeholder={`Unit${i + 1} Description`}
+                      value={co.desc}
+                      onChange={(e) =>
+                        handleChange("co", i, "desc", e.target.value)
+                      }
+                    />
+                    <input
+                      className="input-field"
+                      type="number"
+                      placeholder={`Lecture Hour`}
+                      value={courseDetails.hours[i].hour1}
+                      onChange={(e) =>
+                        handleChange("hours", i, "hour1", e.target.value)
+                      }
+                    />
+                    <input
+                      className="input-field"
+                      type="number"
+                      placeholder={`Practical Hour`}
+                      value={courseDetails.hours[i].hour2}
+                      onChange={(e) =>
+                        handleChange("hours", i, "hour2", e.target.value)
+                      }
+                    />
+                  </div>
+                ))
+              )}
             </div>
           )}
 
           {/* Textbooks Section */}
-          {selectedDegree === "B.E" && (
+          {selectedDegree === "B.E" && !isLabCourse && (
             <>
               <button
                 className="toggle-btn"
@@ -448,58 +525,65 @@ function Faculty() {
           )}
 
           {/* References Section */}
-          <button
-            className="toggle-btn"
-            onClick={() => toggleExpand("references")}
-          >
-            References
-          </button>
-          {expandedSections.references && (
-            <div className="reference-section">
-              <h4 className="section-title">References</h4>
-              {courseDetails.references.map((reference, i) => (
-                <div key={i} className="reference-entry">
-                  {["title", "author", "publisher", "place", "year"].map(
-                    (field) => (
-                      <input
-                        key={field}
-                        className="input-field"
-                        type="text"
-                        placeholder={`Reference ${i + 1} ${field}`}
-                        value={reference[field] || ""}
-                        onChange={(e) =>
-                          handleChange("references", i, field, e.target.value)
-                        }
-                      />
-                    )
-                  )}
-                </div>
-              ))}
+          {!isLabCourse && (
+            <>
               <button
-                className="add-button"
-                onClick={() =>
-                  setCourseDetails((prev) => ({
-                    ...prev,
-                    references: [
-                      ...prev.references,
-                      {
-                        title: "",
-                        author: "",
-                        publisher: "",
-                        place: "",
-                        year: "",
-                      },
-                    ],
-                  }))
-                }
-                disabled={
-                  courseDetails.references.length >=
-                  (selectedDegree === "B.E" ? 4 : 5)
-                } // Disable when 4 references added
+                className="toggle-btn"
+                onClick={() => toggleExpand("references")}
               >
-                + Add Reference
+                References
               </button>
-            </div>
+          
+              {expandedSections.references && (
+                <div className="reference-section">
+                  <h4 className="section-title">References</h4>
+          
+                  {courseDetails.references.map((reference, i) => (
+                    <div key={i} className="reference-entry">
+                      {["title", "author", "publisher", "place", "year"].map(
+                        (field) => (
+                          <input
+                            key={field}
+                            className="input-field"
+                            type="text"
+                            placeholder={`Reference ${i + 1} ${field}`}
+                            value={reference[field] || ""}
+                            onChange={(e) =>
+                              handleChange("references", i, field, e.target.value)
+                            }
+                          />
+                        )
+                      )}
+                    </div>
+                  ))}
+          
+                  <button
+                    className="add-button"
+                    onClick={() =>
+                      setCourseDetails((prev) => ({
+                        ...prev,
+                        references: [
+                          ...prev.references,
+                          {
+                            title: "",
+                            author: "",
+                            publisher: "",
+                            place: "",
+                            year: "",
+                          },
+                        ],
+                      }))
+                    }
+                    disabled={
+                      courseDetails.references.length >=
+                      (selectedDegree === "B.E" ? 4 : 5)
+                    }
+                  >
+                    + Add Reference
+                  </button>
+                </div>
+              )}
+            </>
           )}
 
           <button className="save-button" onClick={handleSave}>
