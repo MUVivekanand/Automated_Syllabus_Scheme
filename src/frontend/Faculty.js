@@ -286,6 +286,7 @@ function Faculty() {
       `Unexpected error: ${error.response?.data?.error || error.message}`
     );
   }
+  };
   
   return (
     <div className="faculty-container">
