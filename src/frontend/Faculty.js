@@ -88,8 +88,16 @@ function Faculty() {
         }
       );
 
-      if (response.data.success) {
-        setCourseDetails(response.data.courseDetails);
+      if (response.data.success) { 
+          const maxCO = selectedDegree === "B.E" ? 5 : 4;
+
+          const filteredDetails = {
+            ...response.data.courseDetails,
+            co: (response.data.courseDetails.co || []).slice(0, maxCO),
+            hours: (response.data.courseDetails.hours || []).slice(0, maxCO),
+          };
+        
+          setCourseDetails(filteredDetails);
       } else {
         alert("Failed to fetch course details.");
       }
@@ -109,6 +117,9 @@ function Faculty() {
 
     // ✅ Store degree and department for composite key
     if (selectedCourseObj) {
+      setSelectedDegree(selectedCourseObj.degree);
+      setSelectedDepartment(selectedCourseObj.department);
+      setSelectedCourseInfo(selectedCourseObj);
       const isLab =
         selectedCourseObj.lecture === 0 &&
         selectedCourseObj.tutorial === 0 &&
