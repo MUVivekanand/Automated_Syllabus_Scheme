@@ -86,15 +86,34 @@ function CourseDetailsPage() {
       )}
 
       {/* Textbooks Section */}
-      {!isLabCourse && (
+      {!isLabCourse && textbooks.length > 0 && (
       <div className="section">
         <h2 className="section-title">TEXT BOOKS</h2>
         {textbooks.length > 0 ? (
           <ol className="book-list">
             {textbooks.map((book, i) => (
               <li key={i} className="book-item">
-                <b>{book.author}</b>, {book.title}, {book.publisher},{" "}
-                {book.place}, {book.year}.
+                {[
+                  book.author && <b key="author">{book.author}</b>,
+                  book.title,
+                  book.publisher,
+                  book.place,
+                  book.year,
+                ]
+                  .filter(Boolean)
+                  .map((item, index) => (
+                    <span key={index}>
+                      {item}
+                      {index !==
+                        [
+                          book.author,
+                          book.title,
+                          book.publisher,
+                          book.place,
+                          book.year,
+                        ].filter(Boolean).length - 1 && ", "}
+                    </span>
+                  ))}
               </li>
             ))}
           </ol>
@@ -105,15 +124,34 @@ function CourseDetailsPage() {
       )}
 
       {/* References Section */}
-      {!isLabCourse && (
+      {refs.length > 0 && (
       <div className="section">
         <h2 className="section-title">REFERENCES</h2>
         {refs.length > 0 ? (
           <ol className="book-list">
             {refs.map((ref, i) => (
               <li key={i} className="book-item">
-                <b>{ref.author}</b>, {ref.title}, {ref.publisher}, {ref.place},{" "}
-                {ref.year}.
+                {[
+                  ref.author && <b key="author">{ref.author}</b>,
+                  ref.title,
+                  ref.publisher,
+                  ref.place,
+                  ref.year,
+                ]
+                  .filter(Boolean)
+                  .map((item, index) => (
+                    <span key={index}>
+                      {item}
+                      {index !==
+                        [
+                          ref.author,
+                          ref.title,
+                          ref.publisher,
+                          ref.place,
+                          ref.year,
+                        ].filter(Boolean).length - 1 && ", "}
+                    </span>
+                  ))}
               </li>
             ))}
           </ol>
