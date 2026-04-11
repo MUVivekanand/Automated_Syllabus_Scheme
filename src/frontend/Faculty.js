@@ -77,7 +77,7 @@ function Faculty() {
 
     const [, courseName] = selectedCourse.split(" - "); // ✅ Extract courseName
     try {
-      const response = await axios.get(-
+      const response = await axios.get(
         `${process.env.REACT_APP_API_URL}/api/faculty/getCourseDetails`,
         {
           params: { 
@@ -89,6 +89,13 @@ function Faculty() {
       );
 
       if (response.data.success) { 
+          if (response.data.courseDetails.description !== undefined) {
+              setCourseDetails({
+                description: response.data.courseDetails.description || "",
+                references: response.data.courseDetails.references || [],
+              });
+              return;
+          }
           const maxCO = selectedDegree === "B.E" ? 5 : 4;
 
           const filteredDetails = {
