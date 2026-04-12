@@ -89,6 +89,13 @@ function Faculty() {
       );
 
       if (response.data.success) { 
+          if (response.data.courseDetails.description !== undefined) {
+              setCourseDetails({
+                description: response.data.courseDetails.description || "",
+                references: response.data.courseDetails.references || [],
+              });
+              return;
+          }
           const maxCO = selectedDegree === "B.E" ? 5 : 4;
 
           const filteredDetails = {
@@ -128,6 +135,7 @@ function Faculty() {
       if (isLab) {
         setCourseDetails({
           description: "",
+          references: [],
         });
       } else {
         const maxCO = selectedCourseObj?.degree === "B.E" ? 5 : 4;
@@ -211,6 +219,7 @@ function Faculty() {
           degree: selectedDegree,
           department: selectedDepartment,
           description: courseDetails.description,
+          references: courseDetails.references,
         }
       );
   
@@ -537,7 +546,7 @@ function Faculty() {
           )}
 
           {/* References Section */}
-          {!isLabCourse && (
+          {(
             <>
               <button
                 className="toggle-btn"
