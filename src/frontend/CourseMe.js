@@ -34,6 +34,8 @@ function CourseMe() {
     tutorial: 0,
     practical: 0,
     credits: 0,
+    caMarks: 0,
+    feMarks: 0,
   });
   const [filterForm, setFilterForm] = useState({
     filterSem: "",
@@ -42,6 +44,7 @@ function CourseMe() {
   const [isFiltered, setIsFiltered] = useState(false);
   const [tableData, setTableData] = useState([]);
   const [originalCourseNames, setOriginalCourseNames] = useState({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const navigate = useNavigate();
 
@@ -83,6 +86,8 @@ const fetchData = async () => {
         tutorial: 0,
         practical: 0,
         credits: 0,
+        caMarks: 0,
+        feMarks: 0,
         type: "",
         faculty: "",
         courseType: "theory"  // All courses are theory now
@@ -103,6 +108,8 @@ const fetchData = async () => {
         tutorial: course.tutorial,
         practical: course.practical,
         credits: course.credits,
+        caMarks: course.ca_marks || 0,
+        feMarks: course.fe_marks || 0,
         type: course.type,
         faculty: course.faculty,
         courseType: "theory"  // Set all to theory
@@ -163,8 +170,10 @@ const fetchData = async () => {
         tutorial: acc.tutorial + Number(course.tutorial || 0),
         practical: acc.practical + Number(course.practical || 0),
         credits: acc.credits + Number(course.credits || 0),
+        caMarks: acc.caMarks + Number(course.caMarks || 0),
+        feMarks: acc.feMarks + Number(course.feMarks || 0),
       }),
-      { lecture: 0, tutorial: 0, practical: 0, credits: 0 }
+      { lecture: 0, tutorial: 0, practical: 0, credits: 0, caMarks: 0, feMarks: 0 }
     );
     setTotalRow(totals);
   };
@@ -172,13 +181,13 @@ const fetchData = async () => {
   const resetStates = () => {
     setCourses([]);
     setExistingCourses([]);
-    setTotalRow({ lecture: 0, tutorial: 0, practical: 0, credits: 0 });
+    setTotalRow({ lecture: 0, tutorial: 0, practical: 0, credits: 0, caMarks: 0, feMarks: 0 });
   };
 
   // Update common info change handler
   const handleCommonInfoChange = useCallback((e) => {
     const { name, value } = e.target;
-    const numericNames = new Set(['caMarks','feMarks','totalMarks','semNo','totalCredits']);
+    const numericNames = new Set(['totalMarks','semNo','totalCredits']);
     const newValue = numericNames.has(name) ? clampNumericValue(value) : value;
     setCommonInfo(prev => ({ ...prev, [name]: newValue }));
   }, []);
@@ -246,7 +255,7 @@ const fetchData = async () => {
   const handleCourseChange = useCallback((index, field, value) => {
     setCourses(prevCourses => {
       const updatedCourses = [...prevCourses];
-      const numericFields = new Set(['serial_no','lecture','tutorial','practical','credits']);
+      const numericFields = new Set(['serial_no','lecture','tutorial','practical','credits','caMarks','feMarks']);
       let newValue = value;
       if (numericFields.has(field)) {
         newValue = clampNumericValue(value);
@@ -270,8 +279,10 @@ const fetchData = async () => {
           tutorial: acc.tutorial + Number(course.tutorial || 0),
           practical: acc.practical + Number(course.practical || 0),
           credits: acc.credits + Number(course.credits || 0),
+          caMarks: acc.caMarks + Number(course.caMarks || 0),
+          feMarks: acc.feMarks + Number(course.feMarks || 0),
         }),
-        { lecture: 0, tutorial: 0, practical: 0, credits: 0 }
+        { lecture: 0, tutorial: 0, practical: 0, credits: 0, caMarks: 0, feMarks: 0 }
       );
 
       setTotalRow(totals);
@@ -348,6 +359,7 @@ const fetchData = async () => {
 // }, [courses, commonInfo, currentSem, originalCourseNames, department, degree]);
 
 const handleSubmit = useCallback(async () => {
+  setIsSubmitting(true);
   try {
     for (let i = 0; i < courses.length; i++) {
       const course = courses[i];
@@ -373,8 +385,8 @@ const handleSubmit = useCallback(async () => {
             tutorial: course.tutorial || 0,
             practical: course.practical || 0,
             credits: course.credits || 0,
-            ca_marks: commonInfo.caMarks || 0,
-            fe_marks: commonInfo.feMarks || 0,
+            ca_marks: course.caMarks || 0,
+            fe_marks: course.feMarks || 0,
             total_marks: commonInfo.totalMarks || 0,
             type: course.type || '',
             faculty: course.faculty || '',
@@ -385,8 +397,10 @@ const handleSubmit = useCallback(async () => {
           });
         } catch (updateError) {
           console.error(`Error updating course ${course.courseTitle}:`, updateError.response?.data || updateError.message);
+          setIsSubmitting(false);
           // Alert about specific course update failure but continue with others
           alert(`Failed to update course ${course.courseTitle}: ${updateError.response?.data?.message || updateError.message}`);
+          return;
         }
       }
     }
@@ -396,6 +410,8 @@ const handleSubmit = useCallback(async () => {
   } catch (error) {
     console.error("Error in submission process:", error);
     alert("Failed to update data: " + (error.response?.data?.message || error.message));
+  } finally {
+    setIsSubmitting(false);
   }
 }, [courses, commonInfo, currentSem, originalCourseNames, department, degree]);
 
@@ -405,8 +421,6 @@ const handleSubmit = useCallback(async () => {
       setCurrentSem(prev => prev + 1);
       setCommonInfo(prev => ({
         ...prev,
-        caMarks: "",
-        feMarks: "",
         totalMarks: "",
         department: prev.department,
         degree: prev.degree
@@ -494,8 +508,6 @@ const handleSubmit = useCallback(async () => {
     setCurrentSem(semNumber);
     setCommonInfo(prev => ({
       ...prev,
-      caMarks: "",
-      feMarks: "",
       totalMarks: "",
       semNo: semNumber
       // Preserving department and degree by not overwriting them
@@ -508,8 +520,6 @@ const handleSubmit = useCallback(async () => {
       setCurrentSem(prev => prev - 1);
       setCommonInfo(prev => ({
         ...prev,
-        caMarks: "",
-        feMarks: "",
         totalMarks: "",
         department: "",
         degree: ""
@@ -526,6 +536,47 @@ const handleSubmit = useCallback(async () => {
   return (
     <div className="container-course page-with-navbar">
       <Navbar/>
+      {isSubmitting && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 9999,
+          flexDirection: 'column'
+        }}>
+          <div style={{
+            backgroundColor: 'white',
+            padding: '30px 50px',
+            borderRadius: '10px',
+            textAlign: 'center',
+            boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
+          }}>
+            <div style={{
+              border: '4px solid #f3f3f3',
+              borderTop: '4px solid #3498db',
+              borderRadius: '50%',
+              width: '50px',
+              height: '50px',
+              animation: 'spin 1s linear infinite',
+              margin: '0 auto 20px'
+            }}></div>
+            <h3 style={{ margin: 0, color: '#333' }}>Submitting Data...</h3>
+            <p style={{ margin: '10px 0 0', color: '#666' }}>Please wait, this may take a few moments</p>
+          </div>
+        </div>
+      )}
+      <style>{`
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+      `}</style>
       <h1>Course Details - Semester {currentSem}</h1>
 
       <div className="dropdown-container">
@@ -571,36 +622,13 @@ const handleSubmit = useCallback(async () => {
       <input type="number" value={commonInfo.theoryCourses} readOnly />
     </div>
     <div>
-      <label>CA Marks:</label>
-      <input
-        type="number"
-        name="caMarks"
-        value={commonInfo.caMarks}
-        onChange={handleCommonInfoChange}
-        min="0"
-        step="1"
-        onKeyDown={(e) => { if (e.key === '-' || e.key === 'e' || e.key === 'E' || e.key === '+') e.preventDefault(); }}
-      />
-    </div>
-    <div>
-      <label>FE Marks:</label>
-      <input
-        type="number"
-        name="feMarks"
-        value={commonInfo.feMarks}
-        onChange={handleCommonInfoChange}
-        min="0"
-        step="1"
-        onKeyDown={(e) => { if (e.key === '-' || e.key === 'e' || e.key === 'E' || e.key === '+') e.preventDefault(); }}
-      />
-    </div>
-    <div>
       <label>Total Marks:</label>
       <input
         type="number"
         name="totalMarks"
         value={commonInfo.totalMarks}
         onChange={handleCommonInfoChange}
+        onWheel={(e) => e.target.blur()}
         min="0"
         step="1"
         onKeyDown={(e) => { if (e.key === '-' || e.key === 'e' || e.key === 'E' || e.key === '+') e.preventDefault(); }}
@@ -643,6 +671,8 @@ const handleSubmit = useCallback(async () => {
         <th>Tutorial</th>
         <th>Practical</th>
         <th>Credits</th>
+        <th>CA Marks</th>
+        <th>FE Marks</th>
         <th className="wide-column">Type</th>
         <th className="wide-column">Faculty Assigned</th>
       </tr>
@@ -655,6 +685,7 @@ const handleSubmit = useCallback(async () => {
               type="number"
               value={course.serial_no || ""}
               onChange={(e) => handleCourseChange(index, "serial_no", e.target.value)}
+              onWheel={(e) => e.target.blur()}
               min="0"
               step="1"
               onKeyDown={(e) => { if (e.key === '-' || e.key === 'e' || e.key === 'E' || e.key === '+') e.preventDefault(); }}
@@ -679,6 +710,7 @@ const handleSubmit = useCallback(async () => {
               type="number"
               value={course.lecture || ""}
               onChange={(e) => handleCourseChange(index, "lecture", e.target.value)}
+              onWheel={(e) => e.target.blur()}
               min="0"
               step="1"
               onKeyDown={(e) => { if (e.key === '-' || e.key === 'e' || e.key === 'E' || e.key === '+') e.preventDefault(); }}
@@ -689,6 +721,7 @@ const handleSubmit = useCallback(async () => {
               type="number"
               value={course.tutorial || ""}
               onChange={(e) => handleCourseChange(index, "tutorial", e.target.value)}
+              onWheel={(e) => e.target.blur()}
               min="0"
               step="1"
               onKeyDown={(e) => { if (e.key === '-' || e.key === 'e' || e.key === 'E' || e.key === '+') e.preventDefault(); }}
@@ -699,6 +732,7 @@ const handleSubmit = useCallback(async () => {
               type="number"
               value={course.practical || ""}
               onChange={(e) => handleCourseChange(index, "practical", e.target.value)}
+              onWheel={(e) => e.target.blur()}
               min="0"
               step="1"
               onKeyDown={(e) => { if (e.key === '-' || e.key === 'e' || e.key === 'E' || e.key === '+') e.preventDefault(); }}
@@ -710,6 +744,28 @@ const handleSubmit = useCallback(async () => {
               value={course.credits || ""}
               readOnly
               style={{ width: 70, textAlign: "center", padding: '8px', fontSize: '16px' }}
+            />
+          </td>
+          <td>
+            <input
+              type="number"
+              value={course.caMarks || ""}
+              onChange={(e) => handleCourseChange(index, "caMarks", e.target.value)}
+              onWheel={(e) => e.target.blur()}
+              min="0"
+              step="1"
+              onKeyDown={(e) => { if (e.key === '-' || e.key === 'e' || e.key === 'E' || e.key === '+') e.preventDefault(); }}
+            />
+          </td>
+          <td>
+            <input
+              type="number"
+              value={course.feMarks || ""}
+              onChange={(e) => handleCourseChange(index, "feMarks", e.target.value)}
+              onWheel={(e) => e.target.blur()}
+              min="0"
+              step="1"
+              onKeyDown={(e) => { if (e.key === '-' || e.key === 'e' || e.key === 'E' || e.key === '+') e.preventDefault(); }}
             />
           </td>
           <td>
@@ -736,6 +792,8 @@ const handleSubmit = useCallback(async () => {
         <td style={{ textAlign: "center", fontWeight: "bold" }}>{totalRow.tutorial}</td>
         <td style={{ textAlign: "center", fontWeight: "bold" }}>{totalRow.practical}</td>
         <td style={{ textAlign: "center", fontWeight: "bold" }}>{totalRow.credits}</td>
+        <td style={{ textAlign: "center", fontWeight: "bold" }}>{totalRow.caMarks}</td>
+        <td style={{ textAlign: "center", fontWeight: "bold" }}>{totalRow.feMarks}</td>
         <td colSpan="2"></td>
       </tr>
     </tbody>
@@ -815,10 +873,12 @@ const handleSubmit = useCallback(async () => {
         </div>
       
       <div className="action-buttons"> 
-        <button onClick={handleSubmit}>Submit</button>
-        <button onClick={navigateSummary}>Generate Summary</button>
-        <button onClick={navigateProfessional}>Professional Electives</button>
-        <button onClick={navigateWordPage}>Downloadable Word Format</button>
+        <button onClick={handleSubmit} disabled={isSubmitting}>
+          {isSubmitting ? "Submitting..." : "Submit"}
+        </button>
+        <button onClick={navigateSummary} disabled={isSubmitting}>Generate Summary</button>
+        <button onClick={navigateProfessional} disabled={isSubmitting}>Professional Electives</button>
+        <button onClick={navigateWordPage} disabled={isSubmitting}>Downloadable Word Format</button>
       </div>
     </div>
 
