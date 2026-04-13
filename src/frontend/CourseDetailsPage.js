@@ -195,4 +195,8 @@ function CourseDetailsPage() {
   );
 }
 
+.lab-description {
+  white-space: pre-line;
+}
+
 export default CourseDetailsPage;
