@@ -116,10 +116,16 @@ function Faculty() {
 
   // Handle dropdown change
   const handleCourseSelection = (event) => {
-    setSelectedCourse(event.target.value);
-    const selectedCourseCode = event.target.value.split(" - ")[0];
+    const value = event.target.value;
+    setSelectedCourse(value);
+  
+    const [courseName, degree, department] = value.split("||");
+  
     const selectedCourseObj = courses.find(
-      (course) => course.course_code === selectedCourseCode
+      (course) =>
+        course.course_name === courseName &&
+        course.degree === degree &&
+        course.department === department
     );
 
     // ✅ Store degree and department for composite key
@@ -235,6 +241,7 @@ function Faculty() {
               tutorial: selectedCourseDetails.tutorial || 0,
               practical: selectedCourseDetails.practical || 0,
               credits: selectedCourseDetails.credits || 0,
+              references: courseDetails.references,
             },
           },
         });
@@ -360,7 +367,7 @@ function Faculty() {
           {courses.map((course) => (
             <option
               key={`${course.course_code}-${course.degree}-${course.department}`}
-              value={`${course.course_code} - ${course.course_name}`}
+              value={`${course.course_name}||${course.degree}||${course.department}`}
             >
               {course.course_code} - {course.course_name} ({course.degree} - {course.department})
             </option>
