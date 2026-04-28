@@ -249,7 +249,9 @@ button.toggle-btn:active {
   font-weight: bold; /* Makes hours bold for better visibility */
 }
 
-
+.lab-description {
+  white-space: pre-line;
+}
 
 
 /* ========================================
