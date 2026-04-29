@@ -181,12 +181,17 @@ function Faculty() {
   const handleTable = async () => {
     navigate("/CoPo", {
       state: {
-        degree: selectedDegree,
-        department: selectedDepartment,
-        facultyName: facultyName,
-        selectedCourse: selectedCourse,
-        outcomes: courseDetails.outcomes,
+      degree: selectedDegree,
+      department: selectedDepartment,
+      facultyName: facultyName,
+      outcomes: courseDetails.outcomes,
+      selectedCourse: {
+        course_name: selectedCourseInfo.course_name,
+        course_code: selectedCourseInfo.course_code,
+        degree: selectedCourseInfo.degree,
+        department: selectedCourseInfo.department,
       },
+    },
     });
   };
 
