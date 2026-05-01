@@ -75,7 +75,7 @@ function Faculty() {
       return;
     }
 
-    const [, courseName] = selectedCourse.split(" - "); // ✅ Extract courseName
+    const [courseName] = selectedCourse.split("||");
     try {
       const response = await axios.get(
         `${process.env.REACT_APP_API_URL}/api/faculty/getCourseDetails`,
@@ -181,12 +181,17 @@ function Faculty() {
   const handleTable = async () => {
     navigate("/CoPo", {
       state: {
-        degree: selectedDegree,
-        department: selectedDepartment,
-        facultyName: facultyName,
-        selectedCourse: selectedCourse,
-        outcomes: courseDetails.outcomes,
+      degree: selectedDegree,
+      department: selectedDepartment,
+      facultyName: facultyName,
+      outcomes: courseDetails.outcomes,
+      selectedCourse: {
+        course_name: selectedCourseInfo.course_name,
+        course_code: selectedCourseInfo.course_code,
+        degree: selectedCourseInfo.degree,
+        department: selectedCourseInfo.department,
       },
+    },
     });
   };
 
@@ -202,19 +207,23 @@ function Faculty() {
       return;
     }
 
-    const [courseCode, courseName] = selectedCourse.split(" - ");
+    const [courseName, degree, department] = selectedCourse.split("||");
+  
     const selectedCourseDetails = courses.find(
       (course) => 
-        course.course_code === courseCode && 
-        course.degree === selectedDegree && 
-        course.department === selectedDepartment
+        course.course_name === courseName &&
+        course.degree === degree &&
+        course.department === department
     );
+
 
     if (!selectedCourseDetails) {
       alert("Course not found.");
       return;
     }
 
+    const courseCode = selectedCourseDetails.course_code;
+    
     try {
     // 🔥 LAB COURSE FLOW
     if (isLabCourse) {
@@ -222,8 +231,8 @@ function Faculty() {
         `${process.env.REACT_APP_API_URL}/api/faculty/updateLabCourseDetails`,
         {
           courseName,
-          degree: selectedDegree,
-          department: selectedDepartment,
+          degree,
+          department,
           description: courseDetails.description,
           references: courseDetails.references,
         }
@@ -278,8 +287,8 @@ function Faculty() {
         courseCode,
         courseName,
         facultyName,
-        degree: selectedDegree,
-        department: selectedDepartment,
+        degree,
+        department,
         coDetails: courseDetails.co,
         hours: courseDetails.hours,
         textbooks: courseDetails.textbooks,

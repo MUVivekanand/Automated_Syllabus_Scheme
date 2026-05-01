@@ -212,7 +212,10 @@ for (const [courseCode, data] of Object.entries(grouped)) {
       return;
     }
 
-    const [course_code, course_name] = selectedCourse.split(" - ");
+    const {
+      course_name,
+      course_code,
+    } = selectedCourse || {};
 
     try {
       const response = await axios.post(
